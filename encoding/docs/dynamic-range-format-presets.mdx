@@ -1,0 +1,79 @@
+---
+title: "Dynamic Range Format presets"
+---
+
+## Introduction
+
+When transcoding your HDR content, or converting content between different HDR formats or to SDR, you need to get the codec configuration settings that conrol the output color settings just right to ensure that the operation is performed correctly and that you have a valid output file.
+
+To simplify this process, with encoder v2.98.0 and above, we expose a `dynamicRangeFormat` enum property with a range of possible values for common dynamic range formats.
+
+Java
+
+`H265VideoConfiguration h265VideoConfiguration = new H265VideoConfiguration();
+h265VideoConfiguration.setHeight(OUTPUT_HEIGHT);
+h265VideoConfiguration.setBitrate(OUTPUT_BITRATE);
+h265VideoConfiguration.setDynamicRangeFormat(H265DynamicRangeFormat.HDR10);
+`
+
+The value selected sets a number of the relevant individual properties on the codec configuration. The tables below show those properties and assigned values, for each supported codec configuration.
+
+You may still overwrite any of the individual settings if necessary.
+
+## H265 Video Configuration
+
+| Preset                             | SDR     | HLG            | HDR10                                                                   | DOLBY\_VISION                                                            |
+| ---------------------------------- | ------- | -------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| profile^                           | main    | main10         | main10                                                                  | main10                                                                   |
+| pixelFormat                        | YUV420P | YUV420P10LE    | YUV420P10LE                                                             | YUV420P10LE                                                              |
+| hdr                                | \-      | true           | true                                                                    | \-                                                                       |
+| enableHrdSignaling                 | \-      | \-             | \-                                                                      | true                                                                     |
+| colorConfig.colorPrimaries         | BT709   | BT2020         | BT2020                                                                  | UNSPECIFIED                                                              |
+| colorConfig.colorTransfer          | BT709   | ARIB\_STD\_B67 | SMPTE2084                                                               | UNSPECIFIED                                                              |
+| colorConfig.colorSpace             | BT709   | BT2020\_NCL    | BT2020\_NCL                                                             | UNSPECIFIED                                                              |
+| colorConfig.colorRange             | \-      | \-             | \-                                                                      | JPEG                                                                     |
+| colorConfig.copyColorTransferFlag  | false   | false          | false                                                                   | false                                                                    |
+| colorConfig.copyColorPrimariesFlag | false   | false          | false                                                                   | false                                                                    |
+| colorConfig.copyChromaLocationFlag | false   | false          | false                                                                   | false                                                                    |
+| colorConfig.copyColorSpaceFlag     | false   | false          | false                                                                   | false                                                                    |
+| colorConfig.copyColorRangeFlag     | false   | false          | false                                                                   | false                                                                    |
+| masterDisplay\*                    | \-      | \-             | G(8500,39850) B(6550,2300) R(35400,14600) WP(15635,16450) L(10000000,1) | G(13250,34500) B(7500,3000) R(34000,16000) WP(15635,16450) L(10000000,1) |
+
+\* _whitespaces and carriage return in the table are for readibility. The actual string used in the APIs does not contain any whitespace_ _^ the profile set by the [PresetConfiguration](/encoding/docs/h265-presets) will be overwritten as needed_
+
+## H264 Video Configuration
+
+| Preset                             | SDR   |
+| ---------------------------------- | ----- |
+| profile                            | main  |
+| colorConfig.colorPrimaries         | BT709 |
+| colorConfig.colorTransfer          | BT709 |
+| colorConfig.colorSpace             | BT709 |
+| colorConfig.copyColorTransferFlag  | false |
+| colorConfig.copyColorPrimariesFlag | false |
+| colorConfig.copyChromaLocationFlag | false |
+| colorConfig.copyColorSpaceFlag     | false |
+| colorConfig.copyColorRangeFlag     | false |
+
+## VP9 Video Configuration
+
+| Preset                             | SDR   | HLG            |
+| ---------------------------------- | ----- | -------------- |
+| colorConfig.colorPrimaries         | BT709 | BT2020         |
+| colorConfig.colorTransfer          | BT709 | ARIB\_STD\_B67 |
+| colorConfig.colorSpace             | BT709 | BT2020\_NCL    |
+| colorConfig.copyColorTransferFlag  | false | false          |
+| colorConfig.copyColorPrimariesFlag | false | false          |
+| colorConfig.copyChromaLocationFlag | false | false          |
+| colorConfig.copyColorSpaceFlag     | false | false          |
+| colorConfig.copyColorRangeFlag     | false | false          |
+
+## Input color
+
+In the background, the encoder decides which conversion to apply based only on the input type and the output configuration. If there is no `dynamicRangeFormat` specifically set in the video configuration, the encoder will keep the output color space the same as found in the input.
+
+The input color configuration can be specified in the API, and if not specified will be deduced during the internal decoding process. If the input color is not specified and the encoder fails to properly deduce the input color configuration, it will be assumed that the colorspace is:
+
+* BT470BG if the input resolution is SD
+* BT709 for input resolution of HD (720p) or above
+* BT2020 for input resolutions of 4K or above

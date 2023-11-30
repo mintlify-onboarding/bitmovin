@@ -1,0 +1,1880 @@
+---
+title: "Encoder 2.0.0 - 2.49.0"
+---
+
+### 2.49.0
+
+Released 2020-07-14
+
+**Added**
+
+* For video encodings a display aspect ratio (DAR) for the output can be specified. If the DAR does not match with the width and height, then the sample aspect ratio (SAR) will be adjusted accordingly.
+* Added support for [HLS iFrame playlist generation](/encoding/reference/postencodingmanifestshlsstreamsiframebymanifestidandstreamid) for AVC/HEVC in fMP4 with and without encryption.
+* Added support for passthrough of [DTS audio codec](/encoding/reference/postencodingconfigurationsaudiodtspassthrough).
+
+**Fixed**
+
+* For Zixi/SRT live streams, if the ingest disconnects and reconnects again with a different stream layout: audio silence will be written for audio streams, which cannot be found in the new ingest; if the video stream is not found again the live stream will go into `ERROR` state.
+* Fixed invalid DASH fMP4 output with non-integer segment lengths. This resolves the related playback issues.
+* A timeout with retry mechanism has been added for live manifests uploads to S3, Generic S3, and GCS in order to avoid player buffering for uploads that take too long.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.48.1
+
+Released 2020-07-21
+
+**Fixed**
+
+* Fixed an issue when the `customData` property of a resource is configured and the value is not valid JSON.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.48.0
+
+Released 2020-06-30
+
+**Added**
+
+* Allow manual restart of live encodings in state FINISHED or ERROR
+* Enabled restart of live encodings if the encoder is unresponsive due to an instance failure (hardware, software, network issue etc.). This will lead to the live encoding being started on an instance with a new IP address.
+* Improved download speed of [GCS Service Account input](/encoding/reference/postencodinginputsgcsserviceaccount) up to 15x
+* Added option to set `suggestedPresentationDelay`, `minimumUpdatePeriod` and `availabilityStartTimeMode` to the `DashManifests` when [starting a live encoding](/encoding/reference/postencodingencodingslivestartbyencodingid)
+
+**Fixed**
+
+* Fixed a bug which prevented the creation of Per-Title encodings in combination with h.265, BroadcastTS and AutoRepresentations.
+* Fixed a bug in the parameter set signaling of segmented TS outputs. The parameter sets were signaled with a 3 byte start code (0x00 0x00 0x01) where according to the standards the start code must be 4 bytes (0x00 0x00 0x00 0x01).
+* A possible stall situation with high-bitrate input files when quality metrics are enabled has been fixed
+* Fixed a stall situation caused by a high amount of logs produced in a small amount of time
+* Fixed an issue where the `publishTime` in a `SegmentTimeline` DASH Manifest might be updated, although the content of the manifest hasn't changed
+* Fixed webm segments content-type detection.
+* When using ProgressiveWebM with manifestType DASH\_ON\_DEMAND and DRM, the first 5 seconds are also encrypted now.
+* Fixed an encoding job error when thumbnail width or height was not a multiple of 4.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.47.2
+
+Released 2020-06-09
+
+**Changed**
+
+* When using [ProgressiveWebM](/encoding/reference/postencodingencodingsmuxingsprogressivewebmbyencodingid) with `manifestType` `DASH_ON_DEMAND` and DRM, the first 5 seconds are also encrypted now.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Encoding jobs will fail if the thumbnail width or height is not a multiple of 4
+
+---
+
+### 2.47.1
+
+Released 2020-06-08
+
+**Fixed**
+
+* Fixed an issue where the `publishTime` in a `SegmentTimeline` DASH Manifest might be updated, although the content of the manifest hasn't changed
+* Resolved an internal condition where the encoder might stall while processing content
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Encoding jobs will fail if the thumbnail width or height is not a multiple of 4
+
+---
+
+### 2.47.0
+
+Released 2020-06-03
+
+**Fixed**
+
+* A possible stall situation with input chunks (GOPs) of a size of about 2 GB has been fixed and the stabililty for even larger chunks has been improved.
+* Fixed a bug in the parameter set signaling of segmented TS outputs. The parameter sets were signaled with a 3 byte start code (0x00 0x00 0x01) where according to the standards the start code must be 4 bytes (0x00 0x00 0x00 0x01).
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* The encoder might stall on certain conditions. Please use the next hotfix version.
+* Encoding jobs will fail if the thumbnail width or height is not a multiple of 4
+
+---
+
+### 2.46.2
+
+Released 2020-06-18
+
+**Fixed**
+
+* Fixed an encoding job error when thumbnail width or height was not a multiple of 4
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.46.1
+
+Released 2020-06-08
+
+**Fixed**
+
+* Fixed an issue where the `publishTime` in a `SegmentTimeline` DASH Manifest might be updated, although the content of the manifest hasn't changed
+* Resolved an internal condition where the encoder might stall while processing content
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Encoding jobs will fail if the thumbnail width or height is not a multiple of 4
+
+---
+
+### 2.46.0
+
+Released 2020-05-19
+
+**Added**
+
+* Added support for [stream conditions](/encoding/reference/postencodingencodingsstreamsbyencodingid) for checking the video rotation metadata
+* Enable `timecode-track` trimming based on the Quicktime timecode track in input files
+* Added upload verification of segmented muxings for Azure Storage
+
+**Fixed**
+
+* Fixed a rare bug that caused the failure of a progressive TS muxing due to restrictions of the underlying operating system
+* Fixed encoding failures for muxings with DROP\_MUXING stream condition mode and multiple streams with one of them being removed by stream conditions
+* The encoder might stall on certain conditions. Please use the next hotfix version.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Encoding jobs will fail if the thumbnail width or height is not a multiple of 4
+
+---
+
+### 2.45.0
+
+Released 2020-05-05
+
+**Added**
+
+* Optimized memory utilization and enhanced resiliency against memory errors
+
+**Fixed**
+
+* Fixed a crash for Zixi live input after a restart. Discontinuity occurrence right at the beginning of the stream or after a restart request generated a crash. This is handled correctly now.
+* Fixed an issue where fMP4 last audio segment was sometimes missing, as it consisted of only 1 audio frame and was incorrectly encoded into next-to-last segment.
+* Fixed a bug that failed an encoding with CEA-608/708 captions from a separate input stream in specific cases
+* Improved error resiliency for decoding audio streams for live encodings.
+* Fixed the `encodedBytes` for progressive muxings with multiple streams in the [encoding statistic endpoint](/encoding/reference/getencodingstatisticsencodingsbyencodingid) for the `muxings` items.
+* Fixed a bug in the Per-Title logic for fixed resolutions with bitrate constraints, where a fixed resolution between two fixed resolutions with bitrate constraints was not handled properly.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Encoding jobs will fail if the thumbnail width or height is not a multiple of 4
+
+---
+
+### 2.44.2
+
+Released 2020-04-24
+
+**Fixed**
+
+* Fixed bug that when using short input files with Progressive WebM muxings and DASH On-Demand manifests the resulting manifests might contain the wrong information for the referenced streams and muxings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.44.1
+
+Released 2020-04-21
+
+**Fixed**
+
+* Support for Burn-in DVB subtitles that are relative to the input resolution instead of subtitle decoding context resolution
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.44.0
+
+Released 2020-04-21
+
+**Added**
+
+* Collects muxing information for fMP4 muxings accessible via [this endpoint](/encoding/reference/getencodingencodingsmuxingsfmp4muxinginformationbyencodingidandmuxingid).
+
+**Fixed**
+
+* Fix for H264 in fMP4: The `default-sample-flags` field is now always set
+* AES-128 encryption for fMP4 now also works for Per-Title
+* Fixed EAC3 audio input support for live streams
+* Undecodable DVB subtitles will not cause the live encoding to go into `ERROR` state but they will be skipped instead
+* Improved stability of Per-Title encodings using a VP9 codec configuration and fixed resolution template streams
+* Improved stability of live stream restarts
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.43.0
+
+Released 2020-04-07
+
+**Added**
+
+* Added Support for Service Account based GCS [inputs](/encoding/reference/postencodinginputsgcsserviceaccount) and [ouputs](/encoding/reference/postencodingoutputsgcsserviceaccount)
+* Added `sourceChannels` to `AudioMixInputStreamChannel` for [audio mix input streams](/encoding/reference/postencodingencodingsinputstreamsaudiomixbyencodingid) to allow to mix and merge channels.
+* Added the possibility to select subtitle streams via `selectionMode` `SUBTITLE_RELATIVE`. See [streams](/encoding/reference/postencodingencodingsstreamsbyencodingid).
+
+**Fixed**
+
+* The `ignoredBy` property will be set correctly for text muxing streams
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.42.0
+
+Released 2020-03-24
+
+**Added**
+
+* Added AES encryption support for [HLS with fMP4](/encoding/reference/postencodingencodingsmuxingsfmp4drmaesbyencodingidandmuxingid)
+
+**Fixed**
+
+* Fixed an issue where fMP4 muxings reported an incorrect bitrate when using multiple outputs for the muxing
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.41.0
+
+Released 2020-03-10
+
+**Added**
+
+* Added support for [Segment List](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsrepresentationsmp4bymanifestidandperiodidandadaptationsetid) for MP4 Dash On-Demand Manifests
+* Added support for [AES-128 Encryption for Progressive TS](/encoding/reference/postencodingencodingsmuxingsprogressivetsdrmaesbyencodingidandmuxingid) muxings
+* Added support for [stream conditions](/encoding/reference/postencodingencodingsstreamsbyencodingid) for checking if CC608/708 is available
+* Added retries with exponential backoff for connecting to SRT and Zixi live input ingests.
+
+**Fixed**
+
+* Encodings of MPEG2 source inputs with faulty interlaced packets, first field present but the second field absent, failed earlier. This is handled correctly now.
+* Encoding with mov containers containing an AAC audio stream without extradata failed earlier.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.40.2
+
+Released 2020-04-14
+
+**Fixed**
+
+* Added missing default-sample-flags in container for fragmented MP4 output, in order to fix playback and seeking issues on some players (e.g., FireTV 4K)
+
+---
+
+### 2.40.1
+
+Released 2020-03-04
+
+**Fixed**
+
+* Add correct `cenc:pssh` and `mspr:pro` elements to `ContentProtection` section of DASH manifests when using CENC PlayReady DRM for [fMP4](/encoding/reference/postencodingencodingsmuxingsfmp4drmcencbyencodingidandmuxingid) muxings in live encodings.
+
+---
+
+### 2.40.0
+
+Released 2020-02-25
+
+**Added**
+
+* Added support for the audio codec `aac_latm (HE_AAC)` for live ingest streams
+* Time-based trimming of inputs with a different offset value is now supported
+* Support CENC Widevine and CENC Clearkey for [progressive WebM muxings](/encoding/reference/postencodingencodingsmuxingsprogressivewebmdrmcencbyencodingidandmuxingid) and via [SPEKE](/encoding/reference/postencodingencodingsmuxingsprogressivewebmspekebyencodingidandmuxingid)
+* CEA-608/708 captions from a separate input track can be added to a H.264 and HEVC video stream.
+* SCC Subtitles from a seperate text file can now be passed through into an HEVC output.
+
+**Fixed**
+
+* Adapted the format of the `cenc:default_KID` in dash manifests to an UUID format for [fMP4](/encoding/reference/postencodingencodingsmuxingsfmp4drmcencbyencodingidandmuxingid) muxings.
+* Fixed a rounding error which caused in rare cases that the DASH manifest contained one segment too much
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.39.0
+
+Released 2020-02-24
+
+**Added**
+
+* [SCC](/encoding/reference/postencodingencodingscaptionssccbyencodingid) to CEA 608/708 subtitle conversion for [H265 codec configurations](/encoding/reference/postencodingconfigurationsvideoh265).
+* CEA 608/708 subtitle passthrough for [H265 codec configurations](/encoding/reference/postencodingconfigurationsvideoh265) via property `cea608708SubtitleConfig`.
+* Added `sshPort` and `faspPort` to Aspera inputs to be able to configure non-standard ports for session intialization and data transfer.
+* Customers using their own [AWS account](/encoding/reference/postencodinginfrastructureaws) can now opt-in, so that all SSH communication comes from one specific IP address. This enables a more rigid network security policy where only one IP is allowlisted for SSH connections.
+
+**Fixed**
+
+* Add correct `cenc:pssh` and `mspr:pro` elements to `ContentProtection` section of DASH manifests when using CENC PlayReady DRM for [MP4](/encoding/reference/postencodingencodingsmuxingsmp4drmcencbyencodingidandmuxingid) and [fMP4](/encoding/reference/postencodingencodingsmuxingsfmp4drmcencbyencodingidandmuxingid) muxings.
+* CENC Marlin is now also applied to muxings generated by the Per-Title algorithm.
+* Enhanced stability of our 24/7 live encoders by fixing smaller memory leaks that led to failures on long-running streams.
+* Fixed an issue where the burn-in of subtitles stops after some time in long running 24/7 live encodings.
+* Improved sync of burn-in subtitles to audio/video streams. Reduced the risk of stalled encodings by making the transcoding tasks time-boxed.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.38.0
+
+Released 2020-01-28
+
+**Fixed**
+
+* Fixed a bug that potentially produced SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps. (caused the segment to be silent in Safari browser)
+* Fixed a bug which prevented the update of DASH Live Manifests
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.37.0
+
+Released 2020-01-14
+
+**Added**
+
+* Burning in of [DVB subtitles into the video stream](/encoding/reference/postencodingencodingsstreamssubtitlesdvbsubbyencodingidandstreamid) is now supported for live encodings.
+
+**Fixed**
+
+* Insertable Content no longer requires to have the same sample aspect ratio as the livestream. Additional requirement for Insertable Content: video stream must be at position 0 of the movie file.
+* Fixed bug which caused encoding to fail when setting stream conditions on Per-Title template streams.
+* Fixed an issue with audio codec detection on specific input files that lead to no audio and 2x video duration output.
+* Fixed bug that potentially caused stalled encodings in case that video filters were applied and several output renditions were encoded in parallel.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.36.2
+
+Released 2020-08-03
+
+**Added**
+
+* Enable `timecode-track` trimming based on the Quicktime timecode track in input files
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.36.1
+
+Released 2020-05-19
+
+**Fixed**
+
+* Fixed a bug that potentially produced SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps. (caused the segment to be silent in Safari browser)
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.36.0
+
+Released 2019-12-17
+
+**Added**
+
+* Support [Image Overlay](ref:live%20Content%20Insertion/PostEncodingEncodingsInsertableContentByEncodingId) for live encodings. The specified image will replace the ingested video of the live stream for the defined time. Audio will be muted.
+* Support concatenation for different resolution inputs  
+   * Specify [AspectMode](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) when adding a concatenated input stream
+* Support for [custom XML in PlayReady DRM WRM header](/encoding/reference/postencodingencodingsmuxingswebmdrmcencbyencodingidandwebm) added for DASH (`playReady` \-> `additionalInformation`)
+* Trimming for Dolby Vision mezzanine files is now supported
+* H.265/HEVC 2pass and 3pass encoding jobs will process up to 10% faster
+* Enhanced detection of open GOP files to correctly handle them.
+
+**Fixed**
+
+* CC to [WebVTT conversion](/encoding/reference/postencodingconfigurationssubtitleswebvtt) was uncompliant after one hour when `appendOptionalZeroHour` was set to true
+* There has been a potential stalling condition related to big output configurations (e.g. when excessive thumbnails creation was enabled).
+* HDR-10 encoding jobs with big output configurations where likely to stall in previous versions.
+* TS descriptor for E-AC-3 audio codecs is now correctly set
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.35.1
+
+Released 2019-12-03
+
+**Fixed**
+
+* Improved analyzing of input for fail-fast in case erroneous DTS and unsupported open-GOP files
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.35.0
+
+Released 2019-12-03
+
+**Added**
+
+* [Concatenation input streams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) now support inputs with different frame rates.
+* [Insertable content](ref:live%20Content%20Insertion/PostEncodingEncodingsInsertableContentByEncodingId) now is also scheduled when a live stream was restarted.
+* Added warning and auto-correction for possibly harmful `tileColumns` and `cpuUsed` parameter combinations of [VP9 codec configurations](/encoding/reference/postencodingconfigurationsvideovp9).
+
+**Fixed**
+
+* Per-Title is now supported for Dolby Vision workflows.
+* In the concatenation workflow, if more than 10 inputs were provided, encoding produced incorrect output.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.34.0
+
+Released 2019-11-19
+
+**Added**
+
+* Added native support for [Azure Blob output](/encoding/reference/postencodingoutputsazure). This makes the additional transfer step unnecessary.
+* Added support for output of Dolby Vision and non Dolby Vision output streams in a single encode
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Per-Title is not supported for Dolby Vision
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.33.0
+
+Released 2019-11-05
+
+**Added**
+
+* If a running VoD encoding is [stopped](/encoding/reference/postencodingencodingsstopbyencodingid) it will now go to status `CANCELED`, live encodings will still go to `FINISHED`.
+* Improved resilience against [Docker Hub registry outages](https://status.docker.com/pages/incident/533c6539221ae15e3f000031/5da5fc78c7b1c11cd8603721).
+
+**Fixed**
+
+* Encodings using [enhanced watermark filter](/encoding/reference/postencodingfiltersenhancedwatermark) might have failed before when setting opacity and `PERCENTS` as unit.
+* Fixed a bug, that caused a failure during retries for uploading files.
+* A special log redirection in the encoder could have led to stalles in previous versions.
+* Fixed a SegFault that occured related to cluster communication.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+* Per-Title is not supported for Dolby Vision
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.32.0
+
+Released 2019-10-29
+
+**Added**
+
+* AVC/H.264 2-pass and 3-pass encoding jobs are now up to 12% faster
+* HEVC/H.265 2-pass and 3-pass encoding jobs are now up to 12% faster
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.31.0
+
+Released 2019-10-24
+
+**Added**
+
+* Support for [Dolby Vision](/encoding/reference/postencodingencodingsstreamsdolbyvisionhdrmetadatabyencodingidandstreamid)  
+   * Can be encoded from Dolby Vision MXF mezzanine  
+   * Packaging to MPEG-DASH [segmented fMP4 output](/encoding/reference/postencodingencodingsmuxingsfmp4byencodingid) in clear and with DRM  
+   * Packaging to HLS [byte-range fMP4 output](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid) in clear and with FairPlay  
+   * Packaging to [Progressive MP4](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid)
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.30.0
+
+Released 2019-10-22
+
+**Added**
+
+* Added possibility to add (black) padding sequences (`concatenation -> paddingBefore / paddingAfter`) between input streams inside a [concatenation input stream](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid)
+* Restructured distribution and scheduling components for efficiency which will enable faster encoding turnaround speeds in the following releases.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.29.1
+
+Released 2019-10-08
+
+**Fixed**
+
+* Increased read timeout for [Akamai NetStorage](/encoding/reference/postencodingoutputsakamainetstorage) uploads
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.29.0
+
+Released 2019-10-08
+
+**Added**
+
+* Added [S3 role-based output](/encoding/reference/postencodingoutputss3rolebased) for segmented muxings.
+* Added support for segmented [WebVTT](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid) for the [HLS](/encoding/reference/postencodingmanifestshlsmediasubtitlesbymanifestid) manifest.
+* Improved encoding speed for high bitrate files.
+
+**Fixed**
+
+* Fixed one bug that caused stalled encodings that occurred sometimes on very high bitrate files.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* S3 role-based output for segmented muxings: No upload verification available
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.28.0
+
+Released 2019-09-25
+
+**Added**
+
+* Added [Conform filter](/encoding/reference/postencodingfiltersconform) which allows for small changes of the video frame rate where the playback speed of video as well as audio will be adapted instead of frame interpolation.
+
+**Fixed**
+
+* Many consecutive timestamp discontinuity events in a live stream do not result in audio/video sync issues anymore
+* [Insertable content](ref:live%20Content%20Insertion/PostEncodingEncodingsInsertableContentByEncodingId) now works for AC-3 audio streams in the input
+* Adding keyframes with encodingMode `THREE_PASS` does not result in an error anymore
+* HEVC video streams can now be muxed to segmented TS
+* HEVC coding delay will now be correctly signaled in fMP4 muxings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.27.0
+
+Released 2019-09-10
+
+**Added**
+
+* Added dynamic scaling of [watermarks](/encoding/reference/postencodingfiltersenhancedwatermark) with new properties `width` and `height`
+* Added option to exclude region for [WebVTT](/encoding/reference/postencodingconfigurationssubtitleswebvtt) conversions (`ignoreRegion`)
+* Added option to auto detect interlaced content when using [deinterlace filter](/encoding/reference/postencodingfiltersdeinterlace) (`autoEnable`)
+* Add `cutoffFrequency` for [AAC](/encoding/reference/postencodingconfigurationsaudioaac), [AC3](/encoding/reference/postencodingconfigurationsaudioac3), [EAC3](/encoding/reference/postencodingconfigurationsaudioeac3)
+
+**Fixed**
+
+* If more then one [insertable content](ref:live%20Content%20Insertion/PostEncodingEncodingsInsertableContentByEncodingId) are scheduled consecutively, this is not leading to audio/video sync issues anymore.
+* Improved stability for long running live streams.
+* [Akamai MSL4 with CMAF](/encoding/reference/postencodingoutputsakamaimsl) output works as expected again
+* Fixed encoding to E-AC3 for cases where the last segment would be very short
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* Adding [keyframes](/encoding/reference/postencodingencodingskeyframesbyencodingid) with encodingMode `THREE_PASS` does result in an error
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.26.1
+
+Released 2019-09-04
+
+**Fixed**
+
+* Improved efficiency during encoding setup when using Per-Title encodings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* If more then one insertable content are scheduled consecutively, this could lead to audio/video sync issues when playing the insertable content. The normal live feed is not affected.
+* Support for Akamai MSL CMAF output is broken
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.26.0
+
+Released 2019-08-27
+
+**Added**
+
+* Fallback from multipart to regular S3 upload when using s3 servers that do not support multipart uploads
+* Further J2k decoding improvements with another speedup of about 50%
+* Improved startup stability when using Zixi live input
+
+**Fixed**
+
+* Fixed rounding error in frame rate change logic. Now exactly every second frame will be dropped when down converting to half of the origianl frame rate.
+* HE-AAC will hit the correct target bitrate now for progressive outputs as well
+* Fixed audio/video sync issues on HE-AAC progressive outputs
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* If more then one insertable content are scheduled consecutively, this could lead to audio/video sync issues when playing the insertable content. The normal live feed is not affected.
+* Support for Akamai MSL CMAF output is broken
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.25.1
+
+Released 2019-08-23
+
+**Fixed**
+
+* Fixed copying of some codec configuration settings from Per-Title templates to Per-Title results
+* Fixed HLS manifest update issue for live encodings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* If more then one insertable content are scheduled consecutively, this could lead to audio/video sync issues when playing the insertable content. The normal live feed is not affected.
+* Support for Akamai MSL CMAF output is broken
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.25.0
+
+Released 2019-08-13
+
+**Added**
+
+* Added [Live Encoding Events](/encoding/reference/geteventsofencodingstatisticsencodingslivestatisticsbyencodingid) to provide feedback in case an error occurs during scheduling of insertable content
+* Doubled the decoding speed for J2K inputs
+* Live encodings are now more resilient to upload failures to cloud storage for audio segments
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* If more then one insertable content are scheduled consecutively, this could lead to audio/video sync issues when playing the insertable content. The normal live feed is not affected.
+* Support for Akamai MSL CMAF output is broken
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.24.1
+
+Released 2019-08-02
+
+**Fixed**
+
+* Revert to previous J2K decoder because of stability issues with certain input files
+* Fixed increased turnaround times for BroadcastTS muxings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* If more then one insertable content are scheduled consecutively, this could lead to audio/video sync issues when playing the insertable content. The normal live feed is not affected.
+* When scheduling insertable content and there are errors with the content to insert, there is currently only minimal error feedback.
+* Support for Akamai MSL CMAF output is broken
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.24.0
+
+Released 2019-07-30
+
+**Added**
+
+* Added progress information for 2pass and 3pass analysis
+* Added [insertable content](/encoding/reference/postencodingencodingsinsertablecontentbyencodingid) for live streams to inject VoD files into the stream at [scheduled times](/encoding/reference/postencodingencodingsscheduledcontentinsertionsbyencodingid)
+* Added the capability to add multiple CENC DRMs (FairPlay, Widevine, PlayReady) to HLS playlists
+
+**Fixed**
+
+* Stability improvements for 3pass encoding, where an invalid internal state of the encoder led to a crash
+* Upload of segmented content to [Generic S3](/encoding/reference/postencodingoutputsgenerics3) was failing in certain cases, e.g., with Scality
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3 or Akamai NetStorage output
+* Broadcast TS muxing workflows suffer from increased turnaround times during the muxing stage
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+* If more then one insertable content are scheduled consecutively, this could lead to audio/video sync issues when playing the insertable content. The normal live feed is not affected.
+* When scheduling insertable content and there are errors with the content to insert, there is currently only minimal error feedback.
+* Support for Akamai MSL CMAF output is broken
+* Minimal chance of producing SAMPLE-AES encrypted TS segments with non-monotonically increasing timestamps for encodings with at least 2 TS muxings, causing the segment to be silent in Safari browser.
+
+---
+
+### 2.23.1
+
+Released 2019-07-23
+
+**Fixed**
+
+* Fixed an issue that caused encodings to fail during the muxing step if a Progressive MP4 muxing without output in combination with DRM was configured
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Broadcast TS muxing workflows suffer from increased turnaround times during the muxing stage
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling
+
+---
+
+### 2.23.0
+
+Released 2019-07-16
+
+**Added**
+
+* Added the [Live Media and Metadata Ingest Protocol](https://tools.ietf.org/html/draft-mekuria-mmediaingest-01) as [additional output option](/encoding/reference/postencodingoutputslivemediaingest) for live encodings. This is a compatible ingest format for [Unified Streaming](https://www.unified-streaming.com/)
+* Default manifests can now be used during the [start of a Per-Title encoding](/encoding/reference/postencodingencodingsstartbyencodingid)
+* Improved turnaround times for encoding jobs with JPEG-2000 inputs by up to 20%
+* Improved transfer speeds to/from Google Cloud Storage (GCS)
+* Provide better feedback for thumbnail generation errors
+* Added support for [Broadcast TS](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid) and [TS Segment](/encoding/reference/postencodingencodingsmuxingstsbyencodingid) muxings for Per-Title workflows
+* Improved speed of Per-Title analysis
+* Provides better feedback for incorrect trimming configurations
+
+**Fixed**
+
+* Fixed handling of encrypted content sent to [Zixi ingest](/encoding/reference/postencodinginputszixi)
+* Fixed failing Per-Title encodes using PlayReady DRM encryption
+* Filler data are now retained in [Progressive MP4 muxings](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid) when setting `nalHrd=CBR` in the [H.264/AVC codec settings](/encoding/reference/postencodingconfigurationsvideoh264)
+* Improved stability of 3-pass encodings
+* Added missing audio stream language metadata to TS container (HLS) when muxed together with video
+* Live encodings are now more resilient to upload failures to cloud storage
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Broadcast TS and Progressive MP4 muxing workflows suffer from increased turnaround times during the muxing stage
+
+---
+
+### 2.22.0
+
+Released 2019-07-02
+
+**Added**
+
+* CEA-[608](/encoding/reference/postencodingencodingsinputstreamscea608byencodingid)/[708](/encoding/reference/postencodingencodingsinputstreamscea708byencodingid) to [Sidecar](/encoding/reference/postencodingencodingsmuxingstextbyencodingid) [WebVTT](/encoding/reference/postencodingconfigurationssubtitleswebvtt)
+* [Sidecar TTML](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid) to [Sidecar](/encoding/reference/postencodingencodingsmuxingstextbyencodingid) [WebVTT](/encoding/reference/postencodingconfigurationssubtitleswebvtt)
+* Added `variableMuxRate`, `initialPresentationTimeStamp` and `initialProgramClockReference` to [Broadcast TS muxing](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid)
+* Added generation of [BIF](/encoding/reference/postencodingencodingsstreamsbifsbyencodingidandstreamid) output
+* Added additional properties for `programNumber`, `pmt`, and `pcr` to [TS muxing](/encoding/reference/postencodingencodingsmuxingstsbyencodingid)
+* Improved timeout handling when downloading files from HTTP(s) storage to prevent stalling
+* Provides better turnaround times for encoding jobs with several output renditions now also for non 4k content
+
+**Fixed**
+
+* 4K input content might stall during the encoding phase when the duration of the input is less than 15 seconds
+* When setting a different FPS for the output than the FPS of the input stream plus additionally configuring `minKeyframeInterval` and/or `maxKeyframeInterval`, this let to incorrect GOP sizes before.
+* Deinterlacing DVCProHD content sometimes let to bad results as internally the field parity of the source was not correctly detected.
+* Muxing of AC-3 audio streams now work correctly for [MP4 muxing](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid) with a `fragmentDuration` set.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+
+---
+
+### 2.21.1
+
+Released 2019-06-18
+
+**Fixed**
+
+* Muxing of an E-AC-3 stream to fMP4 was failing in case the last segment was very short
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* 4K input content might stall during the encoding phase when the duration of the input is less than 15 seconds
+
+---
+
+### 2.21.0
+
+Released 2019-06-18
+
+**Added**
+
+* Added parameter `interval` to the [Thumbnails endpoint](/encoding/reference/postencodingencodingsstreamsthumbnailsbyencodingidandstreamid) to create thumbnails every x seconds
+* Provides better turnaround times for encoding jobs, especially with 4k content and several output renditions
+* Enable muxing of E-AC-3 audio streams with [BroadcastTS](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid)
+
+**Fixed**
+
+* Improved writing of audio backup for SRT and Zixi live ingests after a disconnect.
+* Several stability improvements for 4k encoding jobs
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* 4K input content might stall during the encoding phase when the duration of the input is less than 15 seconds
+
+---
+
+### 2.20.1
+
+Released 2019-06-04
+
+**Fixed**
+
+* Thumbnails and Sprites might have failed when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+
+---
+
+### 2.20.0
+
+Released 2019-06-04
+
+**Added**
+
+* Added support for HE-AAC audio codec with FairPlay encryption and fMP4 muxing
+* Added additional codec settings to [VP9](/encoding/reference/postencodingconfigurationsvideovp9): `errorResiliencyEnabled`, `clientBufferSize`, `clientInitialBufferSize`, `biasPct`, `cpuUsed`, `automaticAltRefFramesEnabled`, `targetLevel`, `rowMultiThreadingEnabled`
+* Improved speed up for live encoding restart
+* Improved Broadcast TS muxing error detection
+* Added Akamai MSL Qualification for CMAF Dash
+* Increased stability for multiple input files feature
+
+**Fixed**
+
+* Preview manifests were not created when input was missing audio
+* PSNR data for a stream was occasionally not created
+* Live Encodings might still occur as running from the API status call, although they have been stopped and shut down
+* Fixed an error with frame rate detection of variable FPS WebM input files
+* Fixed a decoding error with PCM DVD audio codec
+* Fixed a stalling issue with Akamai MSL upload
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.19.0
+
+Released 2019-05-22
+
+**Added**
+
+* [Redundant SRT](/encoding/reference/postencodinginputssrt)
+* Improved error messages of trimming offset is bigger than the source duration for Picture Timing Trimmings
+* [EBU-R128 Audio Normalization](/encoding/reference/postencodingfiltersebur128singlepass)
+* Support for AC3/E-AC3 with Progressive MP4
+* [Opacity option for watermarks](/encoding/reference/postencodingfiltersenhancedwatermark) is now available
+* Support for audio only live streams
+* [Akamai MSL4 with support for CMAF and HLS](/encoding/reference/postencodingoutputsakamaimsl)
+
+**Fixed**
+
+* Progressive muxings with a space in the file name will not fail anymore
+* Broadcast TS muxings with audio only will not fail anymore
+* Per-Title encoding with many fixed resolutions was exceeding `maxBitrate` setting.
+* Correctly copy primaries, transfer characteristics and colorspace for files where they are signaled in the container format only, but not in the bitstream.
+* Filler data are retained when setting `nalHrd=CBR` in the codec settings.
+* MP4 muxings had PPS signaled on every keyframe which is not required and was leading to problems for some JIT packaging solutions.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.18.5
+
+Released 2019-05-10
+
+**Fixed**
+
+* Setting long values for HEVC codec parameter `masterDisplay` was leading to failed encodings
+* Enhanced graceful handling of decoding errors for ProRes video codec
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.18.4
+
+Released 2019-05-03
+
+**Fixed**
+
+* Different segment lengths or fragment durations configured on muxings of one encoding job will be handled correctly and not lead to the segment length of the output to be signaled incorrectly. - The GOP lenght of a video stream will be set to the greatest common divisor of all configured segment and fragment lengths.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.18.3
+
+Released 2019-05-01
+
+**Fixed**
+
+* Fixed Akamai NetStorage to not produce incomplete segments if maximum parallel connections are exceeded
+* Upload failures for Akamai NetStorage will be propagated via the API correctly and let the encoding job fail
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* If different segment lengths or fragment durations are configured on muxings of one encoding job, the segment length of the output can be signaled incorrectly which leads to invalid DASH/HLS manifests
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.18.2
+
+Released 2019-04-30
+
+**Fixed**
+
+* Enhanced upload resiliency to Akamai NetStorage by improving the retry mechanisms on upload failures that were caused by a huge amount of concurrent uploads.
+* Segment duration of audio streams was incorrect (too long or too short) if both sample rates 44.1 kHz and 48 kHz where mixed in one single encode job.
+* Speedup of Per-Title analysis by up to 40%
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Upload to Akamai NetStorage could produce incomplete segments if maximum parallel connections are exceeded without the encoding job failing.
+* If different segment lengths or fragment durations are configured on muxings of one encoding job, the segment length of the output can be signaled incorrectly which leads to invalid DASH/HLS manifests
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.18.1
+
+Released 2019-04-25
+
+**Fixed**
+
+* fMP4 muxings with applied DRM AC3 and EAC3 streams did not get encrypted
+* When running many encodings in parallel for a specific region, the encoding cluster might get too less worker nodes, which slows down the encoding process
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.18.0
+
+Released 2019-04-24
+
+**Added**
+
+* Added detailed statistics for SRT ingest protocol
+* Added the flag `writeDurationPerSample` for fMP4 muxing to enable/disable writing a duration per sample. This is required for some legacy players.
+* Added support for Akamai MSL4 DASH output
+* Added ability to upload segmented WebVTT sidecar file
+
+**Fixed**
+
+* Rate-control enhancement for 3-pass encoding in VP9 for improved quality distribution and to avoid drops in quality
+* Fixed Per-Title analysis errors for files where we could not extract correct timing information.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.17.2
+
+Released 2019-04-12
+
+**Fixed**
+
+* For HEVC resolutions where width or height was not divisible by 8, the wrong width or height was written to the container format. This let to visual artifacts on the frame edges on some players.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.17.1
+
+Released 2019-04-11
+
+**Fixed**
+
+* When using `segmentNamingTemplate` for Live encodings, the resolved `segmentNaming` will be patched, so that it can be retrieved via API. This enables Live to VoD workflow for that use case. The patching also applies for `initSegmentNameTemplate`
+* Dash Manifests always had a value of 2 in `AudioChannelConfiguration`, also if the channel had a higher count (e.g. 6 for 5.1)
+* Allow for huge configurations with many streams, muxings and DRM configurations that failed before
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.17.0
+
+Released 2019-04-10
+
+**Added**
+
+* Object detection for encodings, that uses our new machine learning technology
+* CMAF muxing for Live and VoD workflows with the ability to configure CMAF chunks
+* Enabled the combination HLS + fMP4 + Widevine for VoD workflows
+* Attribute `availabilityStartTime` of DASH manifests has millisecond precision now
+* Improved thumbnail and sprite generation as this is done now in parallel to the encoding and won't slow down the end to end encoding time anymore
+
+**Fixed**
+
+* Re-enabled the combination fMP4 + Fairplay + H264
+* Encoding does not fail anymore, when thumbnail configuration is out-of-bounds
+* Improved decoding of DVCProHD source files to avoid video corruption at the bottom of the frame
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* Thumbnails and Sprites may fail when not using GCS, S3 or Akamai NetStorage output and the thumbnail position is out-of-bound
+
+---
+
+### 2.16.1
+
+Released 2019-03-28
+
+**Fixed**
+
+* Removed the occurence of blocking artifacts for dark scenes using HEVC 3pass introduced by using low bitrates
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+
+---
+
+### 2.16.0
+
+Released 2019-03-26
+
+**Added**
+
+* Auto detect audio sample rate for live inputs
+* Added option to specify the character encoding for Burn-In subtitles
+* Support concatenation for input files with differing audio channel layout
+
+**Fixed**
+
+* Encoding jobs with multiple inputs and GOP sizes longer than the configured segment length where failing in previous versions.
+* Some decoding errors where not correctly propagated to the API.
+* Frame rate signaling in a DASH manifest was incorrect if FPS was not configured for a live stream.
+* MPEG-DASH SegmentTimeline will now playback without errors on Roku devices
+* Very short segments where given too much bitrate for 3pass encodings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+
+---
+
+### 2.15.0
+
+Released 2019-03-19
+
+**Added**
+
+* Added listener mode for SRT
+* Added `{rand_chars}` placeholder for `segmentNamingTemplate` and `initSegmentNameTemplate` to generate a random character sequence. This is especially useful when restarting a live stream and having storage / CDN caching enabled.
+* Better handling of disconnects and reconnects for SRT streams
+
+**Fixed**
+
+* Fixed an issue where the HLS manifest might get stalled during a live streaming when using `CLOSED_CAPTION` in the media resource along with `AUDIO` resource
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+
+---
+
+### 2.14.1
+
+Released 2019-03-15
+
+**Added**
+
+* Fixed distortion of applied watermarks in case the source content contains anamorphic pixels
+* Fixed Per-Title algorithm to work with multiple bitrate constraints for same resolution
+* Fixed Per-Title algorithm where the analysis would fail for large step sizes
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+
+---
+
+### 2.14.0
+
+Released 2019-03-12
+
+**Added**
+
+* Added support for SRT Live Input
+* Auto detect Frame Rate for live input
+* Improved VP9 turn-around times by up to 3x
+* VP9 rate-control improvements
+* Fixed VP9 with 3pass to hit the target bitrate
+* Fixed HEVC rate control to avoid quality drops after scenes following black frames
+* Be more robust to incorrect timestamps of audio and video input files
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+
+---
+
+### 2.13.0
+
+Released 2019-02-28
+
+**Added**
+
+* Support for UTC Timing and Accessability element in Live DASH manifests
+* Added EXT-X-PROGRAM-DATE-TIME for HLS Live playlists
+* Added support for HLS manifests with fMP4 muxing and CENC FairPlay DRM
+* Support of international characters for Burn-in subtitles
+
+**Fixed**
+
+* Fixed an issue where the combination of more than one Audio Mix filter might result in an unexpected audio output
+* Fixed an issue where the thumbnail creation failed when a whitespace was in the input file
+* Fixed an issue where the combination of fMP4 muxing and HLSv3 TS muxing causes an invalid DASH manifest
+* Improved 3pass HEVC quality after a scene change in combination with Per-Title. In some cases blocking artifacts where visible for a few frames.
+* Fixed an issue where too many warning logs where recorded for JPEG 2000 encoded source assets. This was resulting in a failed encoding.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.12.3
+
+Released 2019-02-21
+
+**Added**
+
+* Enabled Live-to-VoD for Zixi ingest streams
+
+**Fixed**
+
+* Fixed a bug where encodings could fail when trimming is applied in combination with long GOP sizes of the input file
+* Fixed decoding of JPEG2000 assets where our encoder detected a wrong source FPS
+* Improved turnaround time of 3pass encodes when doing lots of encodes in parallel
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.12.2
+
+Released 2019-02-15
+
+**Fixed**
+
+* Fixed an issue where an upload to Akamai NetStorage failed. The initialization for calculating the MD5 hash crashed when uploading a large amount of files concurrently.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.12.1
+
+Released 2019-02-13
+
+**Added**
+
+* Added native output support for Akamai NetStorage
+* Added new HEVC codec settings: `wavefrontParallelProcessing`, `parallelModeDecision`, `parallelMotionEstimation`, `slices`, `copyPicture`, `levelHighTier`, `skipSplitRateDistortionAnalysis`, `codingUnitLossless`, `transformSkip`, `refineRateDistortionCost`, `limitTransferUnitDepthRecursion`, `noiseReductionIntra`, `noiseReductionInter`, `rateDistortionPenalty`, `maximumTransferUnitSize`, `dynamicRateDistortionStrength`, `ssimRateDistortionOptimization`, `temporalMotionVectorPredictors`, `analyzeSourceFramePixels`, `strongIntraSmoothing`, `constrainedIntraPrediction`, `scenecutBias`, `allowedRADLBeforeIDR`, `gopLookahead`, `bframeBias`, `forceFlush`, `adaptiveQuantizationStrength`, `adaptiveQuantizationMotion`, `quantizationGroupSize`, `strictCbr`, `qpOffsetChromaCb`, `qpOffsetChromaCr`, `ipRatio`, `pbRatio`, `quantizerCurveCompressionFactor`, `qpStep`, `grainOptimizedRateControl`, `blurQuants`, `blurComplexity`, `saoNonDeblock`, `limitSao`, `lowpassDct`
+* Added I-Frame Playlist for Progressive MP4 and Progressive TS, for both unencrypted and encrypted output
+* Added `COMPLEXITY_RANGE` as new Per-Title bitrate selection mode
+* Added support for AC-3 and HEVC for Broadcast TS muxings
+* Added option to only deinterlace interlaced frames (`frameSelectionMode` on the deinterlace filter)
+
+**Fixed**
+
+* Fixed an issue with audio tracks in the concatenation workflow
+* Fixed an issue with 3pass where our encoder generated invalid NAL units
+* Fixed an issue where visible decoding errors could occur for RTMP ingests
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3 or Akamai NetStorage output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.11.0
+
+Released 2019-01-31
+
+**Added**
+
+* Redundant RTMP input
+* Per-Title with fixed resolutions and bitrates constraints
+* Improved error messages when downloading of subtitle files fail
+* Improved error message when authentication with output storage fails when uploading thumbnails or sprites
+* Added support for multiple audio streams in Broadcast TS muxings
+
+**Fixed**
+
+* Improved download speed from S3 storages with role-based authentication
+* Reduced delay of writing backup packets for live streams with RTMP ingest
+* Fixed a/v sync issue for H.264 files that contain open as well as closed GOPs
+* Fixed an issue where interlaced MP4 files would result in an error during encoding
+* Fixed a bug that would lead in an encoding error for 2pass/3pass when changing FPS
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Visible decoding errors could occur for RTMP ingests
+
+---
+
+### 2.10.5
+
+Released 2019-01-20
+
+**Added**
+
+* Added addtional HEVC codec parameters: `minCodingUnitSize`, `lookaheadSlices`, `limitReferences`, `rectangularMotionPartitionsAnalysis`, `asymetricMotionPartitionsAnalysis`, `limitModes`, `maxMerge`, `earlySkip`, `recursionSkip`, `fastSearchForAngularIntraPredictions`, `evaluationOfIntraModesInBSlices`, `signHide`, `rateDistortionLevelForModeDecision`, `rateDistortionLevelForQuantization`, `qpMin`, `qpMax`
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.10.4
+
+Released 2019-01-18
+
+**Added**
+
+* Improved accuracy of first pass to improve quality in difficult scenes for 2pass and 3pass modes for HEVC
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.10.3
+
+Released 2019-01-18
+
+**Fixed**
+
+* Fixed an issue where a live encoding with RTMP ingest will only output audio segments, but no video segments
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.10.2
+
+Released 2019-01-16
+
+**Added**
+
+* Improved accuracy of first pass to improve quality in difficult scenes for 2pass and 3pass modes
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.10.0
+
+Released 2019-01-15
+
+**Added**
+
+* Added support for trimmings with drop frame timecodes (contain a `;`)
+* Added support for DRM only output for HLS MP4 byte-range muxings
+* Added support for correct HDR10 signaling in HLS manifest
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.9.2
+
+Released 2019-01-29
+
+**Fixed**
+
+* Fixed a concurrency issue where the internal error rate increased when the encoding load increased heavily in a short amount of time
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.9.1
+
+Released 2019-01-08
+
+**Fixed**
+
+* Fixed an issue where a network issue prevented a Three-Pass encoding to succeed
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.9.0
+
+Released 2019-01-07
+
+**Added**
+
+* Added HEVC `cutree` setting
+
+**Fixed**
+
+* Fixed an issue where CENC configuration was not updated correctly for Per-Title stream results when using VP9
+* Fixed an issue where a segment duration of 4 seconds was always used when using progressive TS with audio only
+* Fixed an issue where the TimeCode track ID of MP4 muxings was not unique
+* Fixed an issue where the MP4 HLS byte-range configuration was not correctly applied for Per-Title stream results
+* Fixed an issue where FairPlay DRM was not updated correctly for Per-Title stream results when using progressive TS
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.8.0
+
+Released 2018-12-24
+
+**Added**
+
+* Added VP9 + Widevine
+* Added option to set fixed resolutions for Per-Title encodings
+* Improved sanity checks of `minBitrate` and `maxBitrate` for Per-Title encodings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.7.0
+
+Released 2018-12-16
+
+**Added**
+
+* Improved quality for HEVC with low bitrates
+* Improved quality for 2-pass and 3-pass encodings by up to 3 dB in PSNR
+* Added additional settings for HEVC: `adaptiveQuantizationMode`, `psyRateDistortionOptimization`, `psyRateDistortionOptimizedQuantization` and `enableHrdSignaling`
+* Added `complexityFactor` to Per-Title configuration that allows to modify the assumed complexity of a title.
+* Better reach the configured `maxBitrate` for H264 Per-Title
+
+**Fixed**
+
+* Fixed an issue where Per-Title encoding might not work when using a multi-tenant account
+* Fixed an issue where a low `targetQualityCrf` value would cause the highest resolution to be ignored
+* Fixed an issue where the protection header was not placed in the smooth manifest
+* Fixed an issue where encodings might stall when using 3-pass
+* Fixed an issue where trimming with H264 Picture Timing might lead to audio loss
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.6.1
+
+Released 2018-12-11
+
+**Added**
+
+* Added option to set internal chunk length for progressive muxings
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* HEVC may encounter decreased quality when using low bitrates
+* Encodings might stall when using 3-pass encoding
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.6.0
+
+Released 2018-12-10
+
+**Added**
+
+* Concatenate multiple input files
+* Automatically restart live streams based on timeouts for segments, bytes, frames, manifests and with a schedule expression
+* Support for HLS input for VoD encodings from HTTP(s) locations
+* Option to set an interval for reuploading static DASH manifests and init files for live streams
+* Added an option to disable remote verification for FTP uploads
+* Added an option to set a custom internal chunk length to improve quality for progressive muxings
+* Improved visual quality for H264 2pass and 3pass modes
+
+**Fixed**
+
+* Fixed an issue where AC3 was not supported for progressive TS muxings
+* Fixed an issue where an audio only progressive TS muxing caused an error
+* Fixed an issue where the wrong KID was placed in the DASH manifest for PlayReady when multiple DRM configurations for a single stream have been used
+* Fixed an issue where the Smooth manifest always had a channel count of 2 regardless of the channel count of the audio stream
+* Fixed an issue where the timecode for MP4 muxings could not be set for MP4 files bigger than 2GB
+* Fixed an issue, where too many errors or wanings in a source file would lead to a failed encoding
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* HEVC may encounter decreased quality when using low bitrates
+* Encodings might stall when using 3-pass encoding
+* Live encodings with RTMP ingest may only output audio segments, but no video segments (fixed with `2.10.3`)
+
+---
+
+### 2.5.1
+
+Released 2018-11-27
+
+**Fixed**
+
+* Fixed an issue where Per-Title analysis might fail for some long source files
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+
+---
+
+### 2.5.0
+
+Released 2018-11-25
+
+**Added**
+
+* Per-Title support for HEVC and VP9
+* Added support for FairPlay and HLS with progressive TS files
+
+**Fixed**
+
+* Fixed an issue where IV size and PIFF compatibility for PlayReady where not copied to a Per-Title result stream
+* Segment length was not applied correctly for WebM and progressive MP4
+* Fixed an issue where a 3-pass encoding might stall for a couple of minutes
+* Fixed an issue where `frame_field_info_present_flag` was incorrectly asserted in SPS VUI information of H.265 outputs
+* Fixed an issue where the Per-Title encoding may fail when using PCM\_DVD source
+* Fixed an issue where the output mapping of audio might not work as expected when using the same audio input for multiple streams
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* VP9 in combination with 3-pass does not hit the target bitrate, please use 2-pass instead
+* Per-Title analysis might fail for some long source files
+
+---
+
+### 2.4.4
+
+Released 2019-03-21
+
+**Fixed**
+
+* Fixed a bug where encodings could fail when trimming is applied in combination with long GOP sizes of the input file
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+
+---
+
+### 2.4.3
+
+Released 2019-01-27
+
+**Fixed**
+
+* Fixed a concurrency issue where the internal error rate increased when the encoding load increased heavily in a short amount of time
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+
+---
+
+### 2.4.2
+
+Released 2019-01-22
+
+**Fixed**
+
+* Improved download speed from S3 storages with role-based authentication
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+
+---
+
+### 2.4.1
+
+Released 2019-01-20
+
+**Fixed**
+
+* Fixed an issue where a 3-pass encoding might stall for a couple of minutes
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+
+---
+
+### 2.4.0
+
+Released 2018-11-12
+
+**Added**
+
+* Burn-In of SRT subtitles
+* Added additional H264 codec parameters (`deblockAlpha`, `deblockBeta`, `adaptiveQuantizationMode`, `adaptiveQuantizationStrength`, `mixedReferences`, `adaptiveSpatialTransform`, `fastSkipDetectionPFrames`, `weightedPredictionBFrames`, `weightedPredictionPFrames`, `macroblockTreeRatecontrol`, `quantizerCurveCompression`, `psyRateDistortionOptimization`, `psyTrellis`)
+* Improved handling with audio only MXF files
+* Support open-gop for H264 and H265
+* Support for PCM\_DVD Audio coded as input
+* Added size of IV and flag for `piff-compatible` to PlayReady DRM
+* Added FairPlay DRM for HLS with MP4 byte range requests
+* Improved stability for live
+
+**Fixed**
+
+* Fixed an issue where PAR was not correctly handled when using Per-Title
+* Fixed an issue where Per-Title encoding does not work with input files that have high bitrates
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* 3pass encodings might suffer from a stall up to 10 minutes
+
+---
+
+### 2.3.0
+
+Released 2018-10-29
+
+**Added**
+
+* Implemented support for HLS with MP4 Byte-Range request
+* Implemented DASH Segment Timeline for Live
+* Explicitly set AWS S3 Signature Version to output
+
+**Fixed**
+
+* Fixed an issue where audio only could not be encoded when the input file was in MXF format
+* Fixed an issue where the trimming could be off by a couple of frames when using timecode
+* Restarts of live encoding is now up to 5x faster
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* Per-Title encoding fails with input files that have a high bitrate
+
+---
+
+### 2.2.0
+
+Released 2018-10-22
+
+**Added**
+
+* Per-Title analysis step is now 4x faster
+* Improved writing of live HLS manifest to be more resilient
+* Added new applied settings to the stream that are patched with the width and height used for encoding
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+* Per-Title encoding fails with input files that have a high bitrate
+
+---
+
+### 2.1.0
+
+Released 2018-10-16
+
+**Added**
+
+* Return PAR in stream input analysis
+* Improved error message when a file on S3 cannot be downloaded
+* Enable HLG signaling options for HEVC
+* Support for vbv codec settings for Per-Title
+
+**Fixed**
+
+* Fixed an issue where an encoding might stall at the very end when using a lot of renditions
+* Fixed IDR placement for HEVC
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output
+
+---
+
+### 2.0.0
+
+Released 2018-10-09
+
+**Added**
+
+* Per Title Encoding
+* AV1 speed improvements by 40%. That means it's twice as fast as the reference implementation, 20 times slower than HEVC/VP9 and 40 times slower than H.264
+* Enhanced 2-pass and 3-pass encoding
+* Support de-multiplexed A/V input files
+* Support 2-Pass for live encoding
+* Added Keyframe settings to VP8/VP9
+* Added muxing information for Broadcast TS
+
+**Changed**
+
+* Breaking Change: When adding a stream, the property `decodingErrorMode` is set to `DUPLICATE_FRAMES` per default
+* Breaking Change: When starting an encoding, the property `encodingMode` is set to `TWO_PASS` per default
+* Breaking Change: When starting an encoding, the property `trimming -> ignoreDurationIfInputTooShort` is set to `true` per default
+* Breaking Change: When starting an encoding, the property `handleVariableInputFps` is set to `true` per default
+* Breaking Change: When starting an encoding, the property `tweaks -> audioVideoSyncMode` is set to `RESYNC_AT_START` per default
+
+**Fixed**
+
+* Fixed an upload bug that may occur when uploading Progressive MP4 files to Azure
+* Fixed an issue where the encoding may fail when using a small trimming duration
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS or S3 output

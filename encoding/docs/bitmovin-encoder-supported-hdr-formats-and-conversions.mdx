@@ -1,0 +1,81 @@
+---
+title: "Bitmovin Encoder supported HDR formats and conversions"
+---
+
+## Overview
+
+HDR has become one of video consumption's most important innovations in recent years. Our [Practical Guide to HDR by Bitmovin](https://go.bitmovin.com/practical-hdr-guide) describes the different formats and technology behind them. It describes the different transfer functions and how the signals are presented in the colour spaces. This tutorial gives an overview of the HDR formats that are supported with the Bitmovin Encoder and the possible conversions in between.
+
+## What HDR Formats are supported with the Bitmovin Encoder?
+
+### HLG
+
+Hybrid Log-Gamma (HLG) was jointly developed by the BBC and NHK as a broadcast television HDR format that has a wider dynamic range while remaining backwards-compatible with existing SDR transmission standards. As such, it can be displayed correctly on both SDR and HDR monitors.
+
+### HDR10
+
+HDR10 is an open standard and the most widely used and supported HDR format. It has static metadata that is used to map the content to maximise the display’s brightness and contrast capabilities, applied uniformly to the entire file.
+
+### Dolby Vision
+
+Developed by Dolby Laboratories, Dolby Vision is a dynamic HDR format with accompanying metadata that is used to optimise contrast and light levels for every scene or even frame of a video in order to take full advantage of the display’s capabilities and most accurately reproduce the content creator’s intent.
+
+## HDR to SDR Conversion
+
+The conversion to SDR is supported for any of the supported HDR formats. This is possible across multiple video codecs, such as H.264, H.265 or VP9\. The output format can be specified in the video configuration itself by setting the _dynamicRangeFormat_ parameter to _SDR_.
+
+PHP
+
+`video_configuration = bitmovin_api.encoding.configurations.video.h265.create(
+  h265_video_configuration=H265VideoConfiguration(
+    dynamic_range_format=H265DynamicRangeFormat.SDR
+  )
+)
+`
+
+## Conversion between different HDR Formats
+
+While any HDR format can be converted to SDR, some limitations must be considered when we want to convert between different HDR formats. It is also possible to convert from SDR to HDR, which does not process a higher dynamic range but adds the required metadata to be considered HDR content by the player.
+
+The conversion is done in the same way as HDR to SDR conversion, by setting the dynamicRangeFormat to _DOLBY\_VISION_, _HDR10_, _HLG_ or _SDR_.
+
+PHP
+
+`h265_video_configuration=H265VideoConfiguration(
+  dynamic_range_format=H265DynamicRangeFormat.DOLBY_VISION
+)
+
+video_configuration_hdr10 = bitmovin_api.encoding.configurations.video.h265.create(
+  h265_video_configuration=H265VideoConfiguration(
+    dynamic_range_format=H265DynamicRangeFormat.HDR10
+  )
+)
+
+video_configuration_hlg = bitmovin_api.encoding.configurations.video.h265.create(
+  h265_video_configuration=H265VideoConfiguration(
+    dynamic_range_format=H265DynamicRangeFormat.HLG
+  )
+)
+
+video_configuration_sdr = bitmovin_api.encoding.configurations.video.h265.create(
+  h265_video_configuration=H265VideoConfiguration(
+    dynamic_range_format=H265DynamicRangeFormat.SDR
+  )
+)
+
+`
+
+## More Information
+
+A full example of how to set up HDR conversion can be found in our [public examples.](https://github.com/bitmovin/bitmovin-api-sdk-examples/#hdr-sdr-conversion)
+
+By setting the _dynamicRangeFormat_, specific preset parameters are applied to the video configuration. Using the predefined parameters in the _presetConfiguration_ ensures valid configuration and should be considered while setting specific parameters.
+
+## Supported codecs for HDR content:
+
+* **H.265**: HLG, HDR10, Dolby Vision
+* **VP9**: HLG
+
+## Matrix for possible conversions
+
+![](/images/encoding/docs/68ac954-image.png)

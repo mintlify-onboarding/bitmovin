@@ -1,0 +1,516 @@
+---
+title: "Encoder 1.24.3 - 1.56.0"
+---
+
+### 1.56.0
+
+Released 2018-10-01
+
+**Added**
+
+* Added flag to ignore duration trimming for input files shorter than the specified duration
+* Added support for timecode trimming for MXF files
+* Improve error message reporting when an internal encoding error occurs
+* Cut segments for HLS manifests and insert custom tags
+* Added Audio Leveling support
+
+**Fixed**
+
+* Fixed an issue with bitrate conformance when using HLSv3 and AES128 encryption
+* Fixed handling of per title encodings with PAR other than 1:1
+* Fixed a bug where encoding from MXF source failed
+
+---
+
+### 1.55.3
+
+Released 2018-09-17
+
+**Added**
+
+* Restart of running live encodings
+* Burnt-In Time Code (BITC), taken from the SEI of the source file for every frame
+
+**Fixed**
+
+* Improved handling with large input files
+* Improved playback on Roku and Tizen devices
+* Fixed a bug where the encoding failed with the resync at start feature
+* Fixed playback issue in chrome when adding custom timecode to MP4 muxing
+* Improved handling of watermark image download
+* Improved feedback for unsupported input file types
+* Improved handling of legacy S3 buckets
+* Improved support of MXF input files
+* Improved handling of download from Azure storage with special characters
+* Fixed handling of interlaced source files packaged in MP4 containers
+
+---
+
+### 1.54.0
+
+Released 2018-09-03
+
+**Added**
+
+* Create multi-period DASH manifests with an on-demand profile
+* Create multi-period DASH manifests with keyframes
+* Improved handling of input paths that contain URL encoded characters
+
+**Fixed**
+
+* Fixed an issue where the framerate might be doubled when the deinterlace filter is used
+* Issue fixed where an audio that is encoded with a sample rate below the input sample rate caused an error
+* Fixed an issue where the passthrough of 608 captions may not work as expected
+
+**Known Issues**
+
+* Encoding job might fail for 4k high bitrate files
+
+---
+
+### 1.53.0
+
+Released 2018-08-19
+
+**Added**
+
+* Added support for `HEVC` with `FairPlay DRM`
+* Allow usage of `pre-warmed` instances
+* Added `unsharp`, `interlace` and `scaling` filter
+* Add `multiple audio groups` to an `HLS` stream to be used together with `stream conditions`
+* Introduced new `audio video sync mode` that is useful if the source file was cut out of already encoded content.
+
+**Fixed**
+
+* Fixed an issue where `HTTP Basic authentication` was not working for some endpoints
+* Fixed a bug where audio in `MP4` files could not be decoded when multiple input files have been used
+* Fixed an issue where `HLSv3` in combination with `AES-128` encryption failed for a few input files
+
+---
+
+### 1.52.1
+
+Released 2018-07-30
+
+**Added**
+
+* Support for multiple input files (e.g., one video file and multiple audio files)
+* Support `S3 storage` with `role-based authentication` for `progressive muxings` types
+
+**Fixed**
+
+* Fixed an issue where `HTTP basic authentication` might not work for some hosts
+* Improved status messages when creating `Broadcast TS muxings`
+
+---
+
+### 1.51.0
+
+Released 2018-07-16
+
+**Added**
+
+* Support for `Per-Title` encoding with `2pass` and `3pass` encoding
+* Added option to remove all position information when converting `SCC` to `WebVtt`
+* Added success/error message when creating `preview manifests`
+* Added timecode support for `MP4 muxing`
+* Added `audio language metadata` to `progressive muxings`
+
+**Fixed**
+
+* Fixed a bug where `variable input fps` handling might not work as expected
+* Fixed a bug where valid video files may be recognized incorrectly as `input file format not supported`
+
+---
+
+### 1.50.0
+
+Released 2018-07-03
+
+**Added**
+
+* Support for `AV1`
+* Support for `Per-Title Encoding`
+* Support for `S3 V4` signature buckets
+* Added `numberOfFrames` and `aspectRatio` to `muxing information`
+
+**Fixed**
+
+* Fixed a bug where `watermark filters` could not be applied for certain configurations
+
+**Known Issues**
+
+* `Per-Title` does not work yet with `2pass` and `3pass` encoding
+
+---
+
+### 1.49.0
+
+Released 2018-06-25
+
+**Added**
+
+* Support for `two-pass` and `three-pass` encoding
+* Support for `SCC` to `WebVtt` conversion
+* Support for `SCC` to `608/708` conversion
+
+**Fixed**
+
+* Improved transcoding resilience
+* Fixed an issue where manifest creation fails when `HEVC`, `TS`, and `HLS` is used
+* Fixed an issue where the `FPS` from a live stream might be detected incorrectly
+
+---
+
+### 1.48.0
+
+Released 2018-06-18
+
+**Added**
+
+* `608/708 Passthrough` support
+* `DASH On Demand` Profile
+* New Fonts for `Text Filter`
+* Multi-Channel Audio
+
+**Fixed**
+
+* Fixed a bug where the encoding fails when validating the output if `VP8` and `H264` are encoded at the same time
+* Fixed a bug where the analysis of an input file might fail
+
+---
+
+### 1.47.3
+
+Released 2018-05-29
+
+**Added**
+
+* Added `MP3 muxing`
+* Added `Enhanced Watermark Filter`
+* Added SBR signaling to `HE-AAC` codec
+* Added `dynamic font size` for `text filter`
+* Added custom port for SSH when using `AWS connect`
+* Added property to create multiple files for `sprites`
+
+**Changed**
+
+* Improved download speed from `S3 Inputs`
+
+**Fixed**
+
+* Fixed an issue that might cause wrong audio duration for `Broadcast TS Muxing`
+* Fixed an error where the download step might stall
+
+---
+
+### 1.46.1
+
+Released 2018-05-15
+
+**Added**
+
+* Added `Broadcast TS` Muxing
+
+**Fixed**
+
+* Fixed an error where watermark download fails for certain `HTTP` storages
+* Fixed an audio sync issue that could occur when using `MXF` files and `XDCAM`
+* Fixed an issue that the encoding may fail when the video input codec is `qtrle`
+
+---
+
+### 1.45.0
+
+Released 2018-05-06
+
+**Added**
+
+* Support for `HE-AACv1`
+* Up to 3x faster download of files from `S3 Inputs`
+
+**Fixed**
+
+* Fixed an issue where an encoding might fail when `audio stream conditions` are used
+* Live stream fails fast now if files cannot be written to the output storage
+* Fix for sub-second GOP length for progressive outputs.
+* Fixed a bug for timecode trimming which occurred for some files.
+
+---
+
+### 1.44.0
+
+Released 2018-04-22
+
+**Added**
+
+* Added `muxing information` for MOV muxings
+* Set `DTS offset` for `TS muxings`
+
+---
+
+### 1.43.3
+
+Released 2018-03-29
+
+**Added**
+
+* Support for new AWS regions: `US_EAST_2`, `CA_CENTRAL_1`, `EU_WEST_2`, `EU_WEST_3`
+
+---
+
+### 1.42.0
+
+Released 2018-03-29
+
+**Added**
+
+* Create `preview manifest` of running VoD encodings
+* Improved validation to check if watermark file is downloadable
+
+---
+
+### 1.41.0
+
+Released 2018-03-25
+
+**Added**
+
+* Added new `stream condition` to check for the `duration` of the input file
+* Improved error message when all streams are removed due to `stream conditions`
+* Added port to `HTTP` and `HTTPS` input
+
+**Fixed**
+
+* Fixed a bug where thumbnails created at 100 percents may fail
+
+---
+
+### 1.40.0
+
+Released 2018-03-15
+
+**Added**
+
+* Added `Text` Filter and `Burn In Timecode` Filter
+* Added unit \`percents for specifying sprite distance
+* Improved error messages for invalid input file types
+
+**Fixed**
+
+* Fixed a bug that might cause an error for specific input files when checking for the `fps` in the `stream conditions`
+
+---
+
+### 1.39.0
+
+Released 2018-03-05
+
+**Added**
+
+* Added support for `S3 v2` Signature for input
+* Added `stream condition` for `total stream count`, `video stream count` and `audio stream count`
+
+**Fixed**
+
+* Fixed a bug where muxing to `Progressive TS` with video only may fail
+
+---
+
+### 1.38.0
+
+Released 2018-03-01
+
+**Added**
+
+* Custom `sample aspect ratio` can now be applied
+* Improved scheduling of `on-premise` encodings to increase speed and cluster utilization
+
+**Fixed**
+
+* Fixed an issue where frames might get dropped if the input file is `Open GOP`
+* Fixed a bug where `thumbnails` might not be transferred to `akamai` endpoints
+* Fixed a bug which caused encodings with `VP9` input files to fail
+
+---
+
+### 1.37.0
+
+Released 2018-02-19
+
+**Added**
+
+* Improved speed for `VP8` encoding
+
+**Fixed**
+
+* Fixed an issue where frames might get dropped if the input file is `Open GOP`
+* Fixed an issue where output duration might be wrong for `MP4` muxings
+* Fixed an issue where output duration of manifest might not match the duration of the video stream for `HLSv3` muxings
+
+---
+
+### 1.36.0
+
+Released 2018-02-11
+
+**Added**
+
+* Increased speeds for progressive muxings
+
+**Fixed**
+
+* Improved stability for H264 encodings
+* Improved acquiring of instances to speed up cluster creation
+
+---
+
+### 1.35.0
+
+Released 2018-01-25
+
+**Added**
+
+* Stream conditions can now be configured to only remove the steam instead of the whole muxing if it evaluates to false
+* Added option to provide input color space and range
+* Added support for `aspera token authentication`
+
+**Fixed**
+
+* Fixed an issue where thumbnail creation fails with some MXF files
+
+---
+
+### 1.34.0
+
+Released 2018-01-14
+
+**Added**
+
+* Add `relative position` support for `crop filter`
+* Add `MD5 Hash Header` for progressive outputs written to S3
+
+**Fixed**
+
+* Bugfix for an internal race condition occurring with some H264 input files which caused the encoding to fail
+* Enhanced open GOP detection to avoid frame glitches and audio/video sync issues
+
+---
+
+### 1.33.1
+
+Released 2018-01-04
+
+**Added**
+
+* Added `Denoise Hqdn3d` filter
+* `Fixed frame rate` for `progressive MP4` and `progressive TS`
+
+**Fixed**
+
+* Bugfix for `on-premise` where the worker nodes have not registered on the master node in certain conditions
+
+---
+
+### 1.32.0
+
+Released 2017-12-27
+
+**Added**
+
+* Added `progressive MOV` muxing
+
+---
+
+### 1.31.0
+
+Released 2017-12-18
+
+**Added**
+
+* Introduced `pre-warmed` pods for `on-premise` encoding to reduce enqueue time
+* Transfer checks can be disabled
+
+**Fixed**
+
+* Fixed a bug where the encoding fails when `outputPath` was not set
+
+---
+
+### 1.30.0
+
+Released 2017-12-11
+
+**Added**
+
+* Default settings for ACL were different for segmented and progressive output
+
+---
+
+### 1.29.0
+
+Released 2017-11-29
+
+**Added**
+
+* Added `Keyframe Archive`
+
+---
+
+### 1.28.1
+
+Released 2017-11-23
+
+**Added**
+
+* Added `scenecut threshold` option for `H264` and `H265` codec configurations
+
+**Fixed**
+
+* Encoding failed with an MXF input and an output audio sample rate of 44.1kHz
+* Segment size was ignored for TS muxings
+
+---
+
+### 1.27.0
+
+Released 2017-11-15
+
+**Added**
+
+* Added new video codec: `VP8`
+* Added new audio codecs: `AC3`, `E-AC3`, `MP2`, `MP3`, `Opus`, `Vorbis`
+* Added `progressive WebM` muxing
+
+---
+
+### 1.26.3
+
+Released 2017-11-07
+
+**Added**
+
+* Added API endpoint to get muxing information for `progressive TS` and `progressive MP4`
+
+**Fixed**
+
+* Encoding failed with certain MXF files due to an invalid handling
+* Improved acquiring of `Microsoft Azure Cloud` instances
+
+---
+
+### 1.25.3
+
+Released 2017-10-23
+
+**Added**
+
+* Encodings can now run on Azure cloud
+* Added audio stream conditions for: `Bitrate`, `Language`, `Channel Format`, `Channel Layout`
+
+**Fixed**
+
+* Channel Format for stream conditions has been changed to a Long value
+* Encoding failed when using audio merge in common with MXF input
+
+---

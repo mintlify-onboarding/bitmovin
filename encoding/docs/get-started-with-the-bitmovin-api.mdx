@@ -1,0 +1,70 @@
+---
+title: "Get started with the Bitmovin API"
+---
+
+## Introduction
+
+As a developer the Bitmovin API will become the center of your video infrastructure universe, as it allows you to manage everything about your encodings, player, and analytics, as well as your Bitmovin account itself. In this tutorial we will guide to you through the first steps on how to communicate with the Bitmovin API, so you can start to create your first encoding right away.
+
+## Create an Bitmovin Account
+
+If you haven't already, please create an Bitmovin account by clicking on "Sign Up" in the upper right corner or visit [https://bitmovin.com/dashboard/signup](https://bitmovin.com/dashboard/signup). Once activated you will have access to our your own dashboard so can easily manage your encodings, player/analytics licenses, team members and more. Further, you will be able to manage your API Key, which is needed to interact with our Bitmovin API, which allows to you to control your complete encoding workflow programmatically.
+
+## Get your Bitmovin API Key
+
+Once logged in your Bitmovin account at [https://bitmovin.com/dashboard](https://bitmovin.com/dashboard) go to your [account settings](https://bitmovin.com/dashboard/account). There you will find your Bitmovin API key which is needed in order to communicate with our REST API.
+
+## Send your first request to the Bitmovin API
+
+At this point you created an Bitmovin account, chose an API client, and found your API key in your account. So by now you have everything needed to send your first API request.
+
+Every request is sent to your API as to our API endpoint at `https://api.bitmovin.com/v1/` using GET, POST or DELETE as method. All responses are formatted using JSON and follow a specific [response message format](/encoding/reference/how-to-use-the-api#response-format).
+
+### CURL
+
+The following request will list all encodings that are available for your account. As you might have not done an encoding yet, the response will look like the following:
+
+#### Request
+
+Shell
+
+`curl -X GET https://api.bitmovin.com/v1/encoding/encodings -H 'x-api-key: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx'
+`
+
+#### Response
+
+JSON
+
+`{
+    "requestId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxx",
+    "status": "SUCCESS",
+    "data": {
+        "result": {
+            "totalCount": 0,
+            "previous": "https://api.bitmovin.com/v1/encoding/encodings?offset=0&limit=25",
+            "next": "https://api.bitmovin.com/v1/encoding/encodings?offset=25&limit=25",
+            "items": []
+        }
+    }
+}
+`
+
+## Choose an API Client
+
+Due to the vast amount of features in our API there are as many REST API requests available, that are documented in our [API reference](/encoding/reference/how-to-use-the-api).
+
+In order to ease and speed up your development, and to save you from spending your valuable time on repetitive tasks, we offer our Open API SDK for multiple programming languages like Java, Javascript, Python and [more](/encoding/docs/sdks).
+
+E.g. using our `Open API SDK for Java` to perform the same request as in the previous example getting a List about all encodings, it would look like the following:
+
+Java
+
+`BitmovinApi bitmovinApi = BitmovinApi.builder().withApiKey("YOUR_API_KEY_HERE").build();
+bitmovinApi.encoding.encodings.list();
+`
+
+If you are new to encoding then Python may be the easiest to start with, our [Getting Started Guide for Python](/encoding/docs/python-sdk) contains a walkthrough video, code samples and other tricks for quick deployment.
+
+Its that simple ! These SDK's allow you to quickly start using our Services as well as integrate them into your new or existing applications/projects, to get your video encoding workflow setup in no time.
+
+An overview about all available API clients can be found [here](/encoding/reference/sdks) in our documentation, including links to their respective Github repository. See our [examples on Github](https://github.com/bitmovin/bitmovin-api-sdk-examples) showcasing how to use each of our Open API SDK's!

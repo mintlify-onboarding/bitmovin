@@ -1,0 +1,100 @@
+---
+title: "Integrating Bitmovin Encoder with PallyCon Multi-DRM"
+---
+
+## Overview
+
+This tutorial walks through integrating Bitmovin CENC Encoding with PallyCon CPIX DRM in TWO simple steps.
+
+For a full working sample refer to the [Appendix](/encoding/docs/integrating-bitmovin-encoder-with-pallycon-multi-drm#appendix)
+
+## 3 Minute Video Guide of Bitmovin CENC + Pallycon CPIX Integration
+
+[undefined](https://streams.bitmovin.com/cgrurfckk3f5o48157hg/embed "streams.bitmovin.com") 
+
+## Pre-requisites
+
+1. `CONTENT-ID` ; your script can generate this id to uniquely identify each content
+2. `KMS version` ; this tutorial uses PallyCon KMS version 2 as it supports multi-key encryption
+3. `PallyCon KMS URL` ; most of the time it looks like this _[https://kms.pallycon.com/v2/cpix/pallycon/getKey/](https://kms.pallycon.com/v2/cpix/pallycon/getKey/)_
+4. `KMS token` ; to uniquely identify and protect your request to the PallyCon KMS
+
+Screenshot from the `PALLYCON` portal
+
+![](/images/encoding/docs/bd4e9d4-image.png)
+
+## Applicable Use cases
+
+1. Single Key for all renditions
+2. Multi-key i.e different keys for different renditions
+
+In this tutorial we'll run through use case #2 i.e Multi-Key
+
+### 1\. Get DRM information from PallyCon
+
+#### Overview
+
+We'll be discussing multi-key integration i.e 1 key for SD and 1 key for AUDIO. Implementation of the below logic can be found in the method [\_get\_pallycon\_drm\_config @ cenc\_drm\_content\_protection.py](https://assets.ctfassets.net/blfijbdi3ei3/58OoJ5My9xDyfaGIkpOHIX/dcffcd842561f340899a5e8982d5513f/cenc%5Fdrm%5Fcontent%5Fprotection.py)
+
+#### Steps
+
+1. Get the values from the pre-requisites section and update them respectively
+
+`CONTENT_ID = "my-unique_content_id"
+PALLYCON_KMS_URL = "https://kms.pallycon.com/v2/cpix/pallycon/getKey/"
+PALLYCON_ENC_TOKEN = 'PALLYCON_KMS_TOKEN'
+# Request headers
+headers = {'content-type': 'application/xml'}
+`
+
+1. Request DRM keys from PallyCon. in this case it's been configured for the Fairplay, Widevine and Playready for 1 SD key and 1 AUDIO key.
+
+`` a. `<cpix:ContentKey>` - 1 for each key. 
+    a.1 In our use case there'd be two such elements
+  b. `cpix:DRMSystem` - the different DRM systems i.e Widevine/Playready/Fairplay we are requesting for each key in #1. 
+    b.1 In our usecase there'd be 6 elements (3 for the 1st key and 3 for the 2nd.)
+  c. `cpix:ContentKeyUsageRule` - the intended track type (SD/HD/AUDIO) for each key
+    c.1 In our usecase there'd be 2 such elements are we are requesting 1 key for `SD` and another for `AUDIO`
+ ``
+
+1. Parse the PallyCon DRM response into the Pallycon\_Drm\_Config helper class
+
+### 2\. Apply PallyCon DRM using Bitmovin CENC API
+
+1. After getting the PallyCon drm configs we first split the DRM config by tracks i.e SD/AUDIO
+
+`    def get_drm_config_by_track(pallycon_drm_configs: typing.Dict, track: str) -> typing.Dict:
+        return dict(filter(lambda elem: (elem[1]).get_track() == track,pallycon_drm_configs.items()))
+    pallycon_drm_configs = _get_pallycon_drm_config()
+    audio_drm_configs = get_drm_config_by_track(pallycon_drm_configs, "AUDIO")
+    sd_drm_configs = get_drm_config_by_track(pallycon_drm_configs, "SD")
+`
+
+1. Lastly we apply the `Pallycon_Drm_Config` and create the DRM Muxing by using the method [\_create\_drm\_config @ cenc\_drm\_content\_protection.py](https://assets.ctfassets.net/blfijbdi3ei3/58OoJ5My9xDyfaGIkpOHIX/dcffcd842561f340899a5e8982d5513f/cenc%5Fdrm%5Fcontent%5Fprotection.py)
+
+It's THAT EASY!
+
+## FAQ
+
+### Question: Exception in \_get\_pallycon\_drm\_config @ cenc\_drm\_content\_protection.py
+
+Answer: This could be due to an
+
+1. expired PallyCon DRM token OR
+2. invalid request body
+
+Kindly check with your PallyCon contact for more details.
+
+## Appendix
+
+WORKING Source code
+
+1. Clone the [Bitmovin GitHub](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/python/src/cenc%5Fdrm%5Fcontent%5Fprotection.py) repository
+2. use this updated [cenc\_drm\_content\_protection\_v1.2](https://assets.ctfassets.net/blfijbdi3ei3/3t5XZqkr5eOPKV9jLO6MzV/b3a17b43140b4170a9ed0808fa340441/cenc%5Fdrm%5Fcontent%5Fprotection%5Fv1.2.py) file w/ the PallyCon integation in place of the GitHub sample
+
+Additional reads
+
+1. the underpinnings of the SPEKE integration OR
+2. the CENC integration option
+
+please visit the reference By [PallyCon](https://pallycon.com/docs/en/multidrm/packaging/bitmovin-encoder-guide/).

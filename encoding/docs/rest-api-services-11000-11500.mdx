@@ -1,0 +1,512 @@
+---
+title: "REST API Services 1.100.0 - 1.150.0"
+---
+
+### 1.150.0
+
+**Changed**
+
+* The "STANDARD" mode for [LIVE Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid) now defaults to SINGLE\_PASS (previously was TWO\_PASS).
+
+---
+
+### 1.149.0
+
+**Changed**
+
+* Live input stream status is set to `NOT_AVAILABLE` when a restart is happening.
+
+---
+
+### 1.148.0
+
+**Changed**
+
+* Internal stability improvements
+
+---
+
+### 1.147.0
+
+**Added**
+
+* New [check permissions endpoint](/encoding/reference/postencodingoutputscheckpermissionsbyoutputid) (currently for S3 outputs only) examines if permissions, on the storage to be used as output target by the Bitmovin encoder, are configured correctly.
+
+**Changed**
+
+* Encodings started with the [Simple Encoding API](/encoding/docs/simple-encoding-api-live) now use the BETA Encoder version.
+
+---
+
+### 1.146.0
+
+**Added**
+
+* [LIVE\_STANDARD](/encoding/docs/h265-presets) preset is now available for [H265](/encoding/reference/postencodingconfigurationsvideoh265) Codec Configuration.
+
+---
+
+### 1.145.0
+
+**Changed**
+
+* Internal stability improvements
+
+---
+
+### 1.144.0
+
+ **Fixed**
+
+* Fixed a bug that caused live events to be lost once the live stream has ended.
+* A bug that led to incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast had been added for the impacted encoder versions: 2.137.0 - 2.148.0.
+
+---
+
+### 1.143.0
+
+ **Fixed**
+
+* For Live encodings an incorrect resolution was assumed if no input was connected and resolution not configured.
+
+---
+
+### 1.142.0
+
+ **Fixed**
+
+* Per-Title encodings with [direct file upload](/encoding/reference/postencodinginputsdirectfileupload) failing in some scenarios
+
+---
+
+### 1.141.0
+
+ **Deprecated**
+
+* Encoder version older than 2.2.0 are no longer supported.
+
+---
+
+### 1.140.0
+
+**Added**
+
+* Live Encodings started with the [Simple Encoding API](/encoding/docs/simple-encoding-api-live) now support video-only input
+* Improved error message for LIVE Encodings in case unsupported Manifest configurations for HLS, with Marlin, Playready, Primetime or Clearkey, are used.
+
+---
+
+### 1.139.0
+
+**Added**
+
+* Added a fail-fast for enableHLGSignaling set to true: ColorTransfer needs to be: ARIB STD-B67, UNSPECIFIED, or not set. In the last 2 cases, ARIB STD-B67 will be set implicitly. To avoid creating undesired output any other specific color transfer will result in a fail-fast for encoder versions newer than 2.138.0 (incl.) or equal to LTS verion 2.103.1.
+* To easily access the resulting Manifest files of the VoD encoding jobs, output artifacts have been added to the output objects that are returned by [Simple VoD Encoding Job Response](/encoding/reference/getsimpleencodingvodjobbyjobid).
+
+---
+
+### 1.138.0
+
+ **Fixed**
+
+* Re-Subscribing to an account which was expired for more than 14 days did not re-activate the CDN feature
+* Performance- and stability improvements for high load scenarios
+
+---
+
+### 1.137.0
+
+**Added**
+
+* Added the Live profile `LOWER_LATENCY` to the [Simple Encoding API](/encoding/docs/simple-encoding-api-live) which introduces much lower latency than the regular profile. Additional information about the Simple Encoding API Live profiles can be found [here](/encoding/docs/simple-encoding-api-live)
+
+---
+
+### 1.136.0
+
+**Changed**
+
+* Internal stability improvements
+
+---
+
+### 1.135.0
+
+ **Fixed**
+
+* Fixed an issue with notifications called very often (like [Encoding Status Changed Webhook](/encoding/reference/postnotificationswebhooksencodingencodingsstatuschanged)) that could lead to notifications (email or webhook) being delayed or being delivered multiple times.
+
+---
+
+### 1.134.0
+
+**Changed**
+
+* Internal stability improvements.
+
+Bitmovin’s [Simple Encoding API](/encoding/docs/simple-encoding-api-live) combines our Per-Title and 3-pass optimizations together with HLS and DASH packaging in a single API call. And now you can experience it with our SEA based wizard in our all new [VOD Encoding Home](https://bitmovin.com/dashboard/encoding/home). Try it out!
+
+---
+
+### 1.133.0
+
+**Added**
+
+* HLG output which is backward compatible with SDR is now supported: Using [enableHlgSignaling](/encoding/reference/postencodingconfigurationsvideoh265) in addition to setting the ARIB STD-B67 color transfer function will perform an ARIB STD-B67 conversion but signal it as BT.2020 10 bit. The ARIB STD-B67 conversion will be signaled in the SEI messages.
+
+---
+
+### 1.132.0
+
+ **Fixed**
+
+* When calling the list call for [DASH](/encoding/reference/getencodingmanifestsdash), [HLS](/encoding/reference/getencodingmanifestshls) or [Smooth](/encoding/reference/getencodingmanifestssmooth) manifests with an `encodingId`, `limit` and `offset` parameters were ignored.
+
+---
+
+### 1.131.0
+
+ **Fixed**
+
+* Fixed wrong and invalid return value `loudnessControl.dialnorm=0` for [Dolby Digital](/encoding/reference/postencodingconfigurationsaudiodd) and [Dolby Digital Plus](/encoding/reference/postencodingconfigurationsaudioddplus) Audio Configurations when not specifying a `dialnorm` property at all in the `loudnessControl` object during codec configuration resource creation. This behavior caused the Bitmovin Python SDK to fail parsing the response from the Bitmovin API.
+
+---
+
+### 1.130.0
+
+**Changed**
+
+* Internal stability improvements.
+
+The Bitmovin Content Delivery Network (CDN) removes the need to set up your own output storage, automatically distributing your content around the globe and enabling fast, efficient delivery to all your viewers. Available [now in beta](/encoding/docs/bitmovin-cdn-output), try it today.
+
+---
+
+### 1.129.0
+
+**Changed**
+
+* Internal stability improvements.
+
+Streams, our all-in-one solution combining Bitmovin’s encoding, player and analytics together with built-in storage and pre-configured CDN is now available, with pay as you go [pricing](https://bitmovin.com/pricing/). Drag-and-drop your videos for Per-Title optimized ABR encoding, an embeddable player with QoE analytics and delivery to a worldwide audience. Read more [here](https://bitmovin.com/streams/).
+
+---
+
+### 1.128.0
+
+**Removed**
+
+* Experimental feature of object detection
+
+---
+
+### 1.127.0
+
+ **Fixed**
+
+* Encodings containing 0-Duration-Trimming(s) on [video concatenation configurations](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) could have stalled.
+
+---
+
+### 1.126.0
+
+ **Fixed**
+
+* Fixed an error that caused DASH Manifests with ManifestGenerator=`V2` to fail when including DTS:X audio with 5.1.4 channel layout.
+
+---
+
+### 1.125.0
+
+**Added**
+
+* `input color primaries` and the `input color transfer` for an encoding can now be overridden ([H262](/encoding/reference/postencodingconfigurationsvideoh262), [H264](/encoding/reference/postencodingconfigurationsvideoh264), [H265](/encoding/reference/postencodingconfigurationsvideoh265), [VP8](/encoding/reference/postencodingconfigurationsvideovp8), [VP9](/encoding/reference/postencodingconfigurationsvideovp9), [AV1](/encoding/reference/postencodingconfigurationsvideoav1))
+
+---
+
+### 1.124.0
+
+ **Fixed**
+
+* DASH manifests V2: ContentProtections were being written twice into the same AdaptationSet under particular conditions.
+
+---
+
+### 1.123.0
+
+**Changed**
+
+* Internal stability improvements.
+
+... and while we are working on the next release, have you already seen how Bitmovin’s Simple Encoding API combines our Per-Title and 3-pass optimizations together with HLS and DASH packaging in a single API call? Read more [here](/encoding/docs/simple-encoding-api-vod) and give it a try!
+
+---
+
+### 1.122.0
+
+**Added**
+
+* Simple Encoding API: Live Encodings will now automatically shut down 10 minutes after the ingest has stopped
+* Added CDN usage statistics retrieval API:  
+   * the [API](/encoding/reference/getcdnusagestatisticsbyfromandto) provides an overview of the total usage statistics for a selected time period (both for storage and transfer usages) as well as an individual report of the usages per days.  
+   * more about it can be found in the [documentation](/encoding/docs/bitmovin-cdn-output)
+
+---
+
+### 1.121.0
+
+ **Fixed**
+
+* Fixed a bug that could lead to long request duration and potential timeouts during [encoding start calls](/encoding/reference/postencodingencodingsstartbyencodingid) due to issues during input source probing.
+
+---
+
+### 1.120.0
+
+**Changed**
+
+* The `profile` for [H264](/encoding/reference/postencodingconfigurationsvideoh264) and [H265](/encoding/reference/postencodingconfigurationsvideoh265) video output does not need to be specified anymore when a dynamic range format is set. A default value for the profile is used based on the given dynamic range format.
+
+ **Fixed**
+
+* When a dynamic range format was specified, color config values set via the API could have been ignored
+* When a dynamic range format was specified, default values for color config settings could have not applied correctly
+
+---
+
+### 1.119.0
+
+**Changed**
+
+* Statistics for [SRT Live Stream Input](/encoding/reference/getstatisiticsforsrtlivestreambysrtinputid) are now returned sorted by date with latest entries being first.
+* Added a check to verify that [live stream conditions](/encoding/docs/stream-conditions) are not added to encodings using a version older than 2.120.0.
+
+---
+
+### 1.118.0
+
+ **Fixed**
+
+* In DASH Manifest V2 via [start encoding call](/encoding/reference/postencodingencodingsstartbyencodingid), fixed the calculation of the `presentationTimeOffset` DASH attribute for Segment Template and Segment Timeline Representations in DASH ManifestGenerator.V2 when `startSegmentNumber` or `startKeyframeId` is set in order to keep audio and video in sync.
+
+---
+
+### 1.117.0
+
+**Changed**
+
+* Improved validation and applying of defaults for `selectionMode` and `position`:  
+   * DvbSubtitleInputStream: "selectionMode" now defaults to AUTO. "position" defaults to 0 if the chosen selectionMode requires a position. Specifying a position is not allowed when using selecionMode AUTO.  
+   * IngestInputStream and Stream.inputStreams: Only default "position" to 0 when "selectionMode" is not AUTO.
+
+---
+
+### 1.116.0
+
+**Added**
+
+* Added new [Output Paths endpoint](/encoding/reference/getencodingoutputpathsbyencodingid) which makes it possible to retrieve all of the manifests output paths for an encoding.
+
+---
+
+### 1.115.0
+
+**Added**
+
+* [Stream Conditions](/encoding/docs/stream-conditions) can now also be applied to [Live Encodings](/encoding/reference/postencodingencodingslivestartbyencodingid).
+
+---
+
+### 1.114.0
+
+**Added**
+
+* Manifest Generator V2 now supports Dolby Vision encodings.
+
+ **Fixed**
+
+* [Activating PSNR quality metrics for a stream](/encoding/reference/activatepsnrstreamqualitymetrics) no longer results in a 404 error when using the API key of a tenant user.
+* Overriding DynamicRange Format values with specific settings now works as specified in the OpenAPI documentation.
+
+---
+
+### 1.113.0
+
+**Added**
+
+* **Bitmovin CDN storage** is now supported as output for Live encodings via **Simple Encoding API**
+* [HLS manifest creation with ManifestGenerator.V2](/encoding/reference/postencodingmanifestsdashstartbymanifestid) now fails with appropriate error messages in the following cases:  
+   * If an empty streamId is given for a [Stream](/encoding/reference/postencodingmanifestshlsstreamsbymanifestid)/[MediaInfo](/encoding/reference/postencodingmanifestshlsmediaaudiobymanifestid), but there are more than one streams present in the muxing.  
+   * If a streamId is given for a [Stream](/encoding/reference/postencodingmanifestshlsstreamsbymanifestid)/[MediaInfo](/encoding/reference/postencodingmanifestshlsmediaaudiobymanifestid) that is not contained in the muxing whose id is given.
+* The cloud region `AUTO` is now correctly resolved when used for [Encodings](/encoding/reference/postencodingencodings) with [CDN output](/encoding/reference/getencodingoutputscdn).
+
+**Changed**
+
+* [Simple Encoding Livestreams](/encoding/reference/postsimpleencodinglivejob) can now automatically detect the aspect ratio of the input.
+
+ **Fixed**
+
+* Fixed a bug where the [live Encoding details](/encoding/reference/getencodingencodingslivebyencodingid) could not be retrieved if the stream key was not set.
+
+---
+
+### 1.112.0
+
+**Added**
+
+* **Manifest Generator V2** now also supports HLS manifest generation from multiple encodings. The same known limitations as for single encoding apply:  
+   * LIVE-2-VOD is not supported yet  
+   * Dolby Vision is not supported by V2 yet
+
+ **Fixed**
+
+* Default Manifests now support writing the manifest files to multiple outputs.
+* Fixed a bug where the creation of a [Scte35](ref:scte-35%20Cue/PostEncodingEncodingsScte35CueByEncodingId) would sometimes result in a 500 error.
+
+---
+
+### 1.111.0
+
+**Added**
+
+* **Bitmovin CDN storage** is now available for VOD(beta). The Bitmovin Content Delivery Network (CDN) helps setting up your workflows faster by simplifying the distribution of your content. It's easy to use and removes the need to set up your own output storage. Your content will be automatically distributed around the globe, enabling fast and efficient delivery to all your viewers without any additional effort.  
+   * Note that for your first use, it may take up to 5 minutes after encoding completes before CDN distribution is ready. Subsequent videos will be available as soon as encoding has finished.  
+   * This beta release is available for organizations who signed up for a TRIAL after 2022-04-05 or subscribed to a Starter or PAYG (pay as you go) plan after that date.  
+   * Further information can be found [here](/encoding/docs/bitmovin-cdn-output).
+
+ **Fixed**
+
+* Fixed [progressive MP4](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid) workflow for [Dolby Vision](/encoding/reference/postencodingencodingsinputstreamsdolbyvisionbyencodingid) in combination with [AAC](/encoding/reference/postencodingconfigurationsaudioaac) audio streams.
+
+---
+
+### 1.110.0
+
+ **Fixed**
+
+* Identified and fixed a very rare issue which could potentially lead to less parallelity processing batch jobs when the audio merge feature was used
+
+---
+
+### 1.109.0
+
+**Added**
+
+**Manifest Generator V2** is now available for single-encoding HLS manifests by specifying `manifestGenerator=V2` in the [HLS Start-Manifest Request](/encoding/reference/postencodingmanifestshlsstartbymanifestid). The minimum encoder version for that feature is [2.111.0](/encoding/docs/encoder-21000-21490#21110). Differences to the `LEGACY` generator include:
+
+* Additions  
+   * V2 supports assoc-language and the characteristics which are not supported by LEGACY.
+* Improvements  
+   * The order of the attributes inside the elements can be different. They are now ordered in a stable way. We remain spec compliant in this point.  
+   * I-FramePlaylists referencing a muxing that does not support I-FramePlaylists will cause the manifest to fail in contrary to the LEGACY implementation that writes an incorrect I-FramePlaylist file.  
+   * The target duration is not updated to the highest occurring value in all media playlists in some cases by Legacy HLS manifest generation. V2 now handles this more correctly.  
+   * The codec value of Variant Streams for ProgressiveTsMuxings and TsMuxings which contain a video and an audio stream is now more correct. In the Legacy generator it looks like this `avc1.4D401E,ac-3,avc1.4D401E,ac-3` and in V2 we only write it once e.g. `avc1.4D401E,ac-3`.  
+   * For MediaInfos/StreamInfos where the provided streamId does not belong to the muxing, the manifestGenerator V2 sets the segmentDurations more accurately than the LEGACY one. We might fail fast for cases like this in the future.  
+   * If multiple ClosedCaptionMediaInfos are specified for a single manifest, V2 will only add a single EXT-X-MEDIA tag for each of them instead of adding duplicate entries like legacy does.
+* Known Limitations  
+   * LIVE-2-VOD is not supported yet.  
+   * Dolby Vision does not work with V2 at the moment.
+
+**Simple Encoding Api**
+
+* A name can now be set for Simple Live Encodings.
+
+---
+
+### 1.108.0
+
+**Added**
+
+* Improved the internal [encoding cloud region](/encoding/reference/postencodingencodings) selection for continental regions like `ASIA`, `EUROPE` etc. to take the input and output cloud providers and their regions into consideration. This will minimize potential egress costs.
+
+---
+
+### 1.107.0
+
+**Added**
+
+* The Simple Encoding API now also supports live encodings. Further information can be found [here](/encoding/docs/simple-encoding-api-live).
+
+---
+
+### 1.106.0
+
+ **Fixed**
+
+* [Time-based Trimming](/encoding/reference/postencodingencodingsinputstreamstrimmingtimebasedbyencodingid) configurations with a negative duration caused encodings to stall. Such configs are now disallowed and will result in a 400 Bad Request response during creation.
+
+---
+
+### 1.105.0
+
+**Added**
+
+* For [AV1 encodings](/encoding/reference/postencodingconfigurationsvideoav1) these presets are now available  
+   * VOD\_QUALITY - Higher quality  
+   * VOD\_STANDARD - Default quality and speed  
+   * VOD\_SPEED - Faster encoding
+* Added validations for time based trimming input streams: The encoding now fails fast if the (rounded) duration of all the time based trimming input streams is 0 or negative.
+* The Manifest Generator V2 now supports generating SMOOTH manifests containing more than 1 encoding.
+
+---
+
+### 1.104.0
+
+**Added**
+
+* Added support for Per-Title [AV1](/encoding/reference/postencodingconfigurationsvideoav1) encodings to the [Simple Encoding API](/encoding/reference/postsimpleencodingvodjob).
+
+ **Fixed**
+
+* The H264 presets VOD\_STANDARD and VOD\_QUALITY now use the H264 profile 'MAIN' instead of 'HIGH'. See documentation [here](/encoding/docs/h264-presets).
+
+---
+
+### 1.103.0
+
+**Added**
+
+* Manifest Generator V2 is now available for single-encoding SMOOTH manifests by specifying `manifestGenerator=V2` in the SMOOTH Start-Manifest Request. The minimum encoder version for that feature is `1.108.0`. Differences to the LEGACY generator include:  
+   * V2 now correctly sets the "QualityLevels" attribute in the StreamIndex elements to the count of QualityLevel elements present.  
+   * V2 now correctly sets the "Index" attribute in the QualityLevel elements by increasing the number with each element.
+
+ **Fixed**
+
+* Fixed info messages for GCE infratstructure creation.
+
+---
+
+### 1.102.0
+
+**Added**
+
+* Cloud Region `AWS_EU_NORTH_1` (Stockholm) is now available for encoder version `2.107.0` and newer.
+* Several performance improvements to the HLS manifest generation via the [HLS Manifest Start call](/encoding/reference/postencodingmanifestshlsstartbymanifestid). HLS manifest generation with many renditions is now up to 5 times faster.
+
+ **Fixed**
+
+* HLS Manifest generation failed when the encoding containted an MP3 Audio Muxing even if the HLS Manifest did not reference the MP3 Muxing.
+
+---
+
+### 1.101.0
+
+**Added**
+
+* Several performance improvements to the DASH manifest generation via the [Dash Manifest Start call](/encoding/reference/postencodingmanifestsdashstartbymanifestid). DASH manifest generation with many renditions is now up to 20 times faster.
+
+ **Fixed**
+
+* Updated the documentation for the [daily statistics](/encoding/reference/getencodingstatisticsdailybyfromandto) calls to make it clear that offset and limit parameters are not used.
+
+---
+
+### 1.100.0
+
+**Added**
+
+* Added PTSAlignMode to [fMP4 muxings](/encoding/reference/postencodingencodingsmuxingsfmp4byencodingid). Setting it to `ALIGN_ZERO_NEGATIVE_CTO` will shift the first composition time offset (CTO) to 0\. If B-frames are used, some CTOs will be negative. Therefore, TrackRun (trun) version 1 atoms are being used. This can only be set for H264 and H265 streams.
+
+ **Fixed**
+
+* Fixed a bug where Per-Title analysis with [NextGuard watermarking](/encoding/reference/postencodingencodingsstreamsnexguardfilemarkerbyencodingidandstreamid) and fractional framerates failed

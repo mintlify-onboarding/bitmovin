@@ -1,0 +1,62 @@
+---
+title: "VP9 Presets"
+---
+
+## VP9 Presets
+
+### VoD Quality Preset Configurations
+
+| VoD Quality Presets | VOD\_STANDARD | VOD\_HIGH\_QUALITY |
+| ------------------- | ------------- | ------------------ |
+| aqMode              | VARIANCE      | VARIANCE           |
+| arnrMaxFrames       | 0             | 0                  |
+| arnrStrength        | 0             | 0                  |
+| arnrType            | CENTERED      | CENTERED           |
+| encodingMode        | TWO\_PASS     | THREE\_PASS        |
+| frameParallel       | true          | true               |
+| lagInFrames         | 25            | 25                 |
+| lossless            | false         | false              |
+| maxIntraRate        | 0             | 0                  |
+| noiseSensitivity    | false         | false              |
+| qpMax               | 63            | 63                 |
+| qpMin               | 0             | 0                  |
+| quality             | GOOD          | GOOD               |
+| rateOvershootPct    | 25            | 25                 |
+| rateUndershootPct   | 25            | 25                 |
+| staticThresh        | 0             | 0                  |
+| tileColumns         | +             | +                  |
+| cpuUsed             | +             | +                  |
+| tileRows            | 0             | 0                  |
+
+`+` smart value which is set automatically based on preset and resolution  
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideovp9) for the respective value.
+
+---
+
+### VoD Speed Preset Configurations
+
+| VoD Speed Presets | VOD\_SPEED   |
+| ----------------- | ------------ |
+| aqMode            | VARIANCE     |
+| arnrMaxFrames     | 0            |
+| arnrStrength      | 0            |
+| arnrType          | CENTERED     |
+| encodingMode      | SINGLE\_PASS |
+| frameParallel     | true         |
+| lagInFrames       | 25           |
+| lossless          | false        |
+| maxIntraRate      | 0            |
+| noiseSensitivity  | false        |
+| qpMax             | 63           |
+| qpMin             | 0            |
+| quality           | GOOD         |
+| rateOvershootPct  | 25           |
+| rateUndershootPct | 25           |
+| staticThresh      | 0            |
+| tileColumns       | +            |
+| cpuUsed           | +            |
+| tileRows          | 0            |
+
+`+` smart value which is set automatically based on preset and resolution `-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideovp9) for the respective value.
+
+---

@@ -1,0 +1,353 @@
+---
+title: "Create a Live Encoding from an RTMP stream"
+---
+
+## Introduction
+
+The Bitmovin cloud encoding service is a powerful tool for live streaming, and our API makes it easy to implement. This tutorial concentrates on feeds contributed with the RTMP protocol, which are the simplest to setup. There are basically 4 steps involved when it comes to our live streaming service in the cloud.
+
+![](/images/encoding/docs/9ca54db-image.png)
+
+### 1\. Ingest RTMP Stream to our Live Encoder
+
+Usually a mezzanine or "contribution" encoder that is processing the live signal will transcode this signal to a high quality mezzanine format and ingest it at the RTMP ingest point in our live encoder. You can now use such an encoder from Elemental, Teradek, Teracue, or any other vendor, or use software like the popular OBS studio or ffmpeg.
+
+### 2\. Encoding of the Input Stream to MPEG-DASH and HLS
+
+You can define multiple output resolutions and bitrates for MPEG-DASH and HLS, define if you want to encode to H.264 (AVC) or H.265 (HEVC). There are literally no limits in defining what output you want from our live encoder, e.g. it can easily handle multiple 4k 60FPS streams encoded to HEVC.
+
+### 3\. Direct Output to Your Storage
+
+Our live encoder writes the encoded files directly to your AWS S3 or GCS bucket. You could use this output storage as origin for your CDN or for multiple CDNs. This works well with GCS as [Google offers a CDN Interconnect](https://cloud.google.com/interconnect/cdn-interconnect) for several CDNs such as Akamai, Fastly, Level3, HighWinds, CloudFlare, Limelight, and Verizon. AWS S3 could also easily be connected with their [Cloudfront CDN](https://aws.amazon.com/de/cloudfront/) and provides you an out-of-the-box solution in one cloud.
+
+### 4\. Playback on any Device, or Browser
+
+If you are using the Bitmovin HTML5 player your content will playback on any device or browser. However, you are not limited to use our player and can also choose among others as described in our recent blog post on [encoding for multiple HTML5 Players](https://bitmovin.com/utilizing-bitmovin-encoding-platform-multiple-players/). You can also use the other Bitmovin [Player SDKs](https://bitmovin.com/docs/player/sdks) if you want to build native apps on iOS, Android, Roku and other devices.
+
+---
+
+## Preparation
+
+To run the example in this tutorial, you need a **Bitmovin API Key** and credentials for an **Amazon AWS S3 bucket**.
+
+## Starting With The API
+
+Now, let’s see how we can start a live stream that will generate MPEG-DASH and HLS streams from an RTMP input.
+
+The following example shows the setup of an RTMP live stream, and will be utilizing our [Open API SDK for Java](https://github.com/bitmovin/bitmovin-api-sdk-java). The [full example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/tutorials/RedundantRtmpLiveEncoding.java) can be found in our [Open API Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples/) on Github.
+
+---
+
+**Setting up Your Properties file**
+
+First we need to setup the Bitmovin API client with your API key and S3 bucket credentials. For this, create a directory named _.bitmovin_ in your user’s home directory. Then, create a text file named _examples.properties_ in the _.bitmovin_ directory, with the following content:
+
+`BITMOVIN_API_KEY=<YOUR_API_KEY>
+S3_OUTPUT_BUCKET_NAME=<YOUR_S3_BUCKET_NAME>
+S3_OUTPUT_ACCESS_KEY=<YOUR_S3_ACCESS_KEY>
+S3_OUTPUT_SECRET_KEY=<YOUR_S3_SECRET_KEY>
+S3_OUTPUT_BASE_PATH=/output/encoding_test/doc/srt
+`
+
+---
+
+**Using ConfigProvider to Initialize the API**
+
+The OpenAPI client includes a `configProvider` object which has access to your _examples.properties_ file and thus, to your Bitmovin and S3 credentials. Before we can do anything, we must set up the `configProvider`.
+
+Next, we set up `bitmovinApi`, the basic object accessing the Bitmovin API. It gets the API key from `configProvider`.
+
+Java
+
+`configProvider = new ConfigProvider(args);
+bitmovinApi =
+    BitmovinApi.builder()
+        .withApiKey(configProvider.getBitmovinApiKey())
+        .withLogger(
+             new Slf4jLogger(), Level.BASIC) 
+        .build();
+`
+
+You will find this code in the `main()` method of the `RtmpLiveEncoding` class. This is the method where the main workflow resides. It is also the method you later will run in order to start the encoding.
+
+## Create an Encoding
+
+Create an `encoding` with the simple line
+
+Java
+
+`Encoding encoding =
+        createEncoding("Live Encoding Test", "Live encoding with HLS and DASH manifest");
+`
+
+This creates an encoding resource where we will add all other configuration resources to it.
+
+**Please note:** _For production, to guarantee a stable connection between the contribution encoder and our live encoder, it is crucial to carefully select the cloud and region in which your live encoder will run to reduce latencies._
+
+Our encoder uses Western Europe as the default region. You can set cloud regions by adding attributes to the encoding object in the `createEncoding()` method.
+
+## Select the RTMP Live Input
+
+Bitmovin's live encoding service supports `RTMP Push` as ingest stream, it expects the input stream to be pushed to the live stream. Therefore, your Bitmovin Account is already pre-configured with an `RTMP Input` which you can use to configure your live stream.
+
+Java
+
+`RtmpInput input = getRtmpInput();
+`
+
+If you are interested in the details, please read on. Otherwise you may skip the rest of the section and continue with [_Create an Output_](/encoding/docs/create-a-live-encoding-from-an-rtmp-stream#create-an-output).
+
+**Details**
+
+The code above calls a method named `getRtmpInput()` which looks like this:
+
+Java
+
+`private static RtmpInput getRtmpInput() throws BitmovinException {
+    return bitmovinApi.encoding.inputs.rtmp.list().getItems().get(0);
+}
+`
+
+The method returns the pre-configured RTMP Input resource of your account.
+
+**Please note:** _The IP address of the Bitmovin live encoder (where it listens for an incoming RTMP ingest) will only be determined after you start the encoding, as you will later see. The Bitmovin live encoder's address is chosen by Bitmovin and will typically be different for every new encoding, even if you stop and start the encoding to change parameters. You cannot configure the Bitmovin encoder to assume a certain IP address._
+
+## Create an Output
+
+In this tutorial we are using an AWS S3 bucket as output location of our live encoder. However, it's a simple change to use an Google Cloud Storage bucket as output instead if you prefer.
+
+The `output` object gets the credentials for the bucket from the `configProvider`.
+
+Java
+
+`Output output = createS3Output(
+                    configProvider.getS3OutputBucketName(),
+                    configProvider.getS3OutputAccessKey(),
+                    configProvider.getS3OutputSecretKey());
+`
+
+## Add Video and Audio Codec Configurations
+
+In this section, you will determine the formats into which your live stream will be encoded.
+
+The encoding, or transcoding, will happen in the following steps:
+
+1. Select the video and audio tracks of the input stream
+2. Configure the video resp. audio renditions into which the input tracks will be encoded
+
+**Selecting the video and audio tracks from the input stream** An input stream can have multiple video and multiple audio tracks, e.g for different angles and languages. For this tutorial, we assume that the input stream (coming from the contribution encoder) only contains one video and one audio track.
+
+For this simple but widely used track layout it is sufficient to tell Bitmovin encoder to select the first available track as source for the video renditions, and the second available track as source for the audio renditions. The first available track has the number `0` and the second has the number `1`. We will meet these numbers later in the process.
+
+**Configure Video and Audio Renditions** A rendition is a way to encode content. For adaptive streaming we typically use multiple video renditions - high quality for fast networks and low bandwidth for slow networks. We only use one audio rendition because audio bandwidth is low compared to video and can be used for both fast and slow network conditions.
+
+A codec configuration contains the configuration for a video rendition or an audio rendition. We will link the video input track to three codec configurations for three different video renditions. We will link the audio input track to one codec configuration.
+
+The following code defines a set of three H264 video profiles. The parameters are the _name_, the _bandwidth_ (in bps), the _height_, and the _output path_. The last parameter is always `0` to select the first track of the input stream, which is the video track.
+
+Java
+
+`private static List<VideoConfig> videoProfile =
+  Arrays.asList(
+    new VideoConfig("480p", 800_000L, 480, "/video/480p", 0),
+    new VideoConfig("720p", 1_200_000L, 720, "/video/720p", 0),
+    new VideoConfig("1080p", 3_000_000L, 1080, "/video/1080p", 0));
+`
+
+The code below transforms the video profiles into codec configurations of type `H264VideoConfiguration`. This will encode the input stream's video part using the H.264 codec. Of course it is possible to use other codecs as well, such as VP9 or H.265/HEVC.
+
+Java
+
+`for (VideoConfig videoConfig : videoProfile) {
+      H264VideoConfiguration h264Configuration =
+          createH264VideoConfig(videoConfig.height, videoConfig.bitRate);
+      Stream stream =
+          createStream(encoding, input, h264Configuration, videoConfig.inputStreamPosition);
+      createFmp4Muxing(encoding, stream, output, videoConfig.outputPath);
+    }
+`
+
+Here the lines mean the following:
+
+Java
+
+`Stream stream =
+           createStream(encoding, input, h264Configuration, videoConfig.inputStreamPosition);
+`
+
+This line creates a `h264Configuration` object which uses the `height` and the `bitrate` of the video profile. Because the aspect ratio of the source is kept, with `height` you can control the resolution of the rendition and with `bitRate` the bandwith and hence, quality.
+
+Java
+
+`Stream stream =
+           createStream(encoding, input, h264Configuration, videoConfig.inputStreamPosition);
+`
+
+This line links the `h264Configuration` object to the `input` stream's track which is depicted by the video profile's `inputStreamPosition` (Remember that this is `0` for the video track). The line basically defines a task to "encode the input stream's video track with the given H.264 configuration". Also, this task is linked to the `encoding` object we created earlier, making it part of the encoding. The whole encoded video rendition is referenced as a `stream`.
+
+Java
+
+`createFmp4Muxing(encoding, stream, output, videoConfig.outputPath);
+`
+
+This line is explained in the next section of this tutorial.
+
+For audio it works pretty much the same way as for video as you can see in this code sample:
+
+First, the predefined audio profile:
+
+Java
+
+`private static List<AudioConfig> audioProfile =
+     Collections.singletonList(new AudioConfig("128kbit", 128_000L, "/audio/128kb", 1));
+`
+
+Then, the code that creates an AAC audio configuration out of the profile and links it to the audio track of the input stream
+
+Java
+
+`for (AudioConfig audioConfig : audioProfile) {
+      AacAudioConfiguration aacConfig = createAacAudioConfig(audioConfig.bitrate);
+      Stream audioStream =
+          createStream(encoding, input, aacConfig, audioConfig.inputStreamPosition);
+      createFmp4Muxing(encoding, audioStream, output, audioConfig.outputPath);
+    }
+`
+
+Again, the line `createFmp4Muxing(..)` is explained in the next section.
+
+## Create Muxings for MPEG-DASH and HLS
+
+In the previous section we have explained how the input stream is encoded, but in order to write down the encoded data it must be packaged into a container format.
+
+As the content will be used for MPEG-DASH and HLS streaming, we choose a container format that supports both, named _Fragmented MP4_ or _fMP4_. This format cuts the stream in multiple small, numbered files called _Segments_.
+
+The following line of code, which was already seen in the previous section, defines an _fMP4_ container format. Because writing an encoded stream into a container is also known as "multiplexing", or short _muxing_, container formats are also known as _muxings_.
+
+`      createFmp4Muxing(encoding, stream, output, videoConfig.outputPath);
+`
+
+This line takes an encoded video rendition (`stream`) from an `encoding`, and packages it into the _fMP4_ format. Then it writes the _fMP4_ segments to the `output`, which is the S3 bucket we configured earlier. The segments are written into the `outputPath` defined in the video profile.
+
+## Create Muxings for MPEG-DASH and HLS
+
+In order to create MPEG-DASH and HLS content the encoded data needs to be packaged accordingly. In the following lines of code we will define segmented fMP4 for MPEG-DASH and segmented TS for HLS. Here you also define how long the video segments should be. This can be an important parameter when creating video clips out of your live stream. The smaller this value, the more accurate you can “cut” the video clip, and reduce latency. However too short a value and you will reduce the encoding performance and quality of the output for a given bitrate. By default, our encoder will choose 4 sec as segment length, which is what we would recommend you start with for best balance between latency and encoding efficiency. We also define where the segments should be stored in your output bucket. You have full control over the output location of the video and the audio streams.
+
+_Note that it is also possible to create VoD manifests out of the encoded data createdfrom the live stream in this way. This is explained in our blog post: [Implement Live-to-VoD with the Bitmovin API](/encoding/docs/how-to-implement-a-live-to-vod-workflow-with-the-bitmovin-api)._
+
+First we will create the required fMP4 muxings for MPEG-DASH:
+
+Java
+
+`ar videoFMP4Muxing1080p = bitmovin.Encoding.Encoding.Fmp4.Create(encoding.Id,
+    CreateFMP4Muxing(videoStream1080p, output, OUTPUT_PATH + "video/1080p_dash", segmentLength));
+var audioFMP4Muxing = bitmovin.Encoding.Encoding.Fmp4.Create(encoding.Id,
+    CreateFMP4Muxing(audioStream, output, OUTPUT_PATH + "audio/128kbps_dash", segmentLength));
+`
+
+The following shows the same for segmented TS muxings:
+
+Java
+
+`var videoTsMuxing1080p = bitmovin.Encoding.Encoding.Ts.Create(encoding.Id,
+    CreateTsMuxing(videoStream1080p, output, OUTPUT_PATH + "video/1080p_hls", segmentLength));
+var audioTsMuxing = bitmovin.Encoding.Encoding.Ts.Create(encoding.Id,
+    CreateTsMuxing(audioStream, output, OUTPUT_PATH + "audio/128kbps_hls", segmentLength));
+`
+
+If you added multiple video renditions in the previous steps, you also need to create fMP4 and TS muxings for each rendition.
+
+## Define the MPEG-DASH and HLS Live Manifests
+
+So far we have defined how to encode the input streams and package the encoded streams into _fMP4_ segements which will reside on your output bucket.
+
+In order to playback content using MPEG-DASH or HLS, we also need to have _manifests_. A manifest is a text or XML file which describes the adaptive output stream so a player always knows which segments to retrieve and playback next. Manifests tell the player which renditions are available and where to get them. Typically a stream has a set of interlinked manifests. HLS and MPEG-DASH manifests differ in format. But both formats eventually retrieve and playback the _fMP4_ segments created by the Bitmovin live encoder.
+
+With the Bitmovin API you have full control over creating manifests, e.g. create multiple manifests with different renditions.
+
+When creating the Live MPEG-DASH or Live HLS manifest (or manifests), you also specify where it is output, with path location and filename for the manifest.
+
+Java
+
+`DashManifest dashManifest = createDashManifest(output, "/", encoding);
+HlsManifest hlsManifest = createHlsManifest(output, "/", encoding);
+
+LiveDashManifest liveDashManifest = new LiveDashManifest();
+liveDashManifest.setManifestId(dashManifest.getId());
+liveDashManifest.setTimeshift(300D);
+liveDashManifest.setLiveEdgeOffset(90D);
+
+LiveHlsManifest liveHlsManifest = new LiveHlsManifest();
+liveHlsManifest.setManifestId(hlsManifest.getId());
+liveHlsManifest.setTimeshift(300D);
+`
+
+You also have the option to set specific live options, such as the timeshift parameter that defines how many seconds a user will be able to seek back in time. In the example below we allow the users to seek back 5 minutes. For MPEG-DASH you can also define how far away from the real live signal the player will start to playback the segments. If you are not aiming for low latency live streams, choose a value between 60 and 120 seconds to give the player enough room for buffering.
+
+## Start the RTMP Live Encoding
+
+Now that we have defined every aspect of the live encoding, we can finally start the live stream using both created manifests in the start call.
+
+For this, we define a new `StartLiveEncodingRequest` object named `startRequest` and add both manifests to it:
+
+Java
+
+`StartLiveEncodingRequest startRequest = new StartLiveEncodingRequest();
+startRequest.addDashManifestsItem(liveDashManifest);
+startRequest.addHlsManifestsItem(liveHlsManifest);
+`
+
+**Automatic shutdown**
+
+Optionally an automatic shutdown can be defined for the live encoding. The automatic shutdown can be defined via the `LiveAutoShutdownConfiguration`. There are two possible settings. The `bytesReadTimeoutSeconds` defines how long the live stream will run after an input loss and the `streamTimeoutMinutes` defines the time after which the live stream will be automatically shut down.
+
+Java
+
+`LiveAutoShutdownConfiguration shutdownConfig = new LiveAutoShutdownConfiguration();
+shutdownConfig.setStreamTimeoutMinutes(240L);
+shutdownConfig.setBytesReadTimeoutSeconds(600L);
+startRequest.setAutoShutdownConfiguration(shutdownConfig);
+`
+
+**Starting the Example**
+
+The `startLiveEncodingAndWaitUntilRunning()` method with both the configured `encoding` and the `startRequest` will start the encoding.
+
+Java
+
+`startLiveEncodingAndWaitUntilRunning(encoding, startRequest);
+`
+
+To start the example and actually run a live encoding with RTMP input, run the `main()` method of the `RtmpLiveEncoding` class in the `RtmpLiveEncoding.java` file.
+
+## Retrieve RTMP Ingest Point Information
+
+After starting the live encoding, you need to wait for it to be ready before you can ingest your RTMP stream. This may take a few minutes.
+
+Once it is ready you can easily query the live stream details and - for example - print it to the console:
+
+Java
+
+`LiveEncoding liveEncoding = waitForLiveEncodingDetails(encoding);
+    logger.info(
+        "Live encoding is up and ready for ingest. RTMP URL: rtmp://{}/live StreamKey: {}",
+        liveEncoding.getEncoderIp(),
+        liveEncoding.getStreamKey());
+`
+
+The console output will contain the RTMP Push URL and the stream key. You need to pass this information to your contribution encoder to configure the RTMP URL it should publish to.
+
+As stated before, you should choose your encoding region wisely to have a stable RTMP ingest from your location. However, should the RTMP signal be interrupted to our ingest point, we will continue to stream the last image we got from your encoder as still image in order to avoid interrupting playback of the stream. As soon as your encoder is able to connect to our ingest point again, we will resume streaming your content.
+
+## Shutdown the Live Encoding
+
+Because of this mechanism to provide a continuous output, the live encoding won't stop automatically when the input feed stops. You therefore have to shut the encoding down at the end of your event, to avoid generating unnecessary costs in your account. The following code shows how to stop a live encoding:
+
+Java
+
+`logger.info("Shutting down live encoding!");
+bitmovinApi.encoding.encodings.live.stop(encoding.getId());
+waitUntilEncodingIsInState(encoding, Status.FINISHED);
+`
+
+You can also use the Bitmovin dashboard to stop the encoding. The controls are shown in the Live Encoding details.

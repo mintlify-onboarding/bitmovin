@@ -1,0 +1,11 @@
+---
+title: "Can I remove DRM from an stream?"
+---
+
+No. Digital Rights Management (DRM) systems provide you with the ability to control how people can consume your content. Protecting a stream with DRM means encrypting the different files (DASH / HLS segments) with the media key of one or several DRM provider. This encryption of the content is part of the encoding process when using our service.
+
+DRM protected content isn't decrypted by the player itself, but by the browser, using the appropriate CDM (Content Decryption Module), specific to the DRM solution (Widevine, Playready, Fairplay), if available and/or supported. The decryption itself is happening in a secured environment where no one but the browser and the CDM have access to it. The player is utilising the EME API of the browser, in order to establish a secure connection between the DRM backend and the browser, and the CDM. During this process it also get validated if a particular user is permitted to receive a DRM license to watch the content. So, player never has access, nor the viewer, to the keys needed to decrypt the content, which is why DRM is a powerful tool to protect and control access to your content.
+
+More information regarding DRM can be found on [our website](https://bitmovin.com/drm/) as well as [in our documentation](/encoding/docs/digital-rights-management-drm-overview), where it gets explained in more detail.
+
+In order to Start generating DRM protected content, just create an account in our [Bitmovin Dashboard](https://bitmovin.com/dashboard/signup) and [Get Started with our Encoding Service](/encoding/docs/get-started-with-the-bitmovin-api) right away.

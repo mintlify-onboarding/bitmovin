@@ -1,0 +1,102 @@
+---
+title: "What permissions do I need to set on my S3 buckets for Encoding Input and Output?"
+---
+
+An encoding uses Input and Output resources to define where to get source files from and where to write result files. When you use S3 bucket, you need to provide the IAM user accessing the bucket a set of permissions.
+
+Learn more in these tutorials about creating AWS S3 Inputs/Outputs using [Access/Secret keypairs](/encoding/reference/how-to-create-an-s3-encoding-input-or-output-with-the-bitmovin-api) or [role-based authentication](/encoding/reference/how-to-create-an-s3-role-based-encoding-input-or-output-with-the-bitmovin-api).
+
+## Full Access
+
+If you want a quick solution, for example for quick evaluations or development environments, you can simply allocate the `AmazonS3FullAccess` policy will give the IAM user unrestricted access to your bucket.
+
+## Restricted Access
+
+For most applications, you will want to tighten permissions to the strict set required. With AWS IAM, you have granular control to create a custom policy that only defines certain permissions.
+
+The minimum set required (and why each permission is needed) is listed below:
+
+### For Input buckets
+
+| Action               | Resource Level | Justification                                                                                       |
+| -------------------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| s3:GetBucketLocation | Bucket         | To determine the location of the input bucket to resolve the correct encoding region for mode AUTO. |
+| s3:GetObject         | Object         | To read the file from the S3 bucket                                                                 |
+
+### For Output buckets
+
+| Action               | Resource Level | Justification                                                                                                |
+| -------------------- | -------------- | ------------------------------------------------------------------------------------------------------------ |
+| s3:GetBucketLocation | Bucket         | To determine the location of the output bucket to resolve the correct region for mode AUTO                   |
+| s3:ListBucket        | Bucket         | To verify if all files are present at the output location (i.e., check if all uploaded segments are present) |
+| s3:PutObject         | Object         | To write the file to the S3 Bucket                                                                           |
+| s3:PutObjectAcl(1)   | Object         | To update the ACL for an object on a S3 Bucket (i.e., to allow public access to a file)                      |
+| s3:GetObject         | Object         | To check that the file was successfully uploaded                                                             |
+
+(1) Access control list (ACL) enable you to manage access to buckets and objects. In our API it is possible to set the output of muxings and manifests to `PUBLIC_READ` or `PRIVATE`.
+
+#### Public access for Output buckets
+
+For Encodings started in our [Bitmovin Dashboard](https://bitmovin.com/dashboard), the output bucket’s policy needs to allow **public access** to your Amazon S3 storage. The `PUBLIC_READ` setting requires also that the correct bucket ownership policies are set. Here is a FAQ on how to do this: [How can I configure an AWS S3 Bucket to test playback of my content?](/encoding/docs/how-can-i-configure-an-aws-s3-bucket-to-test-playback-of-my-content)
+
+### JSON Custom Policy
+
+Assuming that you are using the same IAM user and a single policy for both Input and Output buckets, you can use the following JSON payload to create your custom policy in AWS IAM.
+
+The following placeholders need to be replaced with the name of your bucket(s):
+
+* `<INPUT_BUCKET_NAME>`
+* `<OUTPUT_BUCKET_NAME>`
+
+JSON
+
+`{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "BitmovinInputBucketPermissions",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetBucketLocation"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<INPUT_BUCKET_NAME>"
+            ]
+        },
+        {
+            "Sid": "BitmovinInputObjectPermissions",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<INPUT_BUCKET_NAME>/*"
+            ]
+        },
+        {
+            "Sid": "BitmovinOutputBucketPermissions",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<OUTPUT_BUCKET_NAME>"
+            ]
+        },
+        {
+            "Sid": "BitmovinOutputObjectPermissions",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:PutObjectAcl"
+            ],
+            "Resource": [
+                "arn:aws:s3:::<OUTPUT_BUCKET_NAME>/*"
+            ]
+        }
+    ]
+}
+
+`

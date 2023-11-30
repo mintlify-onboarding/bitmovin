@@ -1,0 +1,25 @@
+---
+title: "Why is an timestamp offset for TS Muxings applied by default?"
+---
+
+This is done to ensure correct audio visual sync, and to avoid negative `DTS` (DecodingTimeStamp), which break some decoders. Some of them apply a different start value for the audio and video `PTS` (PresentationTimeStamp). This can cause slight audio visual sync issues. Instead, a slight offset is applied to all streams so that no negative `DTS` values occur and all streams are aligned.
+
+## Why is that?
+
+Streams contain a lot of details, including timestamps, so a decoder knows how to handle the content properly. The `DTS` decides when a frame has to be decoded, while the `PTS` describes when a frame has to be presented. This difference becomes important when using B-frames, which are frames that can have references to frames in the past, but also to frames in the future. Given that, there will be frames in the future, which a decoder needs to decode first in order to use them as reference. So they will have a smaller `DTS` than their `PTS`. As `DTS` values can not be negative, muxers introduce a short offset for the `PTS` values to accommodate for the fact that `DTS` can be smaller than the `PTS` values. As the `PTS` values are used to align the presentation time of different streams (audio and video) to each other, all streams need to start with the same `PTS` offset, to not introduce any sync issue.
+
+## How it is solved
+
+The “best practise” way in order prevent these audio/video sync problems when processing such content is to set a `PTS offset` of 10 seconds. This is the default value used or `TS muxings` in our service as well as of other vendors. In our service it can be adjusted when creating a `TS muxing` as well. Please see the `startOffset` property when creating a `TS Muxing` in the [API reference](/encoding/reference/postencodingencodingsmuxingstsbyencodingid))
+
+## What about subtitles?
+
+`WebVTT` is a common way to provide subtitles for video content. It contains time windows when a certain subtitle has to be shown, and is therefore synchronized to the video content. The timing information in the `WebVTT` track gets converted into a timestamp information by the player. However, the calculated timestamp would be 10 seconds behind the actual point in time the subtitle would have to be shown. While many HTML5 players can compensate that, native players don't do that necessarily. In order to provide them with this information, the [X-TIMESTAMP-MAP](https://tools.ietf.org/html/rfc8216#section-3.5) can be used for that, as described in the [HLS specification](https://tools.ietf.org/html/rfc8216#section-3.5).
+
+So, if `WebVTT` already contains this information, it would start like that:
+
+`WEBVTT
+X-TIMESTAMP-MAP=LOCAL:00:00:00.000,MPEGTS:900000
+`
+
+The value of `MPEGTS` actually describes an `PTS offset` of 10 seconds. The default timescale for MPEG-TS is 90,000\. In order to achieve an offset of 10 seconds you multiply it by the timescale, which results in 900,000.

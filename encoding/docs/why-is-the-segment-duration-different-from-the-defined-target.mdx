@@ -1,0 +1,25 @@
+---
+title: "Why is the segment duration different from the defined target?"
+---
+
+When inspecting your streams (ie: HLS) you may notice that, despite a specific `#EXT-X-TARGETDURATION` being defined during the muxing, the video or audio segments have a different `#EXTINF` actual duration. For example:
+
+`#EXTM3U #EXT-X-PLAYLIST-TYPE:VOD #EXT-X-VERSION:5 #EXT-X-MEDIA-SEQUENCE:0 #EXT-X-TARGETDURATION:4
+#EXTINF:3.989333333333333,
+audio_segment_0.ts
+#EXTINF:4.010666666666666,
+audio_segment_1.ts
+#EXTINF:3.989333333333333,
+audio_segment_2.ts
+#EXTINF:4.010666666666666,
+audio_segment_3.ts
+`
+
+For audio, this is totally normal and expected. To find the reasons behind this behaviour, we need to understand how segments are created:
+
+* For `video`, segments are created and closed upon keyframes, so if our target segment duration is 4 seconds (for example), we'll need to ensure there's a keyframe on the stream every 1, 2 or 4 seconds, as these are exact divisors of 4 and will guarantee that chunks are created/closed on such boundary. Thus, the actual duration of the video segments will be exactly 4 seconds, matching the defined target.
+* For `audio`, keyframes are not involved and the segments being created get filled with as many audio frames as needed to obtain a segment with the desired target duration.  
+Audio frames have a fixed duration that depends on the specific codec and sample rate, so assuming AAC at 48KHz (for example), each audio frame within the stream will have a fixed duration of 21.333 miliseconds (1024 audio frames per sample / 48000 samples per second = 0.02133333333 seconds). Going back to our example, this value is not an exact divisor of the target duration (4s), so in order to keep the generated segments around the target, some of them will contain 187 audio frames (187 x 0.02133333333 seconds = 3.989333333333333 seconds) and others will contain 188 audio frames (188 x 0.02133333333 seconds = 4.010666666666666 seconds), which results on the `#EXTINF` values observed when inspecting the stream.  
+This alternance of shorter/longer audio segments targetting 4 seconds ensures that sync is kept across the stream and that the difference between audio segments will never be higher than one audio frame.
+
+In workflows that demand perfect alignment between audio and video segments (ie: Server Side Ad Insertion), the keyframe interval chosen for the video will need to be an exact multiple of the audio frame duration, to ensure that both audio and video segments can be created/closed at the same exact boundaries. A useful tool for calculating the optimal keyframe intervals (GOP) in such cases is [this one](https://anton.lindstrom.io/gop-size-calculator/)

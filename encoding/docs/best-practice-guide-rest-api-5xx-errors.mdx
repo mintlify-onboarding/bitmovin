@@ -1,0 +1,50 @@
+---
+title: "Best Practice Guide: REST API 5xx Errors"
+---
+
+## Introduction
+
+The objective of this best practice guide is to provide information on what HTTP server 5xx errors mean; why and where they can possibly occur; and what could be done when they actually occur while using Bitmovin Encoding APIs.
+
+## Audience
+
+All users of Bitmovin APIs.
+
+## Brief on 5xx Errors
+
+HTTP response codes starting with "5" indicate scenarios where the server is aware that it has encountered an error or is otherwise incapable of performing the request. This document focuses mainly on the HTTP errors 500, 502, 503, and 504.
+
+### Description of HTTP Errors
+
+* 500 Internal Server Error: A generic error message, given when an unexpected condition was encountered and no more specific message is suitable.
+* 502 Bad Gateway: The server was acting as a gateway or proxy and received an invalid response from the upstream server.
+* 503 Service Unavailable: The server cannot handle the request (because it is overloaded or down for maintenance). Generally, this is a temporary state.
+* 504 Gateway Timeout: The server was acting as a gateway or proxy and did not receive a timely response from the upstream server.
+
+## Call Flow
+
+5xx error can occur due to one of Bitmovin’s services or any of the components on a network (such as DNS servers, switches, load balancers, proxies, and others) generating errors anywhere in the life of a given request. Prior to contacting Bitmovin, the users must check their network connectivity to ensure the error is not due to the local network or the ISP. Moreover, an error occurring outside of Bitmovin’s services is not visible to Bitmovin thereby making it difficult to find the cause.
+
+## Remediation or possible next steps
+
+A retry from the user's end should result in a proper response from the server after a while (Please read [Retry Mechanism](/encoding/docs/best-practice-guide-rest-api-5xx-errors#retry-mechanism)).
+
+**Additionally, for 504 Gateway Timeout:**
+
+* If this error occurs on the Encoding start call, it might be that the service still managed to get the Encoding job started. Before retrying the encoding start call we therefore advice to check the encoding status first. If the encoding status is not “CREATED” anymore, it means the job was already started. If the encoding start call is retried on an already started job, the service would return 409 CONFLICT.
+
+_Important information:_
+
+* [Bitmovin status page](https://status.bitmovin.com/) will be updated in case of elevated 5xx errors. Users can subscribe to the notifications whenever Bitmovin creates, updates or resolves an incident.  
+![](/images/encoding/docs/de663e1-image.png)
+* For automating workflows, users can access the status using the API: [https://status.bitmovin.com/api/v2/status.json](https://status.bitmovin.com/api/v2/status.json) (documentation: [Atlassian Statuspage Status - API](https://metastatuspage.com/api))
+* In most cases, a retry (as suggested under [Retry Mechanism](/encoding/docs/best-practice-guide-rest-api-5xx-errors#retry-mechanism)) should result in a proper response. If that does not happen, Bitmovin will be able to provide more details on the error that occurred. The user needs to record the instance and provide information to Bitmovin (RequestID, UTC time when the error occurred, error code and message, API being exercised, Response body, etc.) for further investigation.
+* [Bitmovin Encoding SDKs](/encoding/docs/sdks) are yet to be updated according to the recommendations above in order to gracefully handle 5xx errors.
+
+## Retry Mechanism
+
+It is recommended that [Exponential Back-off](https://en.wikipedia.org/wiki/Exponential%5Fbackoff) or a similar algorithm be used. For a more robust implementation, [Exponential Backoff can be combined with Jitter](http://www.awsarchitectureblog.com/2015/03/backoff.html).
+
+## Further Reading
+
+Additional error codes Bitmovin APIs can return are explained here: [https://bitmovin.com/docs/encoding/api-reference/help](https://bitmovin.com/docs/encoding/api-reference/help)

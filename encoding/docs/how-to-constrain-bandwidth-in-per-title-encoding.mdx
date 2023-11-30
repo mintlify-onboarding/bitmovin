@@ -1,0 +1,194 @@
+---
+title: "How to constrain bandwidth in Per-Title Encoding"
+---
+
+## Overview
+
+This article shall give an example of the settings and best practices that we can use in the encoding configurations with Per-Title when we have a use case where we are restricted to specific requirements for renditions or bitrates. Following this tutorial, it is expected to have basic knowledge about the Per-Title functionality and how to set up a basic configuration. A comprehensive overview of the available parameters is available in [Per-Title Configuration Options explained](/encoding/docs/per-title-configuration-options-explained).
+
+## Use case requirements
+
+The described use case has the following requirements and shall demonstrate an example.
+
+* We want to encode a fixed amount of H.264 renditions with specified resolutions.
+* We want to specify the maximum bitrate for each rendition.
+* The Per-Title algorithm shall calculate the optimal bitrate for each rendition to achieve an optimised bitrate ladder ([What is Per-Title Encoding?](/encoding/docs/what-is-per-title-encoding)).
+
+An example could be if we want to take the recommended bitrate ladder from Apple for H.264 and limit the bitrate to these specifications. Still, according to the complexity of the content, we want to save as much bandwidth as possible.
+
+| Resolution  | Bitrate |
+| ----------- | ------- |
+| 416 x 234   | 145k    |
+| 640 x 360   | 365k    |
+| 768 x 432   | 730k    |
+| 768 x 432   | 1100k   |
+| 960 x 540   | 2000k   |
+| 1280 x 720  | 3000k   |
+| 1280 x 720  | 4500k   |
+| 1920 x 1080 | 6000k   |
+| 1920 x 1080 | 7800k   |
+
+_Table1: HTTP Live Streaming (HLS) Authoring Specification for Apple Devices_
+
+## Stream Modes
+
+When configuring Per-Title, we need to specify at least one Per-Title template for the stream mode to enable the algorithm to do its magic.
+
+These three different kinds of Per-Title-Templates are available.
+
+* `PER_TITLE_TEMPLATE`
+* `PER_TITLE_TEMPLATE_FIXED_RESOLUTION`
+* `PER_TITLE_TEMPLATE_FIXED_RESOLUTION_AND_BITRATE`
+
+For a simple Per-Title encoding, we usually specify one `PER_TITLE_TEMPLATE`, enable `autoRepresentations`, and Per-Title will take care of the rest. More information can be found in our tutorial [How to create a Per-Title Encoding](/encoding/docs/how-to-create-a-per-title-encoding).
+
+But according to our requirements, we need control over the resolutions and bitrates of each of our renditions; therefore, we will specify one `PER_TITLE_TEMPLATE_FIXED_RESOLUTION_AND_BITRATE` per required rendition.
+
+## Creating stream templates and setting encoding parameters
+
+To specify the resolution and the maximum bitrate, we must create one stream template for each rendition. We assign individual H.264 configurations with the required `width` or `height` specified. In the `per_title_settings` of the streams, we set our boundaries via the `stream_fixed_res_bit_settings`. The here-defined `min_bitrate` and `max_bitrate` per rendition are crucial to enable Per-Title to pick the correct renditions. Together with the common settings `min_bitrate_step_size`, `max_bitrate_step_size`, `min_bitrate` and `max_bitrate` in the Per-Title settings' `start_encoding_request`, it is essential to find the right combination. Suppose these settings are not optimised to each other; in that case, Per-Title will be forced to drop desired renditions or add additional unwanted renditions. In the worst case, finding renditions based on the given boundaries is impossible, leading to an encoding error.
+
+To start with, we can specify all the settings specific to the single renditions in an object to keep a clear overview.
+
+Python
+
+`EncodingProfile = collections.namedtuple('EncodingProfile', 'width min max')
+video_profiles = [
+    EncodingProfile(width=416, min=36_250, max=145_000),
+    EncodingProfile(width=640, min=91_250, max=365_000),
+    EncodingProfile(width=768, min=182_500, max=730_000),
+    EncodingProfile(width=768, min=275_000, max=1_100_000),
+    EncodingProfile(width=960, min=500_000, max=2_000_000),
+    EncodingProfile(width=1280, min=750_000, max=3_000_000),
+    EncodingProfile(width=1280, min=1_125_000, max=4_500_000),
+    EncodingProfile(width=1920, min=1_500_000, max=6_000_000),
+    EncodingProfile(width=1920, min=1_950_000, max=7_800_000)
+]
+`
+
+The `width` and the `max` (bitrate) are clear; this comes from our initial requirements. The`min` (bitrate) needs a bit of gut feeling (or complicated calculation). You don't want to set this parameter too low, even if this seems to widen the boundaries. As said before, this parameter works especially in combination with the `min_bitrate_step_size` and the `max_bitrate_step_size` in the `start_encoding_request` settings.
+
+Python
+
+`# Start Encoding Job
+start_encoding_request = StartEncodingRequest(
+    per_title=PerTitle(
+        h264_configuration=H264PerTitleConfiguration(
+            min_bitrate=36_250, 
+            max_bitrate=7_800_000, 
+            min_bitrate_step_size=1.2,
+            max_bitrate_step_size=4.0,
+            target_quality_crf=22, 
+            complexity_factor=1.0,
+        )
+    )
+)
+bitmovin_api.encoding.encodings.start(encoding_id=encoding.id,start_encoding_request=start_encoding_request)
+`
+
+While the `width` (or the `height`) is specified in the configuration,
+
+Python
+
+`# Video Configuration
+video_configuration = H264VideoConfiguration(
+    width=video_profile.width,
+    preset_configuration=PresetConfiguration.VOD_HIGH_QUALITY,
+)
+video_configuration = bitmovin_api.encoding.configurations.video.h264.create(h264_video_configuration=video_configuration)
+`
+
+the individual `min_bitrate` and `max_bitrate` are configured in the stream settings.
+
+Python
+
+`# Video Streams
+stream_fixed_res_bit_settings = StreamPerTitleFixedResolutionAndBitrateSettings(
+    min_bitrate=video_profile.min,
+    max_bitrate=video_profile.max,
+    bitrate_selection_mode=BitrateSelectionMode.COMPLEXITY_RANGE,
+    low_complexity_boundary_for_max_bitrate=1_950_000,
+    high_complexity_boundary_for_max_bitrate=7_800_000
+)
+stream_per_title_settings = StreamPerTitleSettings(fixed_resolution_and_bitrate_settings=stream_fixed_res_bit_settings)
+video_stream = Stream(
+    input_streams=[stream_input], 
+    codec_config_id=video_configuration.id, 
+    mode=StreamMode.PER_TITLE_TEMPLATE_FIXED_RESOLUTION_AND_BITRATE,
+    per_title_settings=stream_per_title_settings
+)
+video_stream = bitmovin_api.encoding.encodings.streams.create(encoding_id=encoding.id, stream=video_stream)
+`
+
+For this use case, I found promising results for the `min_bitrate` by dividing the `max_bitrate` / `max_bitrate_stepsize` and setting the `max_bitrate_stepsize = 4`. Increasing the `max_bitrate_stepsize` was also necessary to set the proper boundaries for this use case. Here we have a good example of what happens when not finding the correct settings – Per-Title was forced to generate only seven renditions out of the nine desired renditions when using the default setting of `max_bitrate_stepsize = 1.9`.
+
+![](/images/encoding/docs/c72ab6b-image.png)
+
+The same counts for the `min_bitrate_step_size`; this can also mess up the algorithm if not chosen carefully. Having found the right combination of bitrate and step size settings, one must understand that the normal Per-Title behaviour calculates the renditions from bottom to top. To gain some influence over the bitrate of the highest rendition, we can use the `COMPLEXITY_RANGE` in the `bitrate_selection_mode` of the stream settings.
+
+Python
+
+`# Video Streams
+stream_fixed_res_bit_settings = StreamPerTitleFixedResolutionAndBitrateSettings(
+    min_bitrate=video_profile.min,
+    max_bitrate=video_profile.max,
+    bitrate_selection_mode=BitrateSelectionMode.COMPLEXITY_RANGE,
+    low_complexity_boundary_for_max_bitrate=1_950_000,
+    high_complexity_boundary_for_max_bitrate=7_800_000
+)
+`
+
+Here the algorithm first calculates the bitrate of the top rendition in the ladder based on the complexity analysis of the source file and the configured Per-Title settings (such as `targetQualityCrf` and `complexityFactor`) and takes this into account while picking the renditions. It then compares this top bitrate with a configurable complexity range defined by its minimum and maximum bitrates. To ensure that the highest rendition falls into this range, in this use case, I specified the min and max values according to the specified min and max bitrates of this rendition.
+
+With all these settings in place, we achieve the desired outcome with all the required renditions.
+
+![](/images/encoding/docs/7ec1bd9-image.png)
+
+## Influence the bitrate of the highest rendition
+
+The main advantage of Per-Title is to determine the optimal renditions based on the complexity of the content. When setting the proper boundaries, Per-Title can significantly save bandwidth and storage for low-complex content compared to static renditions or ensure that quality requirements are still fulfilled with very high-complex content.
+
+The default settings for using the contents’ calculated complexity to pick the optimum bitrates usually provide good results. Nevertheless, it is still possible to tweak the rendition ladder to achieve an overall higher or lower quality (or lower or higher bitrates). It is also possible to process different kinds of content with various complexities individually, for example, to reduce the bitrates of videos that are known to have high complexity.
+
+One can influence these factors with the `target_quality_crf` and the `complexity_factor` in the `start_encoding_request`. With the `target_quality_crf`, it is possible to shift the quality of the entire ladder up or down (within the boundaries limited by all the other settings). The default CRF for H.264 is specified as 22; anything below will increase the quality (and the bitrates), and anything above will reduce accordingly.
+
+Python
+
+`# Start Encoding Job
+start_encoding_request = StartEncodingRequest(
+    per_title=PerTitle(
+        h264_configuration=H264PerTitleConfiguration(
+            min_bitrate=36_250, 
+            max_bitrate=7_800_000, 
+            min_bitrate_step_size=1.2,
+            max_bitrate_step_size=4,
+            target_quality_crf=22, 
+            complexity_factor=1.0,
+        )
+    )
+)
+`
+
+The `complexity_factor` has basically the same effect. The default here is `1.0`; a higher factor will affect Per-Title to consider the content more complex and assign higher bitrates, while a lower factor (>0) will cause the content to be considered lower complex and assign lower bitrates. Small changes to `complexity_factor` (ie +/- 0.2) is recommended for your initial testing.
+
+This is especially useful to specify the desired quality for an entire library with one target CRF but still be able to treat various kinds of content differently.
+
+## Appendix
+
+Please refer to the [per\_title\_constraints.py](https://assets.ctfassets.net/blfijbdi3ei3/59xiIYyxxDTqgp2Ln2kUir/adbad7879180e8cbd4f5a07e1d31e13a/per%5Ftitle%5Fconstraints.py) Python script for a full example!
+
+## Frequently asked questions
+
+**Q.** The default output from the algorithm is too high in quality
+
+A1\. Bring **all** assets up or down in quality using _targetCRF_ (increase to reduce quality)
+
+A2\. Bring **all** assets up or down in quality using _complexity factor_ (reduce to reduce quality). Note: only change by 0.1 initially. Recommend changing one, not both.
+
+**Q.** My complex assets are too high in quality, but my simple assets are perfect. I want to change the **bias**.
+
+A1\. Adjust the gap between _low_ and _high\_complexity\_boundaries_ , think of this like a magnifying glass. The smaller the gap between the numbers, the more variation in quality you see between a complex and simple asset (you are bringing the magnifying glass closer to the page)
+
+**Q.** In my assets, on average the lower **renditions** are too low in quality, the upper renditions are perfect.
+
+A1\. Adjust the _minimum_ and _maximum_ bitrate, found in the start request. In this scenario increasing the _minimum_ would likely produce the output you are looking for.

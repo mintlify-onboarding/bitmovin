@@ -1,0 +1,715 @@
+---
+title: "REST API Services 1.50.0 - 1.99.0"
+---
+
+### 1.99.0
+
+**Added**
+
+* Placeholders in the output path can now be used with the [Simple Encoding API](/encoding/reference/postsimpleencodingvodjob): `{uuid}` or `{asset}` will be replaced either with a random UUID or with the name of the asset provided as input (for VIDEO or DEFAULT input type). More examples can be found [here](/encoding/reference/postsimpleencodingvodjob)
+* Interlaced video input to the [Simple Encoding API](/encoding/reference/postsimpleencodingvodjob) will now be deinterlaced automatically.
+
+---
+
+### 1.98.0
+
+**Added**
+
+A brand-new way to interact with our encoder - the **Simple Encoding API**
+
+* With the Simple Encoding API you only need a single [API call](/encoding/reference/postsimpleencodingvodjob) providing an input source and an output destination to start an encoding.
+* You can find more information about the template and configuration possibilities [here](/encoding/docs/simple-encoding-api-vod).
+* This API is especially meant for everybody looking to quickly prepare videos for OTT streaming (DASH and HLS) following industry best practices. Sensible defaults, no micro-optimizations.
+* Under the hood, this API is utilizing the same high performance encoding engine used by leading media brands, automatically creating the best ladder for each asset with our award-winning per-title.
+
+---
+
+### 1.97.0
+
+**Added**
+
+* [HLS Default Manifests](/encoding/reference/postencodingmanifestshlsdefault) use the language of the audio stream language (`stream.metadata.language`) if defined.
+
+**Fixed**
+
+* Fixed a potential encoding stall for HDR to SDR conversions with files below 10 seconds.
+* Fixed a bug where Prewarmed Encoder Pools in combination with Cloud Connect could lead to very slow encodings.
+
+---
+
+### 1.96.0
+
+**Fixed**
+
+* Fixed a bug for the [VoD](/encoding/reference/getencodingstatisticsencodingsvodbyfromandto) and [live](/encoding/reference/getencodingstatisticsencodingslivebyfromandto) statistics endpoints with time ranges where offsets led to an empty result.
+
+---
+
+### 1.95.0
+
+**Added**
+
+* Support for adding [CustomTags](/encoding/reference/postencodingmanifestshlsmediacustomtagbymanifestidandmediaid) to [Subtitle Media Infos](/encoding/reference/postencodingmanifestshlsmediasubtitlesbymanifestid) which reference a [ChunkedTextMuxing](/encoding/reference/postencodingencodingsmuxingschunkedtextbyencodingid).
+
+**Changed**
+
+* AV1 encodings:  
+   * Speed - Encodings run now **5x faster**.  
+   * Quality - Encodings now show appr. **30% higher quality** when compared to HEVC/VP9 encodings.  
+   * Cost - Encodings are now significantly more cost effective. See our [Encoding Minute Calculation Methodology](https://bitmovin.com/%5Femcm/) for detailed pricing information.
+* Added `startOffset` to TextMuxing and ChunkedTextMuxing. This is used for setting the MPEGTS value for the RFC 8216 (HLS Specification) X-TIMESTAMP-MAP for WebVtt outputs (e.g.: `X-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000`).
+* WebVttConfigurations with CueIdentifierPolicy INCLUDE\_IDENTIFIERS will now generate CueIds starting from `1` instead of `0` if the FileInputStreamType is WEBVTT.
+* CueIdentifierPolicy default for WebVttConfigurations for inputs with FileInputStreamType TTML and SRT. The default is now INCLUDE\_IDENTIFIERS instead of OMIT\_IDENTIFIERS.
+
+**Fixed**
+
+* Added support for adding DASH `Label` elements to [Video](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsvideobymanifestidandperiodid)\-, [Audio](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsaudiobymanifestidandperiodid)\- [Subtitle](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetssubtitlebymanifestidandperiodid)\- and [Image](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsimagebymanifestidandperiodid) Adaptation Sets.
+* Fixed an issue where streams that were ignored by stream conditions are not indicated as being ignored (i.e., the `ignoredBy` is empty).
+* Streams with WebVttConfigurations will now be trimmed with the same offset and duration as the video stream of the same Encoding if the FileInputStreamType is WEBVTT (This works now same as TTML and SRT FileInputStreamTypes already used to).
+* Fixed an issue where output subtitle cues' timestamps were shifted by the value of the first video PTS, if FileInputStream is used for the subtitle stream
+* KeyFrames are now working for streams with WebVttConfigurations
+
+---
+
+### 1.94.0
+
+**Added**
+
+* Preset configurations for setting `dynamicRangeFormat`:  
+   * `SDR` for [H264](/encoding/reference/postencodingconfigurationsvideoh264)  
+   * `HLG` and `SDR` for [VP9](/encoding/reference/postencodingconfigurationsvideovp9)
+
+**Deprecated**
+
+* Removed deprecated [AV1 API parameters](/encoding/reference/postencodingconfigurationsvideoav1) which had no effect on visual quality but lead to higher encoding times.
+
+---
+
+### 1.93.0
+
+**Added**
+
+* Support for adding an [AAC](/encoding/reference/postencodingconfigurationsaudioaac) or [Dolby Atmos](/encoding/reference/postencodingconfigurationsaudiodolbyatmos) audio stream along with a Dolby Vision video stream to a [MP4 muxing](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid).
+* Cloud regions `AZURE_GERMANY_WESTCENTRAL`, `AZURE_EUROPE_NORTH` and `AZURE_UAE_NORTH` are now supported. `AZURE_UAE_CENTRAL` is only accessible for UAE North customers requiring in-country disaster recovery (as per Microsoft), so it can only be used for Azure connect by those customers.
+
+**Fixed**
+
+* Corrected the documentation for [BIF distance](/encoding/reference/postencodingencodingsstreamsbifsbyencodingidandstreamid) which was not marked as required.
+
+---
+
+### 1.92.0
+
+**Added**
+
+* Support `DolbyVisionInputStream`s together with other input stream types like `IngestInputStream`, `AudioMixInputStream`, etc.
+
+---
+
+### 1.91.0
+
+**Fixed**
+
+* Invalid private keys are now reported correctly when using Cloud Connect on GCP
+
+---
+
+### 1.90.0
+
+**Added**
+
+With this release we've improved the encoding capabilities with regards to HDR conversions for H265 output. From now on we support
+
+* Dolby Vision to HDR10
+* Dolby Vision to SDR
+* HDR10 to HLG
+* HLG to HDR10
+* SDR to HDR10
+* SDR to HLG
+
+The encoder detects the applicable conversion based on the input and the configured output color settings. To make it easier to correctly configure the output we have added preset configurations for the different dynamic range formats. These can be configured on the [H265](/encoding/reference/postencodingconfigurationsvideoh265) resource via the setting `dynamicRangeFormat`.
+
+Dolby Vision input can be configured with a [Dolby Vision input stream](/encoding/reference/postencodingencodingsinputstreamsdolbyvisionbyencodingid)
+
+---
+
+### 1.89.0
+
+**Added**
+
+* Support for setting `duration=null` for [Time-based Trimming](/encoding/reference/postencodingencodingsinputstreamstrimmingtimebasedbyencodingid) to indicate that the whole stream should be used (considering offset). `offset=null` will be defaulted to zero now. We also fixed and issue when setting`duration=0` which lead to different results for video and audio. Setting `duration=0` will now lead to 0 frames for video and audio.
+* Manifest Generation now supports HDR10 and HLG for DASH for progressive muxings.
+
+**Fixed**
+
+* Fixed the return type for the endpoint [List prewarmed encoder pool schedules](/encoding/reference/getencodinginfrastructureprewarmedencoderpoolsschedulesbypoolid)
+
+---
+
+### 1.88.0
+
+**Added**
+
+* Dash Manifest generation for segmented HDR Output is now setting `essentialProperties` and `supplementalProperties` correctly for HDR10 and HLG compatible settings
+
+---
+
+### 1.87.0
+
+**Added**
+
+* Added EXPLICIT\_PS option to HeAacV2Signaling. The option EXPLICIT\_SBR now signals Parametric Stereo (PS) implicitly.
+* Improved descriptions for HeAacV1Signaling and HeAacV2Signaling.
+* Automatic shutdown of a live encoding after a certain period of time, configurable via the `autoShutdownConfiguration.streamTimeoutMinutes` configuration when starting a [Live Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid).
+* Automatic shutdown of a live encoding if input is lost and does not reconnect within a certain time period, configurable via the `autoShutdownConfiguration.bytesReadTimeoutSeconds` configuration when starting a [Live Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid).
+* Fail fast if not all video streams use the same input configuration.
+* Fail fast if video streams are configured to have more than one stream input (except in the case of CEA 608/708 captions passthrough, where this is expected)
+
+**Fixed**
+
+* [Webhook](/encoding/reference/postnotificationswebhooksencodingencodingsencodingstatuschangedbyencodingid) for `ENCODING_STATUS_CHANGED` now can be provided with `customData` (similar to webhook `ENCODING_FINISHED` or `ENCODING_ERROR`).
+
+---
+
+### 1.86.0
+
+**Added**
+
+* Added new property for DASH manifests which defines the compatibility of the manifest with the Standard DASH Edition. Setting the dash edition compatibility to V4 will support the endNumber attribute for SegmentTemplate DASH manifest, specifying the last available segment. This feature is supported when creating a new DASH manifest via the [startEncoding call](/encoding/reference/postencodingencodingsstartbyencodingid) and configuring the V2 ManifestGenerator OR when creating the manifest via the [DASH manifest creation endpoint](/encoding/reference/postencodingmanifestsdash)
+
+**Fixed**
+
+* [GO API SDK](https://github.com/bitmovin/bitmovin-api-sdk-go)  
+   * Endpoints with optional request bodies like the [Start Encoding endpoint](/encoding/reference/postencodingencodingsstartbyencodingid) are now generated as two methods. One will not accept a request body, the second one does accept a request body parameter and will have the suffix `WithRequestBody` in the name.
+* [Java API SDK](https://github.com/bitmovin/bitmovin-api-sdk-java)  
+   * For endpoints with optional request bodies like the [Start Encoding endpoint](/encoding/reference/postencodingencodingsstartbyencodingid) an additional method overload will be generated which does not accept a request body parameter.
+
+---
+
+### 1.85.0
+
+**Added**
+
+* DRM is now supported for [MP4 muxings](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid) with [Dolby Digital](/encoding/reference/postencodingconfigurationsaudiodd) and [Dolby Digital Plus](/encoding/reference/postencodingconfigurationsaudioddplus) audio codecs.
+
+---
+
+### 1.84.0
+
+**Added**
+
+* Region `us-west2` is now supported in GCE cloud (`GOOGLE_US_WEST_2`)
+
+**Changed**
+
+* Removed the deprecated manifest generator `V2_BETA` option from our API SDKs. For generating manifests [during the encoding process](/encoding/reference/postencodingencodingsstartbyencodingid) please use `V2`.
+
+**Fixed**
+
+* Encoding cancelation will now trigger the webhook [Encoding Status Changed](/encoding/reference/postnotificationswebhooksencodingencodingsstatuschanged)
+
+---
+
+### 1.83.0
+
+**Added**
+
+* Added fail fast when using [AC3](/encoding/reference/postencodingconfigurationsaudioac3) or [E-AC3](/encoding/reference/postencodingconfigurationsaudioeac3) with [TS muxing](/encoding/reference/postencodingencodingsmuxingstsbyencodingid) and DRM as this is not supported
+* Implemented support for the DTS:HD and DTS:X audio codecs. The openAPI can be found [here](/encoding/reference/postencodingconfigurationsaudiodtsx). This feature is compatible starting with the 2.88.0 encoder version. Only MP4 and internally fragmented muxings are supported for DTS:HD/DTS:X. DRM configurations are not supported with DTS:HD/DTS:X codecs.
+
+---
+
+### 1.82.0
+
+**Added**
+
+* Added a new AudioVideoSyncMode `RESYNC_AT_START_AND_END` to the [StartEncodingRequest](/encoding/reference/postencodingencodingsstartbyencodingid). This mode pads audio streams with silence, if the audio streams are shorter than the video stream. This prevents DASH clients trying to download non-existent audio segments, if the mediaPresentationDuration is longer than the duration of the audio stream. This new mode is now also the default value.
+
+**Changed**
+
+* Added Fail Fast for manifestGenerator `V2` with encoder versions < 2.70.0 (using it with encoder version >= 2.86.0 is recommended).
+* ManifestGenerator `V2` is the default for new customers going forward.
+
+---
+
+### 1.81.0
+
+**Added**
+
+* Manifest generator `V2` is now generally available and supports all manifest features of our API.  
+   * It can be used by directly setting manifest IDs in the [start encoding request](/encoding/reference/postencodingencodingsstartbyencodingid) and setting `manifestGenerator` to `V2`.  
+   * We are therefore deprecating the manifest generator `V2_BETA` option and will remove it from our API SDKs in release `v2.89.0`.  
+   * For more information see our tutorial [here](/encoding/docs/how-to-create-manifests-for-your-encodings).
+* Improved validation for Per-Title configurations using multiple templates with fixed resolution, fixed bitrate and bitrate selection mode `COMPLEXITY_RANGE`: Encodings now fail fast if the difference between the minimum or the maximum bitrate of consecutive streams is smaller than the configured minimum bitrate step size.
+
+---
+
+### 1.80.0
+
+**Added**
+
+* Added support for Thumbnail Letter and Pillarboxing. Supported aspect modes: `CROP`, `PAD`, `STRETCH`. More Details described in the API Calls:  
+   * [BIF](/encoding/reference/postencodingencodingsstreamsbifsbyencodingidandstreamid)  
+   * [Sprite](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid)  
+   * [Thumbnail](/encoding/reference/postencodingencodingsstreamsthumbnailsbyencodingidandstreamid)
+
+**Fixed**
+
+* When [retrieving encodings](/encoding/reference/getencodingencodings) and using the parameter `search` in combination with sorting by `finishedAt` a 500 status code was returned
+* When using an incorrect manifest ID (or one of a different type) in the [Encoding Start](/encoding/reference/postencodingencodingsstartbyencodingid) a proper error message is returned now instead of an Internal Server Error response.
+
+---
+
+### 1.79.0
+
+**Added**
+
+* [IMSC as subtitle output format](/encoding/reference/postencodingconfigurationssubtitlesimsc) from TTML and SRT inputs. For TTML styling passthrough is available.
+* Warning when creating or using a [H264 Configuration](/encoding/reference/postencodingconfigurationsvideoh264) with settings or a preset that is not compatible with the selected profile. `adaptiveSpatialTransform=true` only works with profile HIGH. `bframes > 0`, `cabac = true`, and `weightedPredictionPFrames = true` are only working with MAIN or HIGH.
+
+**Fixed**
+
+* For [DASH manifests](/encoding/reference/postencodingmanifestsdash), containing Dolby audio renditions, the `codecs` attribute is not set on `AdaptationSet` level anymore but only on the `Representation` level. This also fixes a rare case of duplicate entries in the `codecs` attribute which could have led to device compatibility issues.
+
+---
+
+### 1.78.0
+
+**Added**
+
+* [Dolby Digital](/encoding/reference/postencodingconfigurationsaudiodd) and [Dolby Digital Plus](/encoding/reference/postencodingconfigurationsaudioddplus) codec configurations are now available as replacement for AC3 and EAC3.  
+   * We are therefore deprecating [AC3](/encoding/reference/postencodingconfigurationsaudioac3) and [EAC3](/encoding/reference/postencodingconfigurationsaudioeac3) as the two new codec configurations are producing output, which conforms to Dolby's high certification standards.  
+   * Our [multi-codec example](https://github.com/bitmovin/bitmovin-api-sdk-examples#multi-codec-encoding) now uses Dolby Digital instead of AC3.  
+   * For more information see our tutorial [here](/encoding/docs/how-to-create-dolby-digital-plus-encodings).
+* [Sprite](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid) generation no longer requires both width and height to be set, as long as one of the two values is configured, the other one is automatically computed based on the aspect ratio of the video.
+* [Thumbnail creation](/encoding/reference/postencodingencodingsstreamsthumbnailsbyencodingidandstreamid) has been extended to allow the same options with regards to height and width as sprite generation.
+
+**Changed**
+
+* We improved the error handling and retry behaviour in case of scheduling failed. Previously unrecoverable errors could take 40 minutes to detect, which is no longer the case.
+
+**Fixed**
+
+* Fixed LIVE encodings reporting too low (occasionally negative) statistics after a restart
+* Fixed a bug that could cause billing address changes to fail.
+
+**Known Issues**
+
+* `AdaptationSets` in [DASH manifests](/encoding/reference/postencodingmanifestsdash) could contain the same codec multiple times in the `codecs` attribute, when the manifest contains a Dolby Digital, Dolby Digital Plus or a Dolby Atmos rendition.
+
+---
+
+### 1.77.0
+
+**Added**
+
+* `targetDurationRoundingMode` property on [HLS manifest](/encoding/reference/postencodingmanifestshls), which defines the rounding mode for the target duration (normal or upward rounding) for manifests generated during the encoding.
+
+---
+
+### 1.76.0
+
+**Added**
+
+* If we cannot _request_ VM instances the api returns now more detailed error messages regarding the root cause of a "Scheduling failed" for Cloud Connect customers .
+
+---
+
+### 1.75.0
+
+**Added**
+
+* If we cannot _configure_ VM instances the api returns now more detailed error messages regarding the root cause of a "Scheduling failed" for Cloud Connect customers .
+
+**Changed**
+
+* When creating a [ConcatenationInputStream](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid), the _position_ of each contained _ConcatenationInputConfiguration_ now needs to have a unique value
+* [PHP API SDK](https://github.com/bitmovin/bitmovin-api-sdk-php):  
+   * Now supports PHP 8
+
+**Fixed**
+
+* Improved the SCTE35 cue tags insertion so the time frame between the cue tags is always bigger or equal to the configured cue duration.
+* Previously it was possible, that encodings started with prewarmed encoder pools did not use a prewarmed instance even though it was available
+* Fixed a concurrency issue which could lead to invalid state when calling [start on prewarmed encoder pools](/encoding/reference/postencodinginfrastructureprewarmedencoderpoolsstartbypoolid) in quick succession
+
+---
+
+### 1.74.0
+
+**Added**
+
+* Added support for SCTE-35\. When running a live encoding, calling this [endpoint](/encoding/reference/postencodingencodingsscte35cuebyencodingid) will trigger the insertion of cue tags in the provided HLS manifests and ads will be inserted.  
+Note: this is an experimental feature.
+
+**Fixed**
+
+* Fixed an issue which led to a cascade of scheduling failed error
+
+---
+
+### 1.73.0
+
+**Added**
+
+* Added `targetDurationRoundingMode` property on [HLS manifest](/encoding/reference/postencodingmanifestshls), which defines the rounding mode for the target duration (normal or upward rounding).
+
+**Fixed**
+
+* A validation for live edge offset in HLS Manifests introduced with v1.72.0 could falsely fail, if a CC caption has been used as media stream.
+* Fixed incorrect audio manifest relative path when generating audio-only HLS manifest with MP4 muxing.
+
+---
+
+### 1.72.0
+
+**Changed**
+
+* Improved stability for encodings on Google Cloud.
+
+**Fixed**
+
+* Added validation for Live Edge Offset in HLS Manifests: Live Edge Offset now has to be >= than the segment length of their assigned muxing
+* Fixed concurrency issue for manifest status updates from encoders (introduced in [Encoder v2.75.0](/encoding/docs/encoder-2500-2990#2750)) that could lead to inconsistent status
+* Fixed manifest status endpoints ([DASH](/encoding/reference/getencodingmanifestsdashstatusbymanifestid), [HLS](/encoding/reference/getencodingmanifestshlsstatusbymanifestid) and [Smooth](/encoding/reference/getencodingmanifestssmoothstatusbymanifestid) ) to return a spec conform `servicetask` property.
+
+---
+
+### 1.71.0
+
+**Added**
+
+* Added support for additional [Sprite](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid) features so that they can be used for trick-play with DASH manifests. It's now possible to additionally specify the tile format (`hTiles`/`vTiles`), JPEG quality and a creation mode.
+* Added [Image adaptation sets](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsimagebymanifestidandperiodid) for DASH manifests with [Sprite representations](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsrepresentationsspritebymanifestidandperiodidandadaptationsetid) to enable video players to provide tiled thumbnails based on [Sprites](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid).
+
+---
+
+### 1.70.0
+
+**Fixed**
+
+* Stability improvements for Azure encoding clusters.
+* Changed the `rate` property of [Stream Infos of Live Statistics](/encoding/reference/getstreaminfosofencodingstatisticsencodingslivestatisticsbyencodingid) in the API specification and SDKs from `integer` to its actual type `double`
+* [PHP API SDK](https://github.com/bitmovin/bitmovin-api-sdk-python)  
+   * Fixed an issue in [ErrorHandler](https://github.com/bitmovin/bitmovin-api-sdk-php/blob/main/src/Common/Middleware/ErrorHandler.php) class that prevented an update to PHP 7.2
+
+---
+
+### 1.69.0
+
+**Added**
+
+* Updates in the internals of the TTML to WebVTT subtitle conversion:  
+   * Added support for basic styling in TTML to WebVTT subtitle conversion, configurable via [WebVttConfiguration](/encoding/reference/postencodingconfigurationssubtitleswebvtt)  
+   * Added support for [ChunkedTextMuxing](/encoding/reference/postencodingencodingsmuxingschunkedtextbyencodingid) in TTML to WebVTT subtitle conversion: allows to output segmented WebVTT files
+
+---
+
+### 1.68.0
+
+**Added**
+
+* [VP9 Codec Configurations](/encoding/reference/postencodingconfigurationsvideovp9) now support 10-bit `pixelFormat`
+
+**Changed**
+
+* Instead of failing during the encoding process  
+   * the [Add Dolby Vision Metadata](/encoding/reference/postencodingencodingsstreamsdolbyvisionhdrmetadatabyencodingidandstreamid) call will fail if `enableHrdSignaling` of the Stream's Codec Configuration is not set to `true`  
+   * the [Create VP9 Codec Configuration](/encoding/reference/postencodingconfigurationsvideovp9) call will fail if `pixelFormat` is not any of `YUV420P, YUV422P, YUV440P, YUV444P, YUVJ420P, YUVJ422P, YUVJ440P, YUVJ444P, YUV420P10LE, YUV422P10LE, YUV440P10LE, YUV444P10LE`
+* For [TTML](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid) to [WebVTT subtitle](/encoding/reference/postencodingconfigurationssubtitleswebvtt) conversion with [ChunkedTextMuxing](/encoding/reference/postencodingencodingsmuxingschunkedtextbyencodingid) setting `cueIdentifierPolicy` to `OMIT_IDENTIFIERS` is now mandatory
+
+**Fixed**
+
+* Improved reliability of encoding startups
+
+---
+
+### 1.67.0
+
+**Changed**
+
+* Improved resiliance against server or network errors for manifest uploads
+* DRM keys are now hidden in the response as default.
+* For [SRT](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid) to [WebVTT subtitle](/encoding/reference/postencodingconfigurationssubtitleswebvtt) conversion with [TextMuxing](/encoding/reference/postencodingencodingsmuxingstextbyencodingid) setting `cueIdentifierPolicy` to `OMIT_IDENTIFIERS` is now mandatory
+
+---
+
+### 1.66.0
+
+**Added**
+
+* Region `europe-west3` is now supported in GCE cloud
+
+**Changed**
+
+* Encoder Versions below 2.53.0 are outdated for Azure cloud and will automatically be set to STABLE when executing an encoding.
+
+**Fixed**
+
+* SDKs deserializing a WebVttSidecarFile as SidecarFile when retrieved via [List Sidecars](/encoding/reference/getencodingencodingssidecarsbyencodingid)
+
+---
+
+### 1.65.0
+
+**Added**
+
+* [Broadcast TS muxings](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid) can now configure the rate for subtitle streams
+* [Broadcast TS muxings](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid) can now configure the PID for subtite streams
+* After multiple, failed, consecutive attempts to deliver a pending notification to the endpoint of the configured Webhook, the Webhook will get auto-muted and no further notifications will be sent until the Webhook becomes reachable again and the customer has un-muted the notifications (see [FAQ](/encoding/docs/how-can-i-muteunmute-a-webhook)). When a Webhook is auto-muted, the customer will be immediately informed through an email.
+* V2 manifest generator (BETA)  
+   * The V2 manifest generator is a new implementation that is used for DASH and HLS manifests created as part of the encoding process (SMOOTH manifests are unchanged and supported as before).  
+   * The new manifest generator can be used by setting the ManifestGenerator parameter in the [StartEncodingRequest](/encoding/reference/postencodingencodingsstartbyencodingid) to V2\_BETA. The new manifest generator is currently in BETA and will receive new features frequently. To make use of the new generator, list the manifests you want to have generated automatically in the `vodDashManifests` and `vodHlsManifests` properties of the [StartEncodingRequest](/encoding/reference/postencodingencodingsstartbyencodingid).  
+   * Various bugs have been fixed when manifests were generated during the encoding.  
+   * HLS  
+         * Added support for Widevine and CENC Drm  
+         * Improved TARGET-DURATION calculation  
+         * AVERAGE-BANDWIDTH, CLOSED-CAPTIONS attributes are now set correctly  
+         * Improved precision of BANDWIDTH attribute  
+   * DASH  
+         * Fixed a bug where the channel layout was incorrectly chosen for some Audio AdaptationSets for DASH manifests.
+
+---
+
+### 1.64.0
+
+**Fixed**
+
+* Stability improvement for Azure Encoding Cluster startup and shutdown
+
+---
+
+### 1.63.0
+
+**Changed**
+
+* [Webhook calls](/encoding/reference/getnotificationsbynotificationid) now have a read timeout of 10s and a connection timeout of 5s and are retried 10 times at most.
+
+---
+
+### 1.62.0
+
+**Added**
+
+* Expose the `analysisDetails` property of Stream `StreamInput` resources in the SDKs
+
+---
+
+### 1.61.0
+
+**Changed**
+
+* Improved handling of provisioning and unprovisioning of machine instances for encodings in Google Cloud regions when facing rate limiting from the Google Compute API.
+
+**Fixed**
+
+* [List all Muxings](/encoding/reference/getencodingencodingsmuxingsbyencodingid) endpoint not returning `type` property for `PACKED_AUDIO`, `TEXT`, `CHUNKED_TEXT` and `MXF` muxings
+
+---
+
+### 1.60.0
+
+**Added**
+
+* On encodings that fail with licensing errors, the corresponding retry hint is set in the [status response](/encoding/reference/getencodingencodingsstatusbyencodingid).
+
+**Changed**
+
+* Decreased response times for [encoding get list calls](/encoding/reference/getencodingencodings) by up to 90%
+
+**Fixed**
+
+* When using `colorConfig` on [H264](/encoding/reference/postencodingconfigurationsvideoh264), [H265](/encoding/reference/postencodingconfigurationsvideoh265) or [VP9](/encoding/reference/postencodingconfigurationsvideovp9) configurations with a codec preset, it will not be classified as a custom preset anymore
+* Fixed an error when creating an [HLS](/encoding/reference/postencodingmanifestshlsdefault) or [DASH default manifest](/encoding/reference/postencodingmanifestsdashdefault) without specifying the `version` property. The default `V1` will now be set.
+
+---
+
+### 1.59.0
+
+**Added**
+
+* [Packed Audio](/encoding/reference/postencodingencodingsmuxingspackedaudiobyencodingid) now supports segment naming templates.
+
+**Changed**
+
+* Limited retries of firing of a webhook to a maximum of 5 minutes.
+* [On-demand DASH manifests](/encoding/reference/postencodingmanifestsdashstartbymanifestid) will fail with a proper error message if no representations are configured.
+
+---
+
+### 1.58.0
+
+**Added**
+
+* Securing your assets with [Nagra NexGuard FileMarker A/B Watermarking](/encoding/reference/postencodingencodingsstreamsnexguardfilemarkerbyencodingidandstreamid) is now available
+* Support for [Static IPs](/encoding/reference/postencodinginfrastructurestaticip) for Live Encodings running on Google Cloud regions.
+* Cloud Connect Support for [Static IPs](/encoding/reference/postencodinginfrastructurestaticip) for Live Encodings running on Google Cloud and AWS regions.
+* Segmented WebVTT subtitles now can be [configured](/encoding/reference/postencodingconfigurationssubtitleswebvtt) to either omit or include WebVTT cue identifiers (included by default). Please note that the following restrictions apply:  
+   * SRT to WebVTT conversion workflow does not support cue identifiers as of now. Therefore it needs to be set to `OMIT_IDENTIFIERS`.  
+   * Cue identifier can not be configured for [non-segmented](/encoding/reference/postencodingencodingsmuxingstextbyencodingid) WebVTT outputs.
+* API SDK [examples](https://github.com/bitmovin/bitmovin-api-sdk-examples)  
+   * Added support for setting the tenant organisation ID into all examples, for multi-tenant or sub-organisation scenarios  
+   * New [Java examples](https://github.com/bitmovin/bitmovin-api-sdk-examples/tree/main/java/src/main/java/tutorials/AudioChannelManipulations) in support of the tutorial on [separating and combining audio streams](/encoding/docs/separating-and-combining-audio-streams)
+
+**Changed**
+
+* Changed default branch `main` for all API SDK repositories  
+   * We decided to rename the default branch for all API SDKs to `main`. See [GitHub's support page](https://docs.github.com/en/github/administering-a-repository/renaming-a-branch#updating-a-local-clone-after-a-branch-name-changes) for more information and guidance on how to update a local clone of these repositories.
+
+**Fixed**
+
+* Support for [GenericS3 output](/encoding/reference/postencodingoutputsgenerics3) with SSL and signature version V2 for manifests uploaded via the manifest start endpoints: [DASH](/encoding/reference/postencodingmanifestsdashstartbymanifestid), [HLS](/encoding/reference/postencodingmanifestshlsstartbymanifestid), and [Smooth](/encoding/reference/postencodingmanifestssmoothstartbymanifestid).
+* Fixed bug that can lead to stuck manifest generations.
+* Removed security critical fields from the response in the [Query SPEKE configuration](/encoding/reference/getencodingencodingsmuxingswebmdrmspekebyencodingidandmuxingidanddrmid) endpoint.
+
+---
+
+### 1.57.0
+
+**Added**
+
+* Support for [Packed Audio Segments](/encoding/reference/postencodingencodingsmuxingspackedaudiobyencodingid): Allows to create Packed Audio Segments containing encoded audio samples and ID3 tags that are packed together with minimal framing and no per-sample timestamps.
+* Added configuration of PCR interval for [Broadcast TS](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid).
+
+**Fixed**
+
+* Version check when using SRT file input to prevent using an incompatible version prior to 2.60.0.
+* Fixed SPEKE issue where the initialization vector was incorrectly encoded during the key exchange leading to an invalid initialization vector for stream encryption.
+* Fixed an issue with failed encodings when using `channelLayout` in [audio mix input stream](/encoding/reference/postencodingencodingsinputstreamsaudiomixbyencodingid)
+
+---
+
+### 1.56.0
+
+**Added**
+
+* Introduced new default encoder error for encodings that failed because of an unknown reason. We now will return the `retryHint` `UNDEFINED` for these encodings at the [encoding status endpoint](/encoding/reference/getencodingencodingsstatusbyencodingid)
+* The [status](/encoding/reference/getencodinginfrastructurestaticipbyid) of the static IP is being exposed now
+* Added fail-fast when clear and DRM muxings are configured with the same output
+
+**Fixed**
+
+* Available encoding slots may have been calculated incorrectly when encoding in multiple sub-organizations at the same time
+* When using [SPEKE](/encoding/reference/postencodingencodingsmuxingswebmspekebyencodingidandmuxingid) the signature of a key exchange request during the last week of a year included the upcoming year.
+
+---
+
+### 1.55.0
+
+**Added**
+
+* Support up to 16 [PCM streams](/encoding/reference/postencodingconfigurationsaudiopcm) for [MXF muxing](/encoding/reference/postencodingencodingsmuxingsmxfbyencodingid)
+* Added DVB-SUB subtitle passthrough for BroadcastTsMuxing.
+* Added SRT To DVB-SUB subtitle conversion for BroadcastTsMuxing.
+* Added support for [SRT file](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid) to [WebVtt subtitle encoding](/encoding/reference/postencodingconfigurationssubtitleswebvtt) with [text](/encoding/reference/postencodingencodingsmuxingstextbyencodingid)/[chunked-text muxing](/encoding/reference/postencodingencodingsmuxingschunkedtextbyencodingid).
+* Early Access for [Static IPs](/encoding/reference/postencodinginfrastructurestaticip) feature which allows reusing of IP addresses for consecutive live streams in AWS (please get in touch to try it)
+
+**Changed**
+
+* Made Manifest Generation more resilient by adding some retries.
+
+**Fixed**
+
+* Changed crop filter to allow only zero or positive values.
+
+---
+
+### 1.54.1
+
+**Added**
+
+* Added new [encoding status changed webhooks](/encoding/reference/postnotificationswebhooksencodingencodingsencodingstatuschangedbyencodingid). For `conditions`, the following attributes are possible:  
+   * `type`: 'Input file download', 'Input file analysis', 'Per-Title analysis', 'Encoding', 'Progressive Muxing'  
+   * `progress`: number in range of 0-100  
+   * `status`: 'RUNNING', 'FINISHED', 'ERROR'  
+Examples:  
+   * To only get notified about the encoding process, create a Condition object and set attribute='type', value='Encoding', operator=EQUAL  
+   * To only get notified if a workflow step is over 50%, create a Condition object and set attribute='progress', value='50', operator=GREATER\_THAN  
+   * To only get notified if a workflow step is finished, create a Condition object and set attribute='status', value='FINISHED', operator=EQUAL
+
+---
+
+### 1.54.0
+
+**Added**
+
+* [Encodings](/encoding/reference/getencodingencodings) can now be filtered and sorted by the property `finishedAt`
+
+---
+
+### 1.53.0
+
+**Added**
+
+* Added `externalIdMode` for [S3RoleBasedOutput](/encoding/reference/postencodingoutputss3rolebased), [S3RoleBasedInput](/encoding/reference/postencodinginputss3rolebased) and [Speke Provider](/encoding/reference/postencodingencodingsmuxingswebmspekebyencodingidandmuxingid).
+* Customers using their own [Azure account](/encoding/reference/postencodinginfrastructureazure) can now opt-in, so that all SSH communication comes from one specific IP address. This enables a more rigid network security policy where only one IP is allowlisted for SSH connections.
+* Early access for [pre-warmed encoder pools](/encoding/reference/postencodinginfrastructureprewarmedencoderpools) which eliminate queuing times for scheduled encodings (please get in touch to try it).
+
+**Fixed**
+
+* HLS Manifests can now be [configured](/encoding/reference/postencodingmanifestshls) to add the channels attribute in a standard conform way.
+* Removed unused `encryption` property from [webhook resources](/encoding/reference/notifications-webhooks).
+* DAR settings for [H265](/encoding/reference/postencodingconfigurationsvideoh265) are now applied correctly.
+
+---
+
+### 1.52.1
+
+**Fixed**
+
+* [Go API SDK](https://github.com/bitmovin/bitmovin-api-sdk-go)  
+   * Code formatting was off in release `1.52.0`, this is now fixed again
+* [Python API SDK](https://github.com/bitmovin/bitmovin-api-sdk-python)  
+   * Added missing dependency `pytz` to requirements.txt and setup.py
+
+---
+
+### 1.52.0
+
+**Added**
+
+* Added handling of [SMPTE timecode](/encoding/reference/postencodingencodingsstreamscaptions608708sccbyencodingidandstreamid) with three flavours - `NON_DROP_FRAME`, `DROP_FRAME`, and `AUTO`.
+* The [list all encodings](/encoding/reference/getencodingencodings) endpoint supports now additional time-based filter query parameters.
+* Added [live input stream changed webhook](/encoding/reference/postnotificationswebhooksencodingencodingsliveinputstreamchanged) notifications
+
+**Fixed**
+
+* Fixed unnecessary `&` in the links of the response for the [list all inputs](/encoding/reference/getencodinginputs) endpoint
+
+---
+
+### 1.51.0
+
+**Added**
+
+* A new [Enhanced Deinterlace Filter](/encoding/reference/postencodingfiltersenhanceddeinterlace) is now available
+* Azure Connect: Encoding on [customer Azure infrastructure](/encoding/reference/infrastructure) is now available for VoD and Live encodings.
+
+**Changed**
+
+* Consolidated manifest status endpoint for [Dash](/encoding/reference/getencodingmanifestsdashstatusbymanifestid), [HLS](/encoding/reference/getencodingmanifestshlsstatusbymanifestid), and [Smooth](/encoding/reference/getencodingmanifestssmoothstatusbymanifestid). After starting the manifest generations, manifests will be in status QUEUED, once processing starts they will transition into status RUNNING and finally into FINISHED/ERROR depending on the result of the generation.
+
+**Fixed**
+
+* Fixed the `cache-control` header for manifest uploads in both Live and VoD workflows to contain the correct `max-age:value` instead of `max-age=value` string
+* [Encodings](/encoding/reference/postencodingencodings) with a name longer than 255 characters do no longer result in an internal server error.
+* When calling the [stream filter endpoint](/encoding/reference/postencodingencodingsstreamsfiltersbyencodingidandstreamid) without setting the `position` attribute, a `400` error is now correctly returned instead of an internal server error.
+* The correct value `false` for the `adaptiveSpatialTransform` [for H264](/encoding/reference/postencodingconfigurationsvideoh264) in the `VOD_STANDARD` preset is now applied.
+
+---
+
+### 1.50.0
+
+**Added**
+
+* When using the [list endpoint for encodings](/encoding/reference/getencodingencodings) you can now use `selectedCloudRegion`, `selectedEncoderVersion`, and `selectedEncodingMode` as filter parameters
+
+**Changed**
+
+* Encodings in status `ERROR`, `CANCELED`, `FINISHED`, and `TRANSFER_ERROR` will now always set the `finishedAt` timestamp in the [list encoding](/encoding/reference/getencodingencodings), [get encoding](/encoding/reference/getencodingencodingsbyencodingid) and [get encoding status](/encoding/reference/getencodingencodingsstatusbyencodingid) calls. The `errorAt` timestamp which has been previously set on error encodings is deprecated but will still be populated to ensure backwards compatibility. Note that for encodings prior to this release the finishedAt timestamp might be inaccurate in case of a cancelled encoding.
+* [C# API SDK](https://github.com/bitmovin/bitmovin-api-sdk-dotnet)  
+   * Up until now, enum value names were missing underscores in most cases. To be more consistent with our API and other SDKs we corrected this mistake.
+* [Go API SDK](https://github.com/bitmovin/bitmovin-api-sdk-go)  
+   * The name of 3 enum values was corrected (`M3U8_URL`, `DESEDE`, `UHD_8K`)
+* [PHP API SDK](https://github.com/bitmovin/bitmovin-api-sdk-php)  
+   * The name of 3 enum values was corrected (`M3U8_URL`, `DESEDE`, `UHD_8K`)

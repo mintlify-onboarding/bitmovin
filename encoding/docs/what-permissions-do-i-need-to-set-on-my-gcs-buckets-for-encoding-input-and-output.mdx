@@ -1,0 +1,32 @@
+---
+title: "What permissions do I need to set on my GCS buckets for Encoding Input and Output?"
+---
+
+When using GCS buckets as Bitmovin inputs and outputs you will need to configure them to grant the appropriate roles and access control policies to the Bitmovin encoder.
+
+## Input Buckets
+
+* **GCS role**\- The [Storage Object Viewer](https://cloud.google.com/storage/docs/access-control/iam-roles#standard-roles) role must be added to the relevant IAM user (for which credentials or a service account is used in the Bitmovin configuration) in order to grant read permissions.
+* **GCS Access**\- As long as the proper GCS role was set, Input Buckets can be configured either as [publicly accessible](https://cloud.google.com/storage/docs/access-control/making-data-public) or private.
+* **GCS Access Control Policy**\- As long as the proper GCS role was set, the bucket access control policy can be set either as [Uniform](https://cloud.google.com/storage/docs/uniform-bucket-level-access) or [Fine-Grained](https://cloud.google.com/storage/docs/access-control)
+
+| GCS role (for IAM user) | GCS Access        | GCS Access Control Policy |
+| ----------------------- | ----------------- | ------------------------- |
+| Storage Object Viewer   | Public or Private | Uniform or Fine-Grained   |
+
+## Output Buckets
+
+* **GCS role**\- The Storage Object Admin role must be added to the relevant IAM user.
+* **GCS Access**\- As long as the proper GCS role was added, Output Buckets can be configured either as publicly accessible or private.
+* **GCS Access Control Policy and Bitmovin ACL**\- The bucket access control policy and the Bitmovin ACL settings must be set according to the table below.
+
+| GCS role (for IAM user) | GCS Access       | GCS Access Control Policy | Bitmovin ACL         |
+| ----------------------- | ---------------- | ------------------------- | -------------------- |
+| Storage Object Viewer   | Public / Private | Uniform1                  | private              |
+| Storage Object Viewer   | Public / Private | Fine-Grained2             | private/public\_read |
+
+1When using Uniform access control policy type, GCS applies access control policies to all objects in the Bucket based on the IAM permissions - and all access granted by object ACLs are revoked. To get Bitmovin outputs working properly with this approach, all [ACLs](https://bitmovin.github.io/bitmovin-api-sdk-javascript/classes/encodingoutput.html#acl) in `EncodingOutput.acl[*].permission` must be set to private
+
+2When using Fine-Grained access control policy type, GCS applies access control policies based on [Access Control Lists (ACLs)](https://cloud.google.com/storage/docs/access-control/lists). In this way, the ACLs set in `EncodingOutput.acl[*].permission` are applied to each object to be written in the bucket.
+
+Take into account that Bitmovin ACLs in `EncodingOutput.acl[*].permission` are set to `public_read` by default - for example when creating encoding jobs from the Bitmovin Dashboard, so if you do not set an ACL explicitly, you should set a `Fine-Grained` control policy type on the bucket in order to get it working

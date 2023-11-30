@@ -1,0 +1,10 @@
+---
+title: "Can I use Per-Title encodings with DRM solutions like Widevine, PlayReady, or Fairplay?"
+---
+
+Yes - The DRM use-case works in exact the same way as with a normal encoding.
+
+In addition to our [general tutorial on Per-Title encoding](/encoding/reference/how-to-create-a-per-title-encoding), you just need to add the DRM configuration to the Muxing of the Per-Title template Streams in the same way as you would do it for a normal encoding configuration. One thing to watch out is if you are using different encryption keys for SD, HD and UHD content. There are two things to consider:
+
+1. If you use the autoRepresentations feature, make sure to have one Per-Title template Stream with configured resolution close to each category where you want to use a different encryption key. E.g., for SD use a width of 640.
+2. Make sure to add the DRM configuration with the encryption key you want to use for that category. If you are not using autoRepresentations, just configure the DRM configuration on every Per-Title template stream with the encryption key you want to use for that representation.

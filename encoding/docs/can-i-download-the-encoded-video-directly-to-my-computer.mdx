@@ -1,0 +1,19 @@
+---
+title: "Can I download the encoded video directly to my computer?"
+---
+
+No, not directly. Our encoding service writes your encoded content directly to the output storage you specified in its configuration. From this storage, you could download it to your local device.
+
+In general, we highly recommend using our encoding service with a cloud storage like Google GCS and Amazon S3, as they perform very well in terms of bandwidth availability and scalability, and our encoding service can write to them directly. This enables you to keep the overall turn around time of your encoding as low as possible, so you can provide your content to your users. However, other output storage types like (S)FTP, Akamai NetStorage, and so on can also be used with our encoding service.
+
+These tools are typically used to download content from a cloud storage or FTP server:
+
+* The web interface of your cloud storage provider  
+   * [https://console.aws.amazon.com/s3](https://console.aws.amazon.com/s3)  
+   * [https://console.cloud.google.com/storage](https://console.cloud.google.com/storage)
+* gsutil (CLI tool from Google, to manage your google cloud services)
+* aws-cli (CLI tool from AWS, to manage your AWS resources)
+* S3Browser (GUI to browse/download files from your S3 bucket)
+* DragonDisk (GUI for GCS/AWS S3 to browse/download files)
+* FileZilla ((S)FTP Client)
+* WinSCP ...

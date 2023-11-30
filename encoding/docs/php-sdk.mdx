@@ -1,0 +1,440 @@
+---
+title: "PHP SDK"
+---
+
+The Bitmovin API enables you to build cutting edge video workflows while leveraging emmy-award winning encoding solutions, that automatically optimize your catalog for high quality and cost efficient video streaming.
+
+## Quick Start Guide
+
+This Quick Start Video will demonstrate 3 different approaches to setup an encoding workflow using either a
+
+* **Watch Folder Workflow (No Code Required)**,
+* the **Simple Encoding API** ([Documentation](/encoding/reference/simple)) using a [Postman Collection](https://god.gw.postman.com/run-collection/18670786-99cd0bd7-4579-4d40-89b7-663dff3aa82d?action=collection%2Ffork&collection-url=entityId%3D18670786-99cd0bd7-4579-4d40-89b7-663dff3aa82d%26entityType%3Dcollection%26workspaceId%3D4b3f8ccb-66c0-4379-8cff-e282c9804e03) and a
+* **full Python API SDK example** using this [Colabortory Notebook](https://colab.research.google.com/drive/1qWY3Y6PYaIUV14HhzdPvJbRv5sc-ZUzl?usp=sharing).
+[undefined](https://streams.bitmovin.com/cgrurrkkk3f5o48157i0/embed "streams.bitmovin.com") 
+
+## Get Started with your own Project
+
+The following steps will walk you through adding the SDK to an new or existing Project step by step.
+
+## Overview
+
+Starting an encoding triggers a request for encoding instances. Once available, the input file will be downloaded, divided into chunks, and distributed between all of them. Those instances transcode each chunk into segments for all configured video/audio representations (muxings) in parallel and write them to the designated output destination. **This approach makes Bitmovin's encoding the fastest in the world.**
+
+![](/images/encoding/docs/f671dc6-image.png)
+
+In this tutorial you will implement a simple VOD online streaming scenario, where an input file containing a video stream and stereo audio stream is transcoded into ...
+
+* a fixed ladder of 3 video representations at different resolutions and bitrates using the H264 codec, and
+* an audio rendition with the AAC codec.
+
+Each individual stream is wrapped into fragmented MP4 (fMP4) containers. HLS and DASH manifests are generated so the encoded content is stream- and playable on the majority of modern devices and browsers out there today.
+
+## Step 1: Add Bitmovin SDK to Your Project
+
+Add this to your composer.json:  
+For the latest version please refer to the [GitHub repository](https://github.com/bitmovin/bitmovin-api-sdk-php) or check the [changelog](/encoding/docs/rest-api-services) of the Bitmovin API. Open API SDK versions and the Bitmovin API share the same versioning.
+
+JSON
+
+`{
+  "require": {
+        "php": "^7.1",
+        "bitmovin/bitmovin-api-sdk-php": "^1.95.0"
+  }
+}
+`
+
+And then execute:
+
+Shell
+
+`composer install
+`
+
+## Step 2: Setup a Bitmovin API Client Instance
+
+The Bitmovin API client instance is used for all communication with the Bitmovin REST API, pass your API key to authenticate with the API. You can find your `API_KEY` in the dashboard in your [Account Settings](https://bitmovin.com/dashboard/account).
+
+PHP
+
+`require './vendor/autoload.php';
+
+use BitmovinApiSdk\BitmovinApi;
+use BitmovinApiSdk\Common\Logging\ConsoleLogger;
+use BitmovinApiSdk\Configuration;
+
+$bitmovinApi = new BitmovinApi(Configuration::create()
+    ->apiKey(API_KEY)
+    ->logger(new ConsoleLogger())
+);
+`
+
+## Step 3: Create an Input
+
+### Create Input
+
+An input holds the configuration to access a specific file storage, from which the encoder will download the source file.
+
+We support various types of input sources including HTTP(S), (S)FTP, Google Cloud Storage (GCS), Amazon Simple Storage Service (S3), Azure Blob Storage, and all cloud storage vendors that offer an S3 compatible interface.
+
+Below we are creating an input. You can change the input type on the top right of the code panel.
+
+PHP
+
+`$input = new HttpsInput();
+$input->name("<INPUT_NAME>");
+$input->host("<HTTPS_INPUT_HOST>");
+$input = $bitmovinApi->encoding->inputs->https->create($input);
+`
+
+### Reuse Inputs
+
+Inputs refer to a location, not a specific file.  
+This makes them easily reusable. Create an input once and reuse it for all your encodings.
+
+Hint: All resources in our API are identified by a unique id which enables you to reuse many resources. So you only have to create one input for each location and can reuse it for all encodings.
+
+PHP
+
+`$input = $bitmovinApi->encoding->inputs->https->get("<INPUT_ID>");
+`
+
+## Step 4: Create an Output
+
+### Create Output
+
+Outputs define where the manifests and encoded segments will be written to.  
+Like inputs, outputs represent a set of information needed to access a specific storage. From this storage players can access the content for playback.
+
+`$output = new GcsOutput();
+$output->accessKey("<GCS_ACCESS_KEY>");
+$output->secretKey("<GCS_SECRET_KEY>");
+$output->bucketName("<GCS_BUCKET_NAME>");
+$output->name("<GCS_OUTPUT_NAME>");
+$output = $bitmovinApi->encoding->outputs->gcs->create($output);;
+$outputId = $output->id;
+`
+
+### Reuse Output
+
+Similar to inputs, outputs also refer to a location, not a specific file.  
+So they're exactly as reusable as inputs. Create it once and reuse it for all your encodings.
+
+`$output = $bitmovinApi->encoding->outputs->gcs->get("<OUTPUT_ID>");
+`
+
+## Step 5: Create Codec Configurations
+
+### Codec Configurations
+
+Codec configurations specify the codec and its parameters (eg. media codec, bitrate, frame rate, sampling rate).  
+They are used to encode the input stream coming from your input file.
+
+### Video Codec Configurations
+
+Below we are creating video codec configurations. We support a multitude of codecs, including H264, H265, VP9, AV1 and many more.  
+For simplicity, we use H264 now, but you can easily change that after finishing the getting started.
+
+PHP
+
+`$codecConfigVideoName1 = "Getting Started H264 Codec Config 1";
+$codecConfigVideoBitrate1 = 1500000;
+$videoCodecConfiguration1 = new H264VideoConfiguration();
+$videoCodecConfiguration1->name($codecConfigVideoName1);
+$videoCodecConfiguration1->presetConfiguration(PresetConfiguration::VOD_STANDARD());
+$videoCodecConfiguration1->width(1024);
+$videoCodecConfiguration1->bitrate($codecConfigVideoBitrate1);
+$videoCodecConfiguration1->description("{$codecConfigVideoName1}_{$codecConfigVideoBitrate1}");
+$videoCodecConfiguration1 = $bitmovinApi->encoding->configurations->video->h264->create($videoCodecConfiguration1);
+
+$codecConfigVideoName2 = "Getting Started H264 Codec Config 2";
+$codecConfigVideoBitrate2 = 1000000;
+$videoCodecConfiguration2 = new H264VideoConfiguration();
+$videoCodecConfiguration2->name($codecConfigVideoName2);
+$videoCodecConfiguration2->presetConfiguration(PresetConfiguration::VOD_STANDARD());
+$videoCodecConfiguration2->width(768);
+$videoCodecConfiguration2->bitrate($codecConfigVideoBitrate2);
+$videoCodecConfiguration2->description("{$codecConfigVideoName2}_{$codecConfigVideoBitrate2}");
+$videoCodecConfiguration2 = $bitmovinApi->encoding->configurations->video->h264->create($videoCodecConfiguration2);
+
+$codecConfigVideoName3 = "Getting Started H264 Codec Config 3";
+$codecConfigVideoBitrate3 = 750000;
+$videoCodecConfiguration3 = new H264VideoConfiguration();
+$videoCodecConfiguration3->name($codecConfigVideoName3);
+$videoCodecConfiguration3->presetConfiguration(PresetConfiguration::VOD_STANDARD());
+$videoCodecConfiguration3->width(640);
+$videoCodecConfiguration3->bitrate($codecConfigVideoBitrate3);
+$videoCodecConfiguration3->description("{$codecConfigVideoName3}_{$codecConfigVideoBitrate3}");
+$videoCodecConfiguration3 = $bitmovinApi->encoding->configurations->video->h264->create($videoCodecConfiguration3);
+`
+
+### Audio Codec Configurations
+
+As audio codec configuration we are creating one AAC configuration.  
+We also support many more audio codecs including Opus, Vorbis, AC3, E-AC3 and MP2.
+
+PHP
+
+`$aacConfig = new AacAudioConfiguration();
+$aacConfig->name("Getting Started Audio Codec Config");
+$aacConfig->bitrate(128000);
+$codecConfigAudio = $bitmovinApi->encoding->configurations->audio->aac->create($aacConfig);
+`
+
+### Reusing Codec Configurations
+
+As inputs and outputs, codec configurations can also be reused.  
+To use existing video or audio codec configurations, loading them with their id.
+
+PHP
+
+`$codecConfigVideo = $bitmovinApi->encoding->configurations->video->h264->get("<H264_CC_ID>");
+$codecConfigAudio = $bitmovinApi->encoding->configurations->audio->aac->get("<AAC_CC_ID>");
+`
+
+## Step 6: Create & Configure an Encoding
+
+### Create Encoding
+
+An encoding is a collection of resources (inputs, outputs, codec configurations etc.), mapped to each other.
+
+The cloud region defines in which cloud and region your encoding will be started.  
+If you don't set it, our encoder takes the region closest to your input and output.
+
+Inputs, outputs and codec configurations can be reused among many encodings. Other resources are specific to one encoding, like streams, which we'll create below.
+
+PHP
+
+`$encoding = new Encoding();
+$encoding->name("Getting Started Encoding");
+$encoding->cloudRegion(CloudRegion::GOOGLE_EUROPE_WEST_1());
+$encoding = $bitmovinApi->encoding->encodings->create($encoding);
+`
+
+### Streams
+
+A stream maps an audio or video input stream of your input file (called input stream) to one audio or video codec configuration.  
+The following example uses the selection mode `AUTO`, which will select the first available video input stream of your input file.  
+You can choose an input file from 3 predefined examples on the top right of the code panel.
+
+### Video Stream
+
+PHP
+
+`$inputPath = "<INPUT_PATH>";
+$streamInput = new StreamInput();
+$streamInput->inputId($input->id);
+$streamInput->inputPath($inputPath);
+$streamInput->selectionMode(StreamSelectionMode::AUTO());
+
+$videoStream1 = new Stream();
+$videoStream1->inputStreams([$streamInput]);
+$videoStream1->codecConfigId($videoCodecConfiguration1->id);
+$videoStream1 = $bitmovinApi->encoding->encodings->streams->create($encoding->id, $videoStream1);
+
+$videoStream2 = new Stream();
+$videoStream2->inputStreams([$streamInput]);
+$videoStream2->codecConfigId($videoCodecConfiguration2->id);
+$videoStream2 = $bitmovinApi->encoding->encodings->streams->create($encoding->id, $videoStream2);
+
+$videoStream3 = new Stream();
+$videoStream3->inputStreams([$streamInput]);
+$videoStream3->codecConfigId($videoCodecConfiguration3->id);
+$videoStream3 = $bitmovinApi->encoding->encodings->streams->create($encoding->id, $videoStream3);
+`
+
+### Audio Stream
+
+PHP
+
+`$streamInput = new StreamInput();
+$streamInput->inputId($input->id);
+$streamInput->inputPath($inputPath);
+$streamInput->selectionMode(StreamSelectionMode::AUTO());
+
+$inputStreamAudio = new Stream();
+$inputStreamAudio->inputStreams([$streamInput]);
+$inputStreamAudio->codecConfigId($codecConfigAudio->id);
+$inputStreamAudio = $bitmovinApi->encoding->encodings->streams->create($encoding->id, $inputStreamAudio);
+`
+
+## Step 7: Create a Muxing
+
+### Muxings
+
+A muxing defines which container format will be used for the encoded video or audio files (segmented TS, progressive TS, MP4, FMP4, ...). It requires a stream, an output, and the output path, where the generated segments will be written to.
+
+FMP4 muxings are used for DASH manifest representations, TS muxings for HLS playlist representations.
+
+### FMP4
+
+PHP
+
+`$aclEntry = new AclEntry();
+$aclEntry->permission(AclPermission::PUBLIC_READ());
+$segmentLength = 4;
+$outputPath = "<OUTPUT_PATH>";
+$initSegmentName = "init.mp4";
+$segmentNaming = "seg_%number%.m4s";
+
+$videoMuxingOutput1 = new EncodingOutput();
+$videoMuxingOutput1->acl([$aclEntry]);
+$videoMuxingOutput1->outputId($outputId);
+$videoMuxingOutput1->outputPath("{$outputPath}/video/1024_1500000/fmp4");
+
+$videoMuxingStream1 = new MuxingStream();
+$videoMuxingStream1->streamId($videoStream1->id);
+
+$videoMuxing1 = new Fmp4Muxing();
+$videoMuxing1->outputs([$videoMuxingOutput1]);
+$videoMuxing1->streams([$videoMuxingStream1]);
+$videoMuxing1->segmentLength($segmentLength);
+$videoMuxing1->initSegmentName($initSegmentName);
+$videoMuxing1->segmentNaming($segmentNaming);
+$bitmovinApi->encoding->encodings->muxings->fmp4->create($encoding->id, $videoMuxing1);
+
+$videoMuxingOutput2 = new EncodingOutput();
+$videoMuxingOutput2->acl([$aclEntry]);
+$videoMuxingOutput2->outputId($outputId);
+$videoMuxingOutput2->outputPath("{$outputPath}/video/768_1000000/fmp4");
+
+$videoMuxingStream2 = new MuxingStream();
+$videoMuxingStream2->streamId($videoStream2->id);
+
+$videoMuxing2 = new Fmp4Muxing();
+$videoMuxing2->outputs([$videoMuxingOutput2]);
+$videoMuxing2->streams([$videoMuxingStream2]);
+$videoMuxing2->segmentLength($segmentLength);
+$videoMuxing2->initSegmentName($initSegmentName);
+$videoMuxing2->segmentNaming($segmentNaming);
+$bitmovinApi->encoding->encodings->muxings->fmp4->create($encoding->id, $videoMuxing2);
+
+$videoMuxingOutput3 = new EncodingOutput();
+$videoMuxingOutput3->acl([$aclEntry]);
+$videoMuxingOutput3->outputId($outputId);
+$videoMuxingOutput3->outputPath("{$outputPath}/video/640_750000/fmp4");
+
+$videoMuxingStream3 = new MuxingStream();
+$videoMuxingStream3->streamId($videoStream3->id);
+
+$videoMuxing3 = new Fmp4Muxing();
+$videoMuxing3->outputs([$videoMuxingOutput3]);
+$videoMuxing3->streams([$videoMuxingStream3]);
+$videoMuxing3->segmentLength($segmentLength);
+$videoMuxing3->initSegmentName($initSegmentName);
+$videoMuxing3->segmentNaming($segmentNaming);
+$bitmovinApi->encoding->encodings->muxings->fmp4->create($encoding->id, $videoMuxing3);
+`
+
+### Audio Muxings
+
+PHP
+
+`$aclEntry = new AclEntry();
+$aclEntry->permission(AclPermission::PUBLIC_READ());
+
+$audioMuxingOutput = new EncodingOutput();
+$audioMuxingOutput->acl([$aclEntry]);
+$audioMuxingOutput->outputId($outputId);
+$audioMuxingOutput->outputPath("{$outputPath}/audio/128000/fmp4");
+
+$audioMuxingStream = new MuxingStream();
+$audioMuxingStream->streamId($inputStreamAudio->id);
+
+$audioMuxing = new Fmp4Muxing();
+$audioMuxing->outputs([$audioMuxingOutput]);
+$audioMuxing->streams([$audioMuxingStream]);
+$audioMuxing->segmentLength($segmentLength);
+$audioMuxing->initSegmentName($initSegmentName);
+$audioMuxing->segmentNaming($segmentNaming);
+$bitmovinApi->encoding->encodings->muxings->fmp4->create($encoding->id, $audioMuxing);
+`
+
+Hint: To optimize your content for a specific use-case you can also provide a custom segment length. Further, you can also customize the naming pattern for the resulting segments and the initialization segment as well.
+
+## Step 8: Create a Manifest
+
+### DASH & HLS Manifests
+
+Its recommended to use Default Manifests, one each for DASH ([API-Reference](/encoding/reference/postencodingmanifestsdashdefault)) and HLS ([API-Reference](/encoding/reference/postencodingmanifestshlsdefault)). They are a construct that leaves it to the encoder to determine how to best generate the manifest based on what resources have been created by the encoding. This simplifies the code greatly for simple scenarios like this guide is about.
+
+### Create a DASH Manifest
+
+PHP
+
+`$aclEntry = new AclEntry();
+$aclEntry->permission(AclPermission::PUBLIC_READ());
+
+$encodingOutput = new EncodingOutput();
+$encodingOutput->acl([$aclEntry]);
+$encodingOutput->outputPath($outputPath);
+$encodingOutput->outputId($outputId);
+
+$dashManifest = new DashManifestDefault();
+$dashManifest->encodingId($encoding->id);
+$dashManifest->manifestName("stream.mpd");
+$dashManifest->version(DashManifestDefaultVersion::V1());
+$dashManifest->outputs([$encodingOutput]);
+
+$dashManifest = $bitmovinApi->encoding->manifests->dash->default->create($dashManifest);
+`
+
+### Create a HLS manifest
+
+PHP
+
+`$aclEntry = new AclEntry();
+$aclEntry->permission(AclPermission::PUBLIC_READ());
+
+$manifestOutput = new EncodingOutput();
+$manifestOutput->outputPath($outputPath);
+$manifestOutput->outputId($outputId);
+$manifestOutput->acl([$aclEntry]);
+
+$hlsManifest = new HlsManifestDefault();
+$hlsManifest->encodingId($encoding->id);
+$hlsManifest->manifestName("master.m3u8");
+$hlsManifest->version(HlsManifestDefaultVersion::V1());
+$hlsManifest->outputs([$encodingOutput]);
+
+$hlsManifest = $bitmovinApi->encoding->manifests->hls->default->create($hlsManifest);
+`
+
+## Step 9: Start an Encoding
+
+Let's recap - We have defined:
+
+* an **input**, specifying the input file host
+* an **output**, specifying where the manifest and the encoded files will be written to
+* **codec configurations**, specifying how the input file will be encoded
+* **streams**, specifying which input stream will be encoded using what codec configuration
+* **muxings**, specifying the containerization of the streams
+* **manifests**, to play the encoded content using the HLS or DASH streaming format.
+
+Now we can start the encoding with one API call, including additional configuration so the DASH and HLS Default-Manifests are created as part of the encoding process too:
+
+PHP
+
+`$dashManifestResource = new ManifestResource();
+$dashManifestResource->manifestId($dashManifest->id);
+$hlsManifestResource = new ManifestResource();
+$hlsManifestResource->manifestId($hlsManifest->id);
+
+$startEncodingRequest = new StartEncodingRequest();
+$startEncodingRequest->manifestGenerator(ManifestGenerator::V2());
+$startEncodingRequest->vodDashManifests([$dashManifestResource]);
+$startEncodingRequest->vodHlsManifests([$hlsManifestResource]);
+
+$bitmovinApi->encoding->encodings->start($encoding->id, $startEncodingRequest);
+`
+
+**What happens next:** After the successful start of the encoding, it will change its state from `CREATED` to `STARTED`, and shortly after that to `QUEUED`. `RUNNING` it will be in as soon as the input file starts to get downloaded and processed. Eventually `FINISHED` will indicate a successful encoding and upload of the content to the provided Output destination. More details about each encoding status can be [found here](/encoding/docs/what-do-the-different-encodings-state-mean).
+
+## Step 10: Final Review
+
+**Congratulations!** You successfully started your first encoding :) and this is only the beginning. The Bitmovin Encoding API is extremely flexible and allows many customizations and provides with access to the latest codecs and video streaming optimizations and technologies out there. Have a look at the [API Reference](/encoding/reference/getencodingencodings) to learn more.
+
+## More Examples
+
+You can find many more fully functional code examples in our Github Repository: [Github](https://github.com/bitmovin/bitmovin-api-sdk-examples/tree/master/php)

@@ -1,0 +1,90 @@
+---
+title: "Can I create progressive MOV / MP4 / TS outputs as well?"
+---
+
+Yes. Generating progressive outputs with the Bitmovin Encoding API is possible as well, and can simply be performed by using the according progressive MP4 / MOV / TS muxing type, instead of fMP4/TS muxings that are typically used for generating HLS or MPEG-DASH content. The main difference is, that instead of providing one stream to the muxing, you provide two - a video and a audio stream. You can add more than one as well.
+
+_HINT: While creating MP4 outputs with multiple audio tracks with our service is possible as well, common web browsers don't support it to select a specific audio track, and therefore only play the first one available._
+
+**Open API SDK for [Java example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/FixedBitrateLadder.java#L69) to create progressive muxings:**
+
+Java
+
+`HttpInput input = createHttpInput(configProvider.getHttpInputHost());
+String inputFilePath = configProvider.getHttpInputFilePath();
+
+Output output =
+    createS3Output(
+        configProvider.getS3OutputBucketName(),
+        configProvider.getS3OutputAccessKey(),
+        configProvider.getS3OutputSecretKey());
+
+// Add an H.264 video stream to the encoding
+H264VideoConfiguration h264Config = createH264VideoConfig();
+Stream h264VideoStream = createStream(encoding, input, inputFilePath, h264Config);
+
+// Create an MP4 muxing with the H.264 and AAC streams
+createMp4Muxing(
+    encoding,
+    output,
+    "mp4-h264-aac",
+    Arrays.asList(h264VideoStream, aacAudioStream),
+    "video.mp4");
+...
+`
+
+**createMp4Muxing() method:** ([Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/FixedBitrateLadder.java#L128))
+
+Java
+
+`private static Mp4Muxing createMp4Muxing(
+      Encoding encoding, Output output, String outputPath, List<Stream> streams, String fileName)
+      throws BitmovinException {
+    Mp4Muxing muxing = new Mp4Muxing();
+    muxing.addOutputsItem(buildEncodingOutput(output, outputPath));
+    muxing.setFilename(fileName);
+    
+    for (Stream stream : streams) {
+      MuxingStream muxingStream = new MuxingStream();
+      muxingStream.setStreamId(stream.getId());
+      muxing.addStreamsItem(muxingStream);
+    }
+    
+    return bitmovinApi.encoding.encodings.muxings.mp4.create(encoding.getId(), muxing);
+  }
+`
+
+**createProgressiveTsMuxing() method:** In order to create a progressive TS muxing all you need to do is to add these code snippets to the example from before as well.
+
+Java
+
+`...
+// Create a progressive TS muxing with the H.264 and AAC streams
+createProgressiveTsMuxing(
+    encoding,
+    output,
+    "progressivets-h264-aac",
+    Arrays.asList(h264VideoStream, aacAudioStream),
+    "video.ts");
+`
+
+Java
+
+`private static ProgressiveTsMuxing createProgressiveTsMuxing(
+    Encoding encoding, Output output, String outputPath, List<Stream> streams, String fileName)
+    throws BitmovinException {
+  ProgressiveTsMuxing muxing = new ProgressiveTsMuxing();
+  muxing.addOutputsItem(buildEncodingOutput(output, outputPath));
+  muxing.setFilename(fileName);
+  
+  for (Stream stream : streams) {
+    MuxingStream muxingStream = new MuxingStream();
+    muxingStream.setStreamId(stream.getId());
+    muxing.addStreamsItem(muxingStream);
+  }
+  
+  return bitmovinApi.encoding.encodings.muxings.progressiveTs.create(encoding.getId(), muxing);
+}
+`
+
+See the [full version](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/FixedBitrateLadder.java) for this and many other examples our [Public Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) for each of our Open API SDK's.

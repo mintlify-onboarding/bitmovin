@@ -1,0 +1,219 @@
+---
+title: "How to use Nagra NexGuard FileMarker A/B watermarking"
+---
+
+## Overview
+
+NexGuard FileMarker is based on the concept of A/B watermarking. If you enable it for an input stream the Bitmovin encoder will automatically generate two output streams. The A stream and the B stream.
+
+The A stream will follow your configured segment naming template (e.g. segment\_0.ts) while the B stream is prefixed with b. (e.g.: b.segment\_0.ts). When one of your customers starts watching a protected video, your CDN will serve them unique sequence of A and B segments. This unique sequence enables you to trace any leaked video to the time and customer you originally provided the video for.
+
+---
+
+## Requirements
+
+* Encoder version 2.62 or higher
+* A Nagra Account to obtain license and configuration values
+
+---
+
+## Known Limitations
+
+The NexGuard FileMarker Specification exposes multiple restrictions to the encoding to ensure that a video is compatible with the different CDN providers. A non exhaustive list of restrictions is given here:
+
+##### Supported Muxings
+
+* `fMP4`, `TS`, `WebM`
+
+##### Segment Naming conventinons
+
+* Segment naming must be `<filename>_<number>.<extension>`
+* Init naming must be `<filename>_init.<extension>`
+
+The Nagra NexGuard FileMarker relies heavily on the naming scheme of your segments and of the init file to be able to do the a/b switching correctly. The filename can be chosen freely. For segments we would recommend the default e.g. `segment_<number>.m4s` and for the init segment we would recommend a unique filename with which you can identify your video e.g.: `bigBuckBunny_init.mp4`.
+
+##### Supported Framerates
+
+`23.976`, `24.0`, `25.0`, `29.97`, `30.0`, `48.0`, `50.0`, `59.94`, `60.0`
+
+##### Supported Resolution
+
+* `320` <= `width` <= `5120`
+* `240` <= `height` <= `3200`
+
+##### Others
+
+* `GOP` size has to be `2` or `2.002` seconds
+* Minimum length of the video asset - Required to ensure that a unique sequence of A and B segments can be generated.
+
+---
+
+## Create an Encoding
+
+This tutorial is based on our [Per-Title Encoding Example on Github](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/java/src/main/java/PerTitleEncoding.java) and will state only the adjustments it would need to create NexGuard Watermarking compatible content.
+
+As with every encoding, we will need an `Encoding` Object, that holds all related configuration objects, as well as an `Input` and `Output` Object.
+
+##### Encoding
+
+Java
+
+`Encoding encoding = createEncoding("Per-Title encoding", "Per-Title encoding with NexGuard Watermarking");
+`
+
+##### Create or reuse an Input
+
+HTTP is just used for simplicity in this example, as there is no limitation in where the input file can be downloaded from for that use-case. Of course, you can also reuse existing `Input` objects available in your Bitmovin Account.
+
+Java
+
+`HttpInput input = createHttpInput(configProvider.getHttpInputHost());
+`
+
+##### Create or reuse an Output
+
+Akamai NetStorage is used knowing that the Akamai CDN does support the Nagra FileMarker Specification. Of course, you can also reuse existing Input objects available in your Bitmovin Account.
+
+**IMPORTANT**: While you can write this content to any support `Output`, make sure that your CDN supports the NexGuard FileMarker specification to make use of the A/B watermarking, otherwise you won't be able to use it.
+
+Java
+
+`Output output =
+  createAkamaimNetstorage(
+            configProvider.getAkamaiHost(),
+            configProvider.getAkamaiUsername(),
+            configProvider.getAkamaiPassowrd());
+
+`
+
+## Create an H264 Video Configuration
+
+Make sure that you to configure a supported frame rate and gop size. As stated in "Known Limitations", NexGuard Watermarking requires a GOP size of 2 seconds. The Bitmovin API requires the GOP size in frames. To convert between the two calculate frame rate \_required gop size in seconds. E.g. in this case 24x2 equals a max gop size of 48.
+
+Java
+
+` private static H264VideoConfiguration createBaseH264VideoConfig() throws BitmovinException {
+    H264VideoConfiguration config = new H264VideoConfiguration();
+    config.setName("Base H.264 video config");
+    config.setPresetConfiguration(PresetConfiguration.VOD_STANDARD);
+    config.setRate(24D);
+    config.setMinGop(48);
+    config.setMaxGop(48)
+    return bitmovinApi.encoding.configurations.video.h264.create(config);
+  }
+
+`
+
+## Create Video Stream
+
+A `Stream` Object effectively maps a stream of the input file to a given `CodecConfiguration`, in this case the one created in the step before.
+
+Java
+
+`Stream videoStream =
+        createStream(
+            encoding,
+            input,
+            configProvider.getHttpInputFilePath(),
+            createBaseH264VideoConfig(),
+            StreamMode.PER_TITLE_TEMPLATE);
+`
+
+## Add NexGuard FileMarker to Video Stream
+
+To enable the NexGuard Watermarking on the video streams, we will configure the `NexGuardFileMarker` object and create it with a reference to the `videoStream` from before.
+
+**HINT:** The values for the fields `license` and `preset` are provided to you by your Nagra contact. Please see the [API Reference](/encoding/reference/postencodingencodingsstreamsnexguardfilemarkerbyencodingidandstreamid) for all available properties.
+
+Java
+
+`NexGuardFileMarker nexguardFileMarker = new NexGuardFileMarker();
+nexguardFileMarker.setWatermarkType(NexGuardWatermarkingType.OTT);
+nexguardFileMarker.setLicense(license);
+nexguardFileMarker.setPreset(preset);
+//nexguardFileMarker.setStrength(<string>); //use it only when instructed to by Nagra
+
+bitmovinApi
+    .encodings
+    .streams
+    .watermarking
+    .nexguardFileMarker
+    .create(encoding.getId(), videoStream.getId(), nexguardFileMarker);
+`
+
+## Create a Video Muxing
+
+Next we configure a muxing for the stream. Note that the init segment needs to be follow the `<filename>_init.mp4` naming template stated in `Known Limitations`.
+
+Java
+
+`createFmp4Muxing(encoding, output, "video/{height}/{bitrate}_{uuid}", videoStream);
+ private static Fmp4Muxing createFmp4Muxing(
+      Encoding encoding, Output output, String outputPath, Stream stream) throws BitmovinException {
+    MuxingStream muxingStream = new MuxingStream();
+    muxingStream.setStreamId(stream.getId());
+    Fmp4Muxing muxing = new Fmp4Muxing();
+    muxing.addOutputsItem(buildEncodingOutput(output, outputPath));
+    muxing.addStreamsItem(muxingStream);
+    muxing.setSegmentLength(2.0);
+    muxing.setInitSegmentName("pertitleNexguard_init.mp4")
+    return bitmovinApi.encoding.encodings.muxings.fmp4.create(encoding.getId(), muxing);
+  }
+`
+
+## Create a Audio Codec Configuration
+
+Java
+
+`AacAudioConfiguration aacConfig = createAacAudioConfig();
+`
+
+## Create a Audio Stream
+
+Java
+
+`Stream audioStream =
+        createStream(
+            encoding, input, configProvider.getHttpInputFilePath(), aacConfig, StreamMode.STANDARD);
+`
+
+## Add Nexguard Filemarker to Audio Stream
+
+Theoretically it is possible to mix non watermarked and watermarked streams in a single encoding, therefore we will need to tell the Encoder that this audioStream is part of the watermarking process and needs to be `duplicated`.
+
+This duplication is necessary because NexGuard enabled CDNs do the A/B switching only based on the file extension and both audio and video segments usually share the same extension.
+
+Java
+
+`NexGuardFileMarker nexguardFileMarker = new NexGuardFileMarker();
+nexguardFileMarker.setWatermarkType(NexGuardWatermarkingType.DUPLICATED);
+nexguardFileMarker.setLicense(license);
+nexguardFileMarker.setPreset(preset);
+
+bitmovinApi
+    .encodings
+    .streams
+    .watermarking
+    .nexguardFileMarker
+    .create(encoding.getId(), audioStream.getId(), nexguardFileMarker);
+`
+
+## Create Audio Muxing
+
+Java
+
+`createFmp4Muxing(encoding, output, "audio", audioStream);
+`
+
+## Configure and Start Encoding
+
+Java
+
+`StartEncodingRequest startEncodingRequest = new StartEncodingRequest();
+startEncodingRequest.setPerTitle(buildPerTitleStartRequest());
+`
+
+Java
+
+`executeEncoding(encoding, startEncodingRequest);
+`

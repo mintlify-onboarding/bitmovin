@@ -1,0 +1,23 @@
+---
+title: "Why do I get a MEDIA_ERR_DECODE in Google Chrome with my encoded content?"
+---
+
+If your source content has a frame rate of 24.02, 25.02, or 30.02 the encoded content will have the same frame rate if not specified other in your encoding profile. Using such frame rates can introduce problems with the Google Chrome MSE. However, the content will play fine on IE9, Edge, Firefox.
+
+You can resolve this issue also for Google Chrome if you set the frame rate of your encoded content to a fixed value of, e.g., 24, 25, or 30\. You can easily do that by specifying the rate of the video streams for your codec configuration.
+
+**Open API SDK Java Example - Create an H264 Codec Configuration:**
+
+Java
+
+`H264VideoConfiguration config = new H264VideoConfiguration();
+config.setName("H264 - 1080p - 30 FPS");
+config.setPresetConfiguration(PresetConfiguration.VOD_STANDARD);
+config.setRate(30.0);
+config.setHeight(1080L);
+config.setBitrate(4800000L);
+
+return bitmovinApi.encoding.configurations.video.h264.create(config);
+`
+
+This example is based on our [Open API SDK for Java](https://github.com/bitmovin/bitmovin-api-sdk-java), which is available on Github. Please see our [Open API SDK overview](/encoding/docs/sdks) for all our supported programming languages, and our [GH API SDK Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) for further examples.

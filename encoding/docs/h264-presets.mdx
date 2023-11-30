@@ -1,0 +1,168 @@
+---
+title: "H264 Presets"
+---
+
+## VoD Quality Preset Configurations
+
+| VoD Quality Presets           | VOD\_STANDARD         | VOD\_QUALITY               | VOD\_HIGH\_QUALITY         |
+| ----------------------------- | --------------------- | -------------------------- | -------------------------- |
+| adaptiveQuantizationMode      | VARIANCE              | VARIANCE                   | VARIANCE                   |
+| adaptiveQuantizationStrength  | 1                     | 1                          | 1                          |
+| adaptiveSpatialTransform      | FALSE                 | FALSE                      | TRUE                       |
+| bAdaptiveStrategy             | FAST                  | FULL                       | FULL                       |
+| bPyramid                      | NORMAL                | NORMAL                     | NORMAL                     |
+| bframes                       | 3                     | 3                          | 8                          |
+| cabac                         | TRUE                  | TRUE                       | TRUE                       |
+| deblockAlpha                  | 0                     | 0                          | 0                          |
+| deblockBeta                   | 0                     | 0                          | 0                          |
+| encodingMode                  | TWO\_PASS             | THREE\_PASS                | THREE\_PASS                |
+| fastSkipDetectionPFrames      | TRUE                  | TRUE                       | TRUE                       |
+| macroblockTreeRatecontrol     | \-                    | TRUE                       | TRUE                       |
+| mixedReferences               | TRUE                  | TRUE                       | TRUE                       |
+| motionEstimationMethod        | HEX                   | HEX                        | UMH                        |
+| mvPredictionMode              | SPATIAL               | SPATIAL                    | SPATIAL                    |
+| mvSearchRangeMax              | 16                    | 24                         | 24                         |
+| nalHrd                        | NONE                  | NONE                       | NONE                       |
+| partitions                    | "P8X8,B8X8,I8X8,I4X4" | "I4X4,I8X8,P8X8,B8X8,P4X4" | "I4X4,I8X8,P8X8,B8X8,P4X4" |
+| profile                       | MAIN                  | MAIN                       | HIGH                       |
+| psyRateDistortionOptimization | 1                     | 1                          | 1                          |
+| psyTrellis                    | 0                     | 0                          | 0                          |
+| quantizerCurveCompression     | 0.6                   | 0.6                        | 0.6                        |
+| rcLookahead                   | 40                    | 60                         | 60                         |
+| refFrames                     | 3                     | 4                          | 16                         |
+| sceneCutThreshold             | 0                     | 0                          | 0                          |
+| slices                        | \-                    | 1                          | 1                          |
+| subMe                         | RD\_ALL               | RD\_ALL                    | RD\_REF\_ALL               |
+| trellis                       | ENABLED\_FINAL\_MB    | ENABLED\_ALL               | ENABLED\_ALL               |
+| weightedPredictionBFrames     | TRUE                  | TRUE                       | TRUE                       |
+| weightedPredictionPFrames     | SMART                 | SMART                      | SMART                      |
+
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideoh264) for the respective value.
+
+---
+
+## VoD Speed Preset Configurations
+
+| VoD Speed Presets             | VOD\_SPEED            | VOD\_HIGH\_SPEED      | VOD\_VERYHIGH\_SPEED  | VOD\_EXTRAHIGH\_SPEED | VOD\_SUPERHIGH\_SPEED | VOD\_ULTRAHIGH\_SPEED |
+| ----------------------------- | --------------------- | --------------------- | --------------------- | --------------------- | --------------------- | --------------------- |
+| adaptiveQuantizationMode      | VARIANCE              | VARIANCE              | VARIANCE              | VARIANCE              | VARIANCE              | DISABLED              |
+| adaptiveQuantizationStrength  | 1                     | 1                     | 1                     | 1                     | 1                     | 0                     |
+| adaptiveSpatialTransform      | TRUE                  | TRUE                  | TRUE                  | TRUE                  | TRUE                  | TRUE                  |
+| bAdaptiveStrategy             | FAST                  | FAST                  | FAST                  | FAST                  | FAST                  | NONE                  |
+| bPyramid                      | NORMAL                | NORMAL                | NORMAL                | NORMAL                | NORMAL                | NORMAL                |
+| bframes                       | 3                     | 3                     | 3                     | 3                     | 3                     | 0                     |
+| cabac                         | TRUE                  | TRUE                  | TRUE                  | TRUE                  | TRUE                  | FALSE                 |
+| deblockAlpha                  | 0                     | 0                     | 0                     | 0                     | 0                     | 0                     |
+| deblockBeta                   | 0                     | 0                     | 0                     | 0                     | 0                     | 0                     |
+| encodingMode                  | SINGLE\_PASS          | SINGLE\_PASS          | SINGLE\_PASS          | SINGLE\_PASS          | SINGLE\_PASS          | SINGLE\_PASS          |
+| fastSkipDetectionPFrames      | TRUE                  | TRUE                  | TRUE                  | TRUE                  | TRUE                  | TRUE                  |
+| macroblockTreeRatecontrol     | TRUE                  | \-                    | \-                    | \-                    | \-                    | \-                    |
+| mixedReferences               | TRUE                  | TRUE                  | FALSE                 | FALSE                 | FALSE                 | FALSE                 |
+| motionEstimationMethod        | HEX                   | HEX                   | HEX                   | HEX                   | DIA                   | DIA                   |
+| mvPredictionMode              | SPATIAL               | SPATIAL               | SPATIAL               | SPATIAL               | SPATIAL               | SPATIAL               |
+| mvSearchRangeMax              | 16                    | 16                    | 16                    | 16                    | 16                    | 16                    |
+| nalHrd                        | NONE                  | NONE                  | NONE                  | NONE                  | NONE                  | NONE                  |
+| partitions                    | "I4X4,I8X8,P8X8,B8X8" | "P8X8,B8X8,I8X8,I4X4" | "P8X8,B8X8,I8X8,I4X4" | "P8X8,B8X8,I8X8,I4X4" | "I8X8,I4X4"           | NONE                  |
+| profile                       | HIGH                  | HIGH                  | HIGH                  | HIGH                  | HIGH                  | HIGH                  |
+| psyRateDistortionOptimization | 1                     | 1                     | 1                     | 1                     | 1                     | 1                     |
+| psyTrellis                    | 0                     | 0                     | 0                     | 0                     | 0                     | 0                     |
+| quantizerCurveCompression     | 0.6                   | 0.6                   | 0.6                   | 0.6                   | 0.6                   | 0.6                   |
+| rcLookahead                   | 50                    | 30                    | 10                    | 20                    | 0                     | 0                     |
+| refFrames                     | 5                     | 2                     | 1                     | 2                     | 1                     | 1                     |
+| sceneCutThreshold             | 0                     | 0                     | 0                     | 0                     | 0                     | 0                     |
+| slices                        | 1                     | \-                    | \-                    | \-                    | \-                    | \-                    |
+| subMe                         | RD\_IP                | RD\_IP                | SATD                  | QPEL4                 | SAD                   | FULLPEL               |
+| trellis                       | ENABLED\_ALL          | ENABLED\_FINAL\_MB    | DISABLED              | ENABLED\_FINAL\_MB    | DISABLED              | DISABLED              |
+| weightedPredictionBFrames     | TRUE                  | TRUE                  | TRUE                  | TRUE                  | TRUE                  | FALSE                 |
+| weightedPredictionPFrames     | SMART                 | SIMPLE                | SIMPLE                | SIMPLE                | SIMPLE                | DISABLED              |
+
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideoh264) for the respective value.
+
+---
+
+## Live Quality Preset Configurations
+
+| Live Quality Presets         | LIVE\_STANDARD        | LIVE\_HIGH\_QUALITY   | LIVE\_VERYHIGH\_QUALITY | LIVE\_ULTRAHIGH\_QUALITY |
+| ---------------------------- | --------------------- | --------------------- | ----------------------- | ------------------------ |
+| adaptiveQuantizationMode     | VARIANCE              | VARIANCE              | VARIANCE                | VARIANCE                 |
+| adaptiveQuantizationStrength | 1                     | 1                     | 1                       | 1                        |
+| adaptiveSpatialTransform     | TRUE                  | TRUE                  | TRUE                    | TRUE                     |
+| bAdaptiveStrategy            | FAST                  | FAST                  | FAST                    | FULL                     |
+| bPyramid                     | NORMAL                | NORMAL                | NORMAL                  | NORMAL                   |
+| bframes                      | 3                     | 3                     | 3                       | 3                        |
+| cabac                        | TRUE                  | TRUE                  | TRUE                    | TRUE                     |
+| encodingMode                 | SINGLE\_PASS          | SINGLE\_PASS          | SINGLE\_PASS            | TWO\_PASS                |
+| fastSkipDetectionPFrames     | TRUE                  | TRUE                  | TRUE                    | TRUE                     |
+| macroblockTreeRatecontrol    | TRUE                  | TRUE                  | TRUE                    | TRUE                     |
+| mixedReferences              | FALSE                 | TRUE                  | TRUE                    | TRUE                     |
+| motionEstimationMethod       | HEX                   | HEX                   | HEX                     | UMH                      |
+| mvPredictionMode             | SPATIAL               | SPATIAL               | SPATIAL                 | AUTO                     |
+| mvSearchRangeMax             | 16                    | 16                    | 16                      | 16                       |
+| nalHrd                       | NONE                  | NONE                  | NONE                    | NONE                     |
+| partitions                   | "I4X4,I8X8,P8X8,B8X8" | "I4X4,I8X8,P8X8,B8X8" | "I4X4,I8X8,P8X8,B8X8"   | "I4X4,I8X8,P8X8,B8X8"    |
+| profile                      | HIGH                  | HIGH                  | HIGH                    | HIGH                     |
+| rcLookahead                  | 20                    | 30                    | 40                      | 50                       |
+| refFrames                    | 2                     | 2                     | 3                       | 5                        |
+| sceneCutThreshold            | 0                     | 0                     | 0                       | 0                        |
+| subMe                        | QPEL4                 | RD\_IP                | RD\_ALL                 | RD\_REF\_IP              |
+| trellis                      | ENABLED\_FINAL\_MB    | ENABLED\_FINAL\_MB    | ENABLED\_FINAL\_MB      | ENABLED\_FINAL\_MB       |
+| weightedPredictionBFrames    | TRUE                  | TRUE                  | TRUE                    | TRUE                     |
+| weightedPredictionPFrames    | SIMPLE                | SIMPLE                | SMART                   | SMART                    |
+
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideoh264) for the respective value.
+
+---
+
+## Live Low Latency Preset Configurations
+
+| Live Low Latency Presets     | LIVE\_LOW\_LATENCY    | LIVE\_LOWER\_LATENCY | LIVE\_VERYLOW\_LATENCY |
+| ---------------------------- | --------------------- | -------------------- | ---------------------- |
+| adaptiveQuantizationMode     | VARIANCE              | VARIANCE             | DISABLED               |
+| adaptiveQuantizationStrength | 1                     | 1                    | 0                      |
+| adaptiveSpatialTransform     | TRUE                  | TRUE                 | FALSE                  |
+| bAdaptiveStrategy            | FAST                  | FAST                 | NONE                   |
+| bPyramid                     | NORMAL                | NORMAL               | NORMAL                 |
+| bframes                      | 3                     | 3                    | 0                      |
+| cabac                        | TRUE                  | TRUE                 | FALSE                  |
+| encodingMode                 | SINGLE\_PASS          | SINGLE\_PASS         | SINGLE\_PASS           |
+| fastSkipDetectionPFrames     | TRUE                  | TRUE                 | TRUE                   |
+| macroblockTreeRatecontrol    | TRUE                  | FALSE                | FALSE                  |
+| mixedReferences              | FALSE                 | FALSE                | FALSE                  |
+| motionEstimationMethod       | HEX                   | DIA                  | DIA                    |
+| mvPredictionMode             | SPATIAL               | SPATIAL              | SPATIAL                |
+| mvSearchRangeMax             | 16                    | 16                   | 16                     |
+| nalHrd                       | NONE                  | NONE                 | NONE                   |
+| partitions                   | "I4X4,I8X8,P8X8,B8X8" | "I4X4,I8X8"          | NONE                   |
+| profile                      | HIGH                  | HIGH                 | BASELINE               |
+| rcLookahead                  | 10                    | 0                    | 0                      |
+| refFrames                    | 1                     | 1                    | 1                      |
+| sceneCutThreshold            | 0                     | 0                    | 0                      |
+| subMe                        | SATD                  | SAD                  | FULLPEL                |
+| trellis                      | DISABLED              | DISABLED             | DISABLED               |
+| weightedPredictionBFrames    | TRUE                  | TRUE                 | FALSE                  |
+| weightedPredictionPFrames    | SIMPLE                | SIMPLE               | DISABLED               |
+
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideoh264) for the respective value.
+
+## Conformance with H264 Profiles
+
+The majority of the profiles listed above set the H264 profile to `HIGH`, and use codec capabilities that target decoders that support this profile. The H264 High profile is by far the most common and has been widely supported for many years.
+
+If your application requires the use of lower profiles, such as `BASELINE` or `MAIN`, you will need to overwrite some of the codec configuration parameters after applying the preset. Note however that the output quality may be reduced in doing so, and file sizes and bandwidth requirements may increase.
+
+### To set the profile to `MAIN`
+
+* Overwrite `adaptiveSpatialTransform` to False
+
+### To set the profile to `BASELINE`
+
+* Overwrite `adaptiveSpatialTransform` to False
+* Overwrite `bFrames` to 0
+* Overwrite `cabac` to False
+* Overwrite `weightedPredictionPFrames` to DISABLED
+
+Conversely, if your selected preset sets the profile to `MAIN` and you want to ensure that the output uses `HIGH`, you can make a simple change:
+
+### To force the profile to `HIGH`
+
+* Overwrite `adaptiveSpatialTransform` to True

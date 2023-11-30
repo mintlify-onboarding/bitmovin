@@ -1,0 +1,53 @@
+---
+title: "Contribution Encoder: OBS Studio Example"
+---
+
+## Introduction
+
+_OBS Studio_ is free, open source, easy to use encoder software to produce rich live content with lots of features. The software is popular among our customers for encoding live contribution streams.
+
+_OBS Studio_ is available on this page: [Open Broadcaster Software](https://obsproject.com/de)
+
+> **Note:** At the time this tutorial was written, the OBS Studio version was 27.2.4\. Other versions may differ slightly, but the principles are the same.
+
+To use _OBS Studio_ as a Contribution Encoder for Bitmovin, you will need to perform two steps:
+
+1. Set up the Live Encoding in Bitmovin Encoder
+2. Send the Contribution Stream from _OBS Studio_ to Bitmovin Encoder.
+
+> **Note:** In this tutorial, we use OBS Studio to send an RTMP stream to Bitmovin Encoder. OBS Studio and Bitmovin Encoder also support the SRT protocol, which is out of scope of this tutorial.
+
+## Setting up the Live Encoding in Bitmovin Encoder
+
+1. On your local machine, open a browser and log into your Bitmovin account.
+2. Set up a Live Encoding in Bitmovin Encoder. You have multiple options to do this:  
+   1. For a **Quick Start**, just open your Bitmovin Dashboard, go to _ENCODING->Live Encodings_ and go through the wizard by clicking on the blue _Create new live encoding_ button.  
+   ![](/images/encoding/docs/5fc996f-image.png)  
+   2. If you are **already familiar with Bitmovin Encoder**, you can also proceed according to this tutorial: [Create a Live Encoding from an RTMP stream](/encoding/docs/create-a-live-encoding-from-an-rtmp-stream)
+3. Now we need the _Stream URL_ (e.g. **rtmp://a.b.c.d/live**) and the _Stream Key_ of the newly started Live Encoding. To get them, in the dashboard, go to _ENCODING->Live Encodings_ and click on the newest encoding in the list. This opens the encoding’s page with the Live Encoding Ingest section, in which you see the _Stream URL_ and the _Stream Key_ to be used going forward.  
+![](/images/encoding/docs/4953be0-image.png)
+
+## Send a Contribution Stream from OBS Studio to Bitmovin Encoder
+
+1. On your local machine, start _OBS Studio_. (If you start OBS Studio after a fresh install, it automatically opens the auto-configuration wizard. If this happens, just close the wizard).
+2. Open _Preferences_ (or click on _Settings_ on the bottom right). This opens the Settings Dialog.
+3. In the Settings Dialog, Click on _Stream_. This opens a dialog with three configuration options and one checkbox, see screenshot.
+
+![](/images/encoding/docs/82c3ae0-image.png)
+
+1. In this dialog, choose the following:  
+   1. As _Service_, choose _Custom_.  
+   2. As _Server_, type in or paste the _Stream URL_ (e.g. rtmp://a.b.c.d/live) defined by the Bitmovin encoding.  
+   3. As _Stream Key_, choose the Stream Key that you got from your Live Encoding page.  
+   4. Leave the _Use authentication_ checkbox unchecked (RTMP authentication is currently not supported by Bitmovin Encoder. If authentication is required for your production setup, we recommend using the SRT protocol).
+2. Click OK to close the dialog
+3. Now configure OBS to generate a Live Stream according to the manual, e.g. this Quickstart: Wiki - OBS Studio Quickstart | OBS . There are lots of tutorials and YouTube videos online that will be helpful learning OBS Studio.
+4. Click _Start Streaming_ to begin sending the OBS stream to Bitmovin Encoder.
+5. If OBS shows a green light and the bitrate it sends (in its bottom right corner), then the stream is successfully sent to Bitmovin Encoder.
+
+![](/images/encoding/docs/5b37152-image.png)
+
+1. Check in Bitmovin Encoder that the stream is succesfully received. Look at the _Live Encoding Ingest_ section and verify that the _Input Stream Status_ is _Connected_.  
+![](/images/encoding/docs/6991759-image.png)
+
+> **Note:** If OBS Studio does not show a green light and the live stream is not received by Bitmovin Encoder, make sure the Stream URL is correct and you can reach the IP address from the computer running OBS Studio.

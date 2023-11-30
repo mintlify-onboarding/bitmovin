@@ -1,0 +1,120 @@
+---
+title: "Manifest Generator V2"
+---
+
+The manifest generator is the component that builds the actual manifest text file(s) that are written to the output storage, based on a manifest API resource which you configured beforehand.
+
+There are two major versions of this component:
+
+* **LEGACY**: As the name suggests, this is outdated and should only be used in existing and proven workflows.
+* **V2**: A new and completely overhauled implementation of the generator that brings many improvements regarding consistency, compatibility and specification conformity of manifests. It receives constant improvements via minor version upgrades and is the recommended choice.
+
+This guide will help you assess if there is a need to take action and explains how to migrate to V2 if desired.
+
+## To whom this applies
+
+The manifest generator that is used by default depends on the initial **sign-up date** of your organization:
+
+**after 2023-05-31**: The recommended version (`V2`) is your default for all scenarios and it's the only version your are allowed to use. There's nothing you need to care about.
+
+**2021-07-27 to 2023-05-31**: The recommended version (`V2`) is your default for just-in-time manifests. For post-encoding manifests, it is `LEGACY`. If you are using the latter, you might consider migrating to `V2`.
+
+**before 2021-07-27**: `LEGACY` is your default for all scenarios and you might consider migrating to `V2`.
+
+Exceptions to the above:
+
+**Live-2-VoD** is not yet supported by V2\. A post-encoding manifest that references a LIVE encoding will always automatically fall back to the LEGACY generator.
+
+**Old encoder versions**: When using an encoder version older than the minimum versions listed further below, the mentioned defaults do not apply, but the LEGACY generator will be used.
+
+## Why you should migrate
+
+One of the main reasons for introducing a new major version was the fact that post-encoding manifests and just-in-time manifests use separate LEGACY implementations with slightly different feature sets. With V2, both ways of generation yield equal results.
+
+Features and improvements introduced after the release of V2 are only available in V2\. LEGACY will not receive any further minor version upgrades.
+
+A central goal for generator V2 was to improve consistency, compatibility and specification conformity of the resulting manifests.
+
+## Improvements of V2 over LEGACY
+
+This is a detailed listing of the changes to expect in the generated manifests when migrating from LEGACY to V2\. It is up-to-date as of 2023-05-31\. All future improvements or fixes can be found in the release notes.
+
+#### DASH
+
+1. MPD, Period and Representation elements have an `@id` attribute with their value corresponding to the IDs of the API resource.
+2. If configured, the `@dependencyId` attribute on Representation elements is always set for all, not just Dolby audio representations.
+3. The MediaPresentationDurations can be slightly different from being more spec conform.
+4. The DASH timestamps of Segment entries in segment timeline manifests can be slightly different because V2 uses more precise data.
+5. Element order of AdaptationSets is more consistent in On-Demand manifests.
+6. LEGACY always uses the profile `urn:mpegprofile:isoff-live:2011` for default manifests.  
+V2’s profile depends on the codec types in the video adaptation sets.  
+H264: `urn:mpeg:dash:profile:isoff-live:2011,urn:com:dashif:dash264`  
+VP9: `urn:mpeg:dash:profile:full:2011`  
+others: `urn:mpeg:dash:profile:isoff-live:2011`  
+Please note that this only pertains to DASH-live profile manifests. For DASH-on-demand manifests, the profile string is always `urn:mpeg:dash:profile:isoff-on-demand:2011`.
+7. V2 adds the attribute contentType=text to subtitle representations which LEGACY does not add.
+8. V2 does not truncate the protocol part of the `vttUrl` specified for DashVttRepresentation (which will be the BaseURL text content in the resulting manifest XML).  
+Setting `vttUrl` to `https://some-domain.com/some-path.vtt` results in:  
+LEGACY: `<BaseURL>//some-domain.com/some-path.vtt</BaseURL>`  
+V2: `<BaseURL>https://some-domain.com/some-path.vtt</BaseURL>`
+9. For DASH On Demand (single-file muxing) manifests, V2 correctly inserts multiple “Role” elements on AdaptationSets. LEGACY writes the roles comma-separated, whereas V2 now correctly inserts a Role element for each one configured. An example is shown below:  
+LEGACY:  
+`<Role schemeIdUri="urn:mpeg:dash:role:2011" value="alternate,commentary"/>`  
+V2:  
+`<Role schemeIdUri="urn:mpeg:dash:role:2011" value="alternate"/>`  
+`<Role schemeIdUri="urn:mpeg:dash:role:2011" value="commentary"/>`
+10. For DASH On Demand (single-file muxing) manifests, if the customer sets the duration of a period resource, V2 propagates the set period duration to the duration of the period and the MediaPresentationDuration.  
+Legacy does not do that, i.e. the period duration is not set in the DASH manifest nor propagated to the MediaPresentationDuration.  
+Note: For other DASH Profiles (i.e. DASH Live), the set period duration is propagated by both Legacy and V2.  
+Disclaimer: Explicitly setting period durations is not recommended.
+11. If `startSegmentNumber` or `startKeyframeId` are set in combination with representations of type `TIMELINE`, `presentationTimeOffset` is calculated more precisely, preventing A/V sync issues that can occur with LEGACY.
+12. Attributes of XML elements can be ordered differently.
+
+#### HLS
+
+1. The attributes of elements are ordered and their order is stable, making comparisons significantly easier.
+2. V2 adds `assocLanguage` and `characteristics` attributes where needed. LEGACY does not support adding them.
+3. The codec value of Variant Streams for ProgressiveTsMuxings and TsMuxings, which contain a video and an audio stream, does not contain duplicate values in V2  
+LEGACY: `avc1.4D401E,ac-3,avc1.4D401E,ac-3`  
+V2: `avc1.4D401E,ac-3`
+4. I-FramePlaylists which point to a muxing that does not support I-FramePlaylists (e.g. TsMuxings, or Mp4Muxings with a `FragmentMp4ManifestType` other than `HLS_BYTE_RANGES_AND_IFRAME_PLAYLIST`) fail instead of writing an invalid file to the storage. LEGACY writes a file that only contains the word “null”.
+5. The target duration is sometimes not updated to the highest occurring value in all media playlists by LEGACY. V2 handles this correctly.
+6. For MediaInfos/StreamInfos, where the streamId set by the customer is empty/blank, V2 sets the segmentDurations more accurately.
+7. V2 handles incorrectly set streamIds differently:  
+   1. if the streamId is not set on the variantStream/mediaInfo  
+         1. if the muxing only has one stream, we use this stream  
+         2. if the muxing has more than one stream, the manifest generation fails  
+   2. if the streamId is set  
+         1. if it points to a stream that is not part of the muxing, the manifest generation fails
+8. If multiple ClosedCaptionMediaInfos are configured for a single manifest, LEGACY adds duplicated entries for each; this is fixed in V2.
+
+#### SMOOTH
+
+1. V2 correctly sets the `QualityLevels` attribute in the StreamIndex elements to the count of QualityLevel elements present.
+2. V2 correctly sets the `Index` attribute in the QualityLevel elements by increasing the number with each element.
+
+## How to migrate
+
+Both generator versions rely on the exact same API resources for configuring your manifest, making it very easy to migrate.
+
+Depending on your workflow, you are using one of these "start" calls to trigger the generation of manifests:
+
+* post-encoding manifests:  
+   * DASH: [Start DASH Manifest Creation](/encoding/reference/postencodingmanifestsdashstartbymanifestid)  
+   * HLS: [Start HLS Manifest Creation](/encoding/reference/postencodingmanifestshlsstartbymanifestid)  
+   * Smooth Streaming: [Start Smooth Streaming Manifest Creation](/encoding/reference/postencodingmanifestssmoothstartbymanifestid)
+* just-in-time manifests  
+   * VoD: [Start Encoding](/encoding/reference/postencodingencodingsstartbyencodingid)  
+   * LIVE: [Start Live Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid)
+
+All of those requests can contain an optional property `manifestGenerator`, which allows to opt for version `V2`. (Note that opting for `LEGACY` is not possible if `V2` is your default)
+
+### Minimum encoder version
+
+**Just-in-time manifests**: The minimum encoder version that supports V2 is **2.70.0** (for all manifest types). Note that the minor version of the generator is bound to the encoder version. The newer the encoder, the newer the manifest generator.
+
+**Post-encoding manifests** rely on data produced by the encoder and are therefore also dependent on the encoder version. Using an up-to-date encoder ensures best results. The following minimum versions apply:
+
+* DASH: 2.121.0
+* HLS: 2.111.0
+* Smooth Streaming: 2.108.0

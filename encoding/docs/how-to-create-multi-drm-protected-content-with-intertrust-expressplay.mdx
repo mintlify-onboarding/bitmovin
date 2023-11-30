@@ -1,0 +1,80 @@
+---
+title: "How to create Multi-DRM protected content with Intertrust / ExpressPlay"
+---
+
+## Overview
+
+The following tutorial will show you how to create a video distribution platform, ready to target multiple devices and browsers with a DRM system compatible with Apple’s FairPlay, Google’s Widevine, Microsoft’s PlayReady and the open-standards-based Marlin DRM.
+
+This solution is an end-to-end solution that integrates the ExpressPlay Multi-DRM system with the Bitmovin Cloud Encoding system. By following this tutorial and using the supporting documents that you will find linked below, you can create a video on demand service with the same speed and quality as Netflix.
+
+## Requirements
+
+* An account at [https://admin.expressplay.com](https://admin.expressplay.com/)
+* If you want to use FairPlay DRM, a valid Apple certificate is required and has to be requested at Apple ([https://developer.apple.com/streaming/fps/](https://developer.apple.com/streaming/fps/), please "Request a Deployment Package")
+
+## Multi-DRM System – High Level Architecture
+
+![](/images/encoding/docs/a264d62-image.png)
+
+1. Use the Bitmovin Cloud Encoding Service to encode the content
+2. The client (HTML5 app or native app) requests the content from the service
+3. The service uses the ExpressPlay REST API to request a token for the DRM support by the client
+4. The token is passed back to the device
+5. Playback and / or download starts
+
+## Setup Bitmovin Cloud Encoding with DRM
+
+The following code example shows the configuration required to encrypt your adaptive stream to use Playready, Widevine and Fairplay. You are not required to include all the DRM schemas. For example, you can leave out Fairplay if it is not required.
+
+> **Important**: This example is using the LaUrl of the test environment offered by Intertrust/ExpressPlay. Please replace it with the production-use LaUrl, which is available in your Intertrust/ExpressPlay backend at [https://admin.expressplay.com](https://admin.expressplay.com/)
+
+## Widevine and PlayReady DRM
+
+Please see [this tutorial](/encoding/docs/how-to-create-combined-multi-drm-protected-content), which explains how to create a combined Widevine and PlayReady DRM protected encoding in more detail. The following parameters are required in order to create a successful DRM protected encoding using the ExpressPlay Multi DRM service.
+
+Java
+
+`String key = "0123456789abcdef0123456789abcdef";
+String kid = "0123456789abcdef0123456789abcdef";
+String widevinePssh = "CAESEAABAgMEBQYHCAkKCwwNDg8aCmludGVydHJ1c3QiASo=";
+String playreadyLaUrl = "https://pr.test.expressplay.com/playready/RightsManager.asmx";
+`
+
+The parameters of the configuration have the following meaning:
+
+* **key**: This is the common content encryption key in hex format of your choice, used for every DRM solution provided in the `CencDRM` configuration.
+* **kid**: This is the common unique identifier for your content key in hex format of your choice, used for every DRM solution provided in the `CencDRM` configuration.
+* **Widevine** \- `pssh`: This is the value for the Widevine pssh box, which is stays the same for the test and production environment offered by ExpressPlay
+* **PlayReady** \- `laUrl`: This is the URL to the PlayReady license server, that will be added in the metadata of the manifest and could be used by player to request a license.
+
+Each tutorial provides a full example, which you can use in order to create your own DRM protected content using ExpressPlay MultiDRM Services.
+
+## FairPlay DRM
+
+Please see [this tutorial](/encoding/docs/how-to-create-fairplay-drm-protected-content), which explains how to create a Fairplay DRM protected encoding. The following parameters are required in order to create a successful DRM protected encoding using the ExpressPlay Multi DRM service.
+
+Java
+
+`String key = "0123456789abcdef0123456789abcdef";
+String iv = "0123456789abcdef0123456789abcdef";
+String uri = "skd://expressplay_token";
+`
+
+The parameters of the Fairplay DRM configuration have the following meaning:
+
+* **key**: You need to provide a key that will be used to encrypt the content (16 byte; 32 hexadecimal characters)
+* **iv**: The initialization vector is optional. If it is not provided we will generate one for you. (16 byte; 32 hexadecimal characters)
+* **uri**: If provided, this URI will be used for license acquisition. Using Expressplay, you have to provide "skd://expressplay\_token" as `uri`
+
+## Get Started with a Bitmovin SDK
+
+| Bitmovin API SDK                                                               | Description                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Java](https://github.com/bitmovin/bitmovin-api-sdk-java)                      | Integrate the SDK into your Java Project easily and add it to the config of your dependency manager like Maven or Gradle. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-java#installation) |
+| [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples) | Integrate the SDK into your Javascript/Typescript based project easily by adding it as a dependency via NPM. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-javascript#installation)        |
+| [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples)                | Integrate the SDK into your Python based project easily by adding it as a dependency via pip or Setuptools. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-python#installation)             |
+| [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples)                  | Integrate the SDK into your .NET based project easily by adding it as a dependency via nuget. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-dotnet#installation)                           |
+| [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples)                   | Integrate the SDK into your PHP based project easily by adding it as a dependency via composer. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-php#installation)                            |
+
+Visit our [Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) that provides you with examples for all Bitmovin SDK's available.

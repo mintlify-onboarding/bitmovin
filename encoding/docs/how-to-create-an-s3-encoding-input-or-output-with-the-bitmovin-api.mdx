@@ -1,0 +1,138 @@
+---
+title: "How to create an S3 Encoding Input or Output with the Bitmovin API"
+---
+
+## Overview
+
+Your encoding workflow needs to have access to Input and Output storage to retrieve source files and write encoded files. When using AWS (Amazon Web Services), you will need to use S3 buckets as storage.
+
+In the simplest configuration, you will provide the Bitmovin Encoding Service with an Access and Secret key pair, attached to an AWS IAM (Identity and Access Management) User with appropriate permissions to access those buckets.
+
+This tutorial will walk you through the steps to create an S3 bucket, configure it to your needs, and then create Input and Output resources in the Bitmovin Encoding service.
+
+_Note: There is an alternative mechanism to grant access to your S3 buckets, with role-based access. If this is what you need, consult the [S3 Role-Based Input and Output tutorial](/encoding/docs/how-to-create-an-s3-role-based-encoding-input-or-output-with-the-bitmovin-api) instead._
+
+## Create an AWS S3 Bucket
+
+In the AWS Management Console, open the [S3 section](https://s3.console.aws.amazon.com/s3/home).
+
+1. Click on the **Create Bucket** button which starts the bucket creation wizard
+2. In the "Name and Region" panel, choose a bucket name (for example _my-bitmovin-bucket_) and a Region (for example _(EU) Ireland)_), then press **Next**
+3. Configure the **Object Ownership** depending on your needs a. **ACLs enabled**, this is **required** if PUBLIC\_ACCESS is configured for Encoding outputs. Encodings that are started in our [Bitmovin Dashboard](https://bitmovin.com/dashboard/) set the PUBLIC\_ACCESS to enable preview playback.  
+b. ACLs disabled. If this policy is used Encoding outputs need to be set to have the PRIVATE ACL.
+4. Configure **Block Public Access settings for this bucket** a. The default settings will **Block** _**all**_ **public access** b. To **enable playback** for manifests and files from the bucket, **uncheck** 🔳 **Block** _**all**_ **public access.**
+5. Finish going through the wizard and click **Create Bucket**
+6. To allow players to request content for streaming from your S3 bucket, you will also need to allow origin access with a CORS configuration. See [How can I configure an AWS S3 Bucket to test playback of my content?](/encoding/docs/how-can-i-configure-an-aws-s3-bucket-to-test-playback-of-my-content) on how to configure this for your bucket.
+
+Your bucket is now ready to be used.
+
+## Create an AWS IAM User
+
+Next we need to create a user that will be accessing the bucket. We continue working with the AWS Console
+
+1. Open the [Identity and Access Management (IAM) console](https://console.aws.amazon.com/iam/home)
+2. On the left pane, click on "Access Management" -> "Users".
+3. Click on **Add User**. The _Add User_ page appears.
+4. Step 1: add your desired User name.
+5. Step 2: Permissions  
+a. Make sure the user has the right permissions to for Amazon S3  
+b. The easiest way to achieve this is AmazonS3FullAccess  
+c. In “**Permission options”** select “**Attach policies directly”**  
+d. In **“Permission policies”** filter and select AmazonS3FullAccess  
+_(Note: The pre-defined AmazonS3FullAccess policy is known to be suitable but since it provides unrestricted access to your bucket, you might need to create a custom policy with fine-tuned access rights. Please review details of the permissions required for [buckets for Encoding Input and Output](/encoding/reference/what-permissions-do-i-need-to-set-on-my-s3-buckets-for-encoding-input-and-output) buckets and create a specific IAM Policy and associate it with this user as needed_ )
+6. Go through the next screens - those settings are optional and do not affect the configuration.
+7. On the last screen, press **Create User**
+8. Select the newly created user in the **Users** overview
+9. Select the **“Security credentials”** tab
+10. Scroll down to **“Access keys”** and hit the **“Create access key”** button
+11. Follow the **“Create access key”** steps  
+a. For **“Access key best practices & alternatives”** select **“Application running outside AWS”**  
+b. You need to securely store **Access Key** and **Secret Access Key.** You need to store them somewhere securely as you will need them later. Note that once you've left this screen, you will not be able to retrieve the Secret Access Key anymore and will need to generate a new one.
+
+If you want to learn more about Users in AWS, please see their [documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id%5Fusers%5Fcreate.html).
+
+## Create an S3 Input/Output
+
+S3 input and output resources can be created via the Bitmovin API or in the Bitmovin Dashboard. The minimal required information to create an S3 input or output are the following :
+
+* `bucketName`: the name of your S3 bucket
+* `accessKey` and `secretKey`: the Access Key ID and Secret Access Key obtained earlier.
+
+This example uses our latest [Open API client for Java](https://github.com/bitmovin/bitmovin-api-sdk-java), which is available on Github.
+
+## (Java) S3 Output Example
+
+### Create a new S3 Output
+
+Java
+
+`bitmovinApi = BitmovinApi.builder().withApiKey("YOUR_BITMOVIN_API_KEY").build();
+
+AclEntry aclEntry = new AclEntry();
+aclEntry.setPermission(AclPermission.PRIVATE);
+
+List<AclEntry> acl = new ArrayList<>();
+acl.add(aclEntry);
+
+S3Output s3Output = new S3Output();
+s3Output.setBucketName("<BUCKET_NAME>");
+s3Output.setAccessKey("<AWS_ACCESS_KEY>");
+s3Output.setSecretKey("<AWS_SECRET_KEY>");
+s3Output.setAcl(acl);
+
+s3RoleBasedOutput = bitmovinApi.encoding.outputs.s3.create(s3Output);
+`
+
+_Hint: In case you chose to enable `Block public access` on your S3 bucket (recommended), you would have to make sure that the ACL is set to `PRIVATE` on the output (as shown above) as well as on your Muxing configurations._
+
+_To create an Input is fairly similar, but you just use the `S3Input` resource and the `bitmovinApi.encoding.inputs.s3` endpoint_
+
+### Use an existing S3 Output
+
+Java
+
+`bitmovinApi = BitmovinApi.builder().withApiKey("YOUR_BITMOVIN_API_KEY").build();
+
+S3Output s3Output = bitmovinApi.encoding.outputs.s3.get("YOUR_S3_OUTPUT_ID");
+`
+
+---
+
+## (CURL) S3 Output Example
+
+### Create a new S3 Output
+
+API reference: [create an S3 Output](/encoding/reference/postencodingoutputss3):
+
+Shell
+
+`curl -X POST \
+  https://api.bitmovin.com/v1/encoding/outputs/s3 \
+  -H 'Content-Type: application/json' \
+  -H 'x-api-key: YOUR_BITMOVIN_API_KEY' \
+  -d '{
+    "bucketName": "<BUCKET_NAME>",
+    "accessKey": "<AWS_ACCESS_KEY>",
+    "secretKey": "<AWS_SECRET_KEY>",
+    "acl": [
+        {
+            "permission": "PRIVATE"
+        }
+    ]
+}'
+`
+
+### Get an existing S3 Output
+
+API reference: [get an S3 Output](/encoding/reference/getencodingoutputss3byoutputid)
+
+Shell
+
+`curl  https://api.bitmovin.com/v1/encoding/outputs/s3/YOUR_OUTPUT_ID \
+  -H 'Content-Type: application/json' \
+  -H 'x-api-key: YOUR_BITMOVIN_API_KEY'
+`
+
+## What's Next?
+
+Now that you have created S3 Role-Based Inputs and/or Outputs, you can use them in your encoding in much the same way as you would any other Input or Output.

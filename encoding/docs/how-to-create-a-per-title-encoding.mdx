@@ -1,0 +1,117 @@
+---
+title: "How to create a Per-Title Encoding"
+---
+
+## Overview
+
+What does Per-title Encoding do? In short: It introduces an additional step during the encoding process, analyzing the video asset. The findings are used to calculate the optimal bitrate ladder for every single asset and thus achieve higher perceptual quality.
+
+If you are not yet sure what Per-Title Encoding is, and what it means, please have a look at this [FAQ article](/encoding/docs/what-is-per-title-encoding) first before you continue.
+
+## Configuring a Per Title Encoding
+
+So far, when you create an `Encoding`, you add a `Stream` set to their `STANDARD` mode (enabled by default), for every output rendition you want to create out of your input file. Each `Stream` is linked to an `Codec Configuration` that defines which codec, resolution, bitrate, etc. has to be used for this rendition. Then you create `Muxing`s to define which outputs (fMP4 (DASH), MP4, TS,...) have to be created out of theses `Stream`s.
+
+When you create an `Per Title Encoding` the workflow and configuration is a little bit different as it depends on your requirements or use-case.
+
+## A Simple Setup (Example)
+
+The most simple use-case is where you let our encoding service decide everything to achieve the best possible outcome with regards to bandwidth savings and quality improvements.
+
+Instead of adding multiple `Stream`s to your `Encoding`, you add just one which mode is set to `PER_TITLE_TEMPLATE` and has as an plain `Codec configuration` linked to it. This `Stream`, its Codec Configuration, as well as all Muxings that are using it, will be used as a `template` by the Per-Title encoding, to create a `Per-Title profile`.
+
+Our Per-Title Algorithm will then add additional `Stream`s to this `per title profile` based on the `Per-Title Template`, which it considers to be most beneficial for your encoding in terms of bandwidth and quality. These `Streams` will have set their mode to `PER_TITLE_RESULT`, as they got added automatically by the Per-Title Algorithm.
+
+An `HTTPS Input` and `AWS S3 Output` will be used in the following example. The [full example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/PerTitleEncoding.java) states their creation and configuration as well.
+
+## 1) Create an Encoding
+
+As always the first step is to create an encoding in our API, which holds all the streams and muxings that are used to configure the encoding of your input file. In order to be able to use the Per Title Encoding you have to use the encoder version v1.53.0 or higher.
+
+Java
+
+`Encoding encoding = new Encoding();
+encoding.setName("Java Example - Per-Title");
+encoding.setCloudRegion(CloudRegion.AUTO);
+encoding = bitmovinApi.encoding.create(encoding);
+`
+
+## 2) Add a Stream and Codec Configuration
+
+As for regular encodings you do have to provide the Stream with the information about which video stream of your input file has to be used for the encoding.
+
+Java
+
+`InputStream videoInputStream = new InputStream();
+videoInputStream.setSelectionMode(StreamSelectionMode.AUTO);
+videoInputStream.setInputPath(INPUT_PATH);
+videoInputStream.setInputId(s3Input.getId());
+
+InputStream audioInputStream = new InputStream();
+audioInputStream.setSelectionMode(StreamSelectionMode.AUTO);
+audioInputStream.setInputPath(INPUT_PATH);
+audioInputStream.setInputId(s3Input.getId());
+`
+
+The next step is to create a single “Stream” which is configured to use a plain H264 Codec configuration, that is configured with its required options only, which is the “profile” option, and the “mode” of the Stream set to “PER\_TITLE\_TEMPLATE”. These steps are encapsulated in the "createAudioStream" and "createVideoStream" method used in the [full example](https://github.com/bitmovin/bitmovin-java/blob/master/src/test/java/com/bitmovin/api/examples/CreatePerTitleEncodingMp4.java#L112).
+
+Java
+
+`Stream audioStream = createAudioStream(encoding, audioInputStream);
+Stream videoStream = createVideoStream(encoding, videoInputStream);
+`
+
+## 3) Add Muxings
+
+Having finished the configuration which video stream of the input file shall be used for the per title encoding, the configuration of the desired output formats is needed (fMP4, TS, MP4, …). As done for the Codec configuration, only the required options will be set of the muxing.
+
+The example is creating fMP4 content, so its required parameters are:
+
+* Segment length
+* Streams to be used by the muxing
+* Outputs to be used, and a path where to store the content
+
+When creating content for an adaptive streaming format like MPEG-DASH, you typically store the segments of each rendition in a separate folder, where its name typically states the bitrate and/or resolution as well as an unique identifier to make it clearly identifiable.
+
+As you yet don’t know the bitrate or resolution that is going to be used by the Per Title Encoding, you can use the following placeholders to specify your output path:
+
+* {uuid} - e.g. 3f759845-75d7-4df0-91b6-53aef29b91dd
+* {bitrate} in bps
+* {width} in px
+* {height} in px
+
+These steps are encapsulated in the "createMp4Muxing" method used in the [full example](https://github.com/bitmovin/bitmovin-java/blob/master/src/test/java/com/bitmovin/api/examples/CreatePerTitleEncodingMp4.java#L178).
+
+`createMp4Muxing(encoding, s3Output, videoStream, audioStream);
+`
+
+## 4) Start the Per Title Encoding
+
+The configuration of the Per Title Encoding is now complete, therefore its `start Encoding` API call and the according `Per Title Configuration` can be prepared. Right now, Per Title Encodings support H.264, HEVC, and VP9 only, however other codecs like AV1 will be supported soon as well.
+
+While the `Per Title Configuration` allows you to customize the `Per Title Algorithm`, all its settings are optional. However in order start one, the `Per Title configuration` as to be present in the “start Encoding” API request.
+
+The Per Title Configuration can be added to the `StartEncodingRequest` configuration. There you can configure the “EncodingMode” which can be set to “STANDARD”, “TWO\_PASS” or “THREE\_PASS”. In order achieve the best possible quality “THREE\_PASS” is used in this example.
+
+These steps are encapsulated in the "startEncoding" method used in the [full example](https://github.com/bitmovin/bitmovin-java/blob/master/src/test/java/com/bitmovin/api/examples/CreatePerTitleEncodingMp4.java#L212).
+
+`startEncoding(encoding);
+`
+
+That’s it! The Per Title Encoding will be started now, the Per Title Algorithm add additional Streams to achieve high quality and bandwidth savings, and transfers them to your Output accordingly.
+
+## Per-Title Configuration Options
+
+If the fully automated way doesn't suite you completely, as you need to fullfil certain requirements, e.g. the range available to select a proper bitrate, or how small/big the steps between each representation has to be, you can [customize the per title algorithm configuration](/encoding/docs/per-title-configuration-options-explained) for each codec you are using as well.
+
+## Get Started with a Bitmovin SDK
+
+| Bitmovin API SDK                                                               | Description                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Java](https://github.com/bitmovin/bitmovin-api-sdk-java)                      | Integrate the SDK into your Java Project easily and add it to the config of your dependency manager like Maven or Gradle. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-java#installation) |
+| [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples) | Integrate the SDK into your Javascript/Typescript based project easily by adding it as a dependency via NPM. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-javascript#installation)        |
+| [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples)                | Integrate the SDK into your Python based project easily by adding it as a dependency via pip or Setuptools. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-python#installation)             |
+| [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples)                  | Integrate the SDK into your .NET based project easily by adding it as a dependency via nuget. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-dotnet#installation)                           |
+| [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples)                   | Integrate the SDK into your PHP based project easily by adding it as a dependency via composer. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-php#installation)                            |
+
+Visit our [Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) that provides you with examples for all Bitmovin SDK's available.

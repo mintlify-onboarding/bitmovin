@@ -1,0 +1,37 @@
+---
+title: "What do the different encodings state mean?"
+---
+
+An encoding can have multiple states: `CREATED`, `QUEUED`, `RUNNING`, `FINISHED`, or `ERROR`.
+
+## CREATED
+
+The first step of every encoding configuration is to create an encoding resource with the Bitmovin API, where you can define the Cloud and a region, if you want, where this encodign shall be executed in. If this initial API call succeeds, a new encoding resource gets created and has the state `CREATED`.
+
+While an encoding is in this state you add or remove other resources like `Stream`s and `Muxing`s accordingly, until you achieve the desired configuration for your encoding. Once you are done with that, you can send the API request to start this encoding (POST `https://api.bitmovin.com/v1/encodings/encoding/<encodingId>/start`). If the configuration passes the initial validation, the encoding will be scheduled for processing, and its state changes to ...
+
+## QUEUED
+
+In this state our system is checking the particular cloud provider and region the encoding is supposed to run in, for available encoder resources.
+
+If no encoders resources are available at the moment, new ones have to be requested first. This time can vary, between Cloud Providers like AWS, Google or Azure, as well as their region that is used for an encoding. Also the current utilization of a particular region can impact the time an encoding remains in this state. However, we continuosely are optimizing our scheduling algorithms, so new resources are usually available within 1-2 minutes.
+
+If there are encoder resources available already, those get assigned to the queued encoding and will be configured accordingly. This only takes a few seconds and eventually the state of the encoding will switch from QUEUED to RUNNING.
+
+## RUNNING
+
+In this state several steps are happening.
+
+1. **Input Download** \- Inititally the encoding starts with downloading the input file for the encoding
+2. **Input Analysis** \- Once completed, the input file get analyzed to determine its resolution, available audio/video tracks and other metadata information.
+3. **Encoding** \- Now the encoding process starts generating the configured output formats, thumbnails, sprites and everything else.
+4. **Transmuxing** \- If progressive outputs are part of the encoding configuration, they will be finished during this step, by merging the audio/video tracks that were encoded before.
+5. **Transfer** \- The transfer of the encoded content to the provided output location is an implicit part of the whole encoding. Once completed successfully, the encoding changes its state to `FINISHED` if the encoding and tranfer step were successful, or to `ERROR` in case one of those failed unfortunately.
+
+## FINISHED
+
+All steps of the encooding process were finished successfully, and your content is available on your storage ready to be streamed to your users :)
+
+## ERROR
+
+In case of an issue during the whole encoding process, the task log panel in the details view in the dashboard, provides more details about the reason for the error and should already be helpful to understand what happened. If you still need assistance please don't hesitate and reach out to us through our [support request forms](https://bitmovin.com/dashboard/support/cases/create) here.

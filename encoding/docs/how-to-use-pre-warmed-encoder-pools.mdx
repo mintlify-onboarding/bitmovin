@@ -1,0 +1,175 @@
+---
+title: "How to use Pre-warmed Encoder Pools"
+---
+
+## Overview
+
+Pre-warmed encoder pools, are a collection of idle encoding resources which can be immediately acquired by starting encodings that are configured to take resources from such a pool. If an encoding takes a resource from a pool, this pool automatically provisions additional encoding resources to maintain its target size at any time.
+
+**Why would I use that?** \- It allows you to optimize the total turn around time of your workflow by basically removing the queue time for an encoding. When properly configured for your use-case, your encoding queue time drops down \~0 to a few seconds consistently. This way you can achieve a continuous throughput as a dedicated pool of encoding resources is exclusively available to your Bitmovin Account.
+
+**Key Features**
+
+* **Create a pool of pre-warmed encoding resources** \- Encodings which refill's automatically and maintains a minimum number of always available encoding resources.
+* **Schedule the availability of pre-warmed encoder pools** \- If you only want to have them pre-warmed, e.g. during your business hours or other specific time frames where you know you would need them, you can schedule the start and stop of a pool ahead of time
+* **Works with `Cloud Connect` for AWS, GCP, and Azure** \- Create pre-warmed encoder pools in your own connected infrastructure.
+
+## Requirements
+
+* Open API SDK v1.168+
+* As running pools generate costs even if not utilized, they have to be enabled by our team.
+
+## Known Limitations
+
+The following limitations exist:
+
+* only one pre-warmed encoder pool can be assigned to the start-request for an encoding
+* At the moment, pre-warmed encoder pools can be used for VoD encoding workflows only
+* Pool status - At the moment, it only reflects if a pool has been STARTED or STOPPED. The readiness of a pool to be used by encodings, can't be determined automatically yet. In general, after starting a pool, depending on the cloud provider and region, it can take \~ 5 minutes before it is ready to use.
+* `targetPoolSize` is limited to the number of available encoding slots to your Bitmovin Account.
+
+## Create a Pool
+
+**Required Pool Configuration Properties:**
+
+* `encoderVersion` \- An explicitly defined encoder version for this pool. Only encodings that are configured to use the same encoder version can take resources from this pool.
+* `cloudRegion` \- An explicitly defined cloud region of a cloud provider for this pool. Only encodings that are configured to use the cloud region can take resources from this pool.
+* `targetPoolSize` \- The number of encoding resources the pool has to keep available at all times. If one is taken from the pool, it "refill"s a new one automatically.
+* `diskSize` \- (500GB|1000GB|2000GB) available to the encoding resource. The appropriate size depends on the use-case you are dealing with. E.g. when processing mainly small input files with a typical encoding profile, 500GB are usually sufficient. Workflows creating big progressive Outputs or dealing with RAW or Mezzanine files should use 1000GB or more.
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/postencodinginfrastructureprewarmedencoderpools) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+Java
+
+`PrewarmedEncoderPool poolToCreate = new PrewarmedEncoderPool();
+poolToCreate.setName("Fast-Track Encodings");
+poolToCreate.setDescription("Use for encodings that have to be done immediately");
+poolToCreate.setEncoderVersion("2.174.0");
+poolToCreate.setCloudRegion(CloudRegion.AWS_EU_WEST_1);
+poolToCreate.setDiskSize(PrewarmedEncoderDiskSize.GB_500);
+poolToCreate.setTargetPoolSize(1);
+
+PrewarmedEncoderPool createdPool = bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.create(poolToCreate);
+`
+
+## Start a Pool
+
+Once created, you can start a pool by issuing the start API Call:
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/postencodinginfrastructureprewarmedencoderpoolsstartbypoolid) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+Java
+
+`bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.start(createdPool.getId());
+`
+
+### Wait for Pool to be Up and Running
+
+As mentioned in "Known Limitations", only STARTED and STOPPED is available to reflect the status of a pool right now. Therefore, its recommended to wait for a few minutes (\~5min) before the pool is ready to use, after being started.
+
+## Check the status of a Pool
+
+As its an asynchronous process, you can check the status of a pool accordingly like this:
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/getencodinginfrastructureprewarmedencoderpoolsbypoolid) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+Java
+
+`bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.get(createdPool.getId());
+`
+
+Its either STOPPED, or STARTED. As mentioned at "Known Limitations", the readiness of a pool to be used by encodings, can't be determined automatically yet. In general, after starting a pool, depending on the cloud provider and region, it can take \~ 5 minutes before it is ready to use.
+
+## Start an Encoding using a Pool
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/postencodingencodingsstartbyencodingid) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+Java
+
+`Encoding encoding = new Encoding();
+encoding.setEncoderVersion("2.174.0");
+encoding.setCloudRegion(CloudRegion.AWS_EU_WEST_1);
+
+...
+//your encoding configurations...
+...
+
+//Start an Encoding with StartEncodingRequest Configuration
+Scheduling scheduling = new Scheduling();
+scheduling.setPrewarmedEncoderPoolIds(array.asList(createdPool.getId()));
+StartEncodingRequest startEncodingRequest = new StartEncodingRequest();   
+
+startEncodingRequest.setScheduling(scheduling);
+bitmovinApi.encodings.start(encoding.getId(), startEncodingRequest);
+`
+
+## Stop a Pool
+
+If a pool is no longer needed at the moment, you can stop using the stop API call. Once issued, the pool immediately starts to gracefully de-provision all its idle encoding resources.
+
+**Hint:** Already running encodings, using resources from a stopping pool, will continue to run and its resources will be de-provisioned as soon as they have successfully finished.
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/postencodinginfrastructureprewarmedencoderpoolsstopbypoolid) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+Java
+
+`bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.stop(retrieved.getId());
+`
+
+## Delete a Pool
+
+If a pool is no longer needed, it can be deleted. A pool has to be STOPPED first, before it can be deleted.
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/deleteencodinginfrastructureprewarmedencoderpoolsbypoolid) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+Java
+
+`bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.delete(createdPool.getId());
+`
+
+## Schedule the START/STOP for a pool
+
+**Required Properties:**
+
+* `action` \- (START|STOP) Determines if the pool shall be started or stopped
+* `triggerDate` \- The date and time in the future (at least a full minute) the action shall be executed at. The scheduling time is on a per-minute basis, so seconds and milliseconds are not respected by the scheduling.
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/postencodinginfrastructureprewarmedencoderpoolsschedulesbypoolid) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+### Schedule the Start of a Pool
+
+Java
+
+`Date poolStartDate = new DateTime(2020, 11, 20, 9, 0, 0).toDate();
+
+PrewarmedEncoderPoolSchedule poolSchedule = new PrewarmedEncoderPoolSchedule();
+poolSchedule.setAction(PrewarmedEncoderPoolAction.START);
+poolSchedule.setTriggerDate(poolStartDate);
+
+PrewarmedEncoderPoolSchedule createdPoolSchedule =
+bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.schedules.create(
+createdPool.getId(), poolSchedule);
+`
+
+### Schedule the Stop of a Pool
+
+Java
+
+`Date poolStopDate = new DateTime(2020, 11, 20, 17, 0, 0).toDate();
+
+PrewarmedEncoderPoolSchedule poolSchedule = new PrewarmedEncoderPoolSchedule();
+poolSchedule.setAction(PrewarmedEncoderPoolAction.STOP);
+poolSchedule.setTriggerDate(poolStopDate);
+
+bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.schedules.create(
+retrieved.getId(), poolSchedule);
+`
+
+## Delete a scheduled START/STOP of a Pool
+
+**Bitmovin API SDK for Java Example:** ([API-Reference](/encoding/reference/deleteencodinginfrastructureprewarmedencoderpoolsschedulesbypoolidandscheduleid) | [Github](https://github.com/bitmovin/bitmovin-api-sdk-java/))
+
+Java
+
+`bitmovinApi.encoding.infrastructure.prewarmedEncoderPools.schedules.delete(createdPool.getId(),createdPoolSchedule.getId());
+`

@@ -1,0 +1,106 @@
+---
+title: "Default vs custom manifests"
+---
+
+## Overview
+
+The Bitmovin API offers two approaches for configuring manifests, allowing for different degrees of customization regarding the exact structure of the manifest file and its contents (video and audio renditions, thumbnails, sprites, subtitles, DRM information,...).
+
+A "default manifest" is the worry-free option that will be configured fully automatically, depending on what output your encoding creates. This is a good starting point for most low to medium complexity workflows.
+
+If you need more control, go for a custom manifest.
+
+## Default manifests
+
+A default manifest will automatically include every muxing and DRM output of the specified encoding. This is a typical requirement that covers a vast majority of use-cases. There is no need (and no possibility) to take any more control of the manifest content.
+
+The only properties required for creating a default manifest resource are `encodingId` and `outputs` (specifying the storage location where the manifest is to be written to).
+
+### API endpoints
+
+Creating a Default Manifest resource:
+
+* DASH: [Create Default DASH Manifest](/encoding/reference/postencodingmanifestsdashdefault)
+* HLS: [Create Default HLS Manifest](/encoding/reference/postencodingmanifestshlsdefault)
+* Smooth Streaming: [Create Default Smooth Streaming Manifest](/encoding/reference/postencodingmanifestssmoothdefault)
+
+To start manifest generation, choose one of the two options described in [Creating manifests with the Bitmovin API](/encoding/docs/how-to-create-manifests-for-your-encodings#generation-method).
+
+### Example for DASH and HLS
+
+Java
+
+`...
+executeEncoding(encoding);
+
+generateDashManifest(encoding, output, "/");
+generateHlsManifest(encoding, output, "/");
+
+...
+
+private static void generateDashManifest(Encoding encoding, Output output, String outputPath) throws Exception {
+    DashManifestDefault dashManifestDefault = new DashManifestDefault();
+    dashManifestDefault.setEncodingId(encoding.getId());
+    dashManifestDefault.setManifestName("stream.mpd");
+    dashManifestDefault.addOutputsItem(buildEncodingOutput(output, outputPath));
+
+    dashManifestDefault = bitmovinApi.encoding.manifests.dash.defaultapi.create(dashManifestDefault);
+    executeDashManifestCreation(dashManifestDefault); //Start manifest creation, and wait until its state is either FINISHED, or ERROR
+}
+
+private static void generateHlsManifest(Encoding encoding, Output output, String outputPath) throws Exception {
+    HlsManifestDefault hlsManifestDefault = new HlsManifestDefault();
+    hlsManifestDefault.setEncodingId(encoding.getId());
+    hlsManifestDefault.addOutputsItem(buildEncodingOutput(output, outputPath));
+    hlsManifestDefault.setName("master.m3u8");
+    hlsManifestDefault.setVersion(HlsManifestDefaultVersion.V1);
+    
+    hlsManifestDefault = bitmovinApi.encoding.manifests.hls.defaultapi.create(hlsManifestDefault);
+    executeHlsManifestCreation(hlsManifestDefault); //Start manifest creation, and poll status until its state is either FINISHED, or ERROR
+}
+`
+
+This is a snippet from the [Generating Default Manifests](https://github.com/bitmovin/bitmovin-api-sdk-examples/tree/main#generating-default-manifests) code example available in multiple languages on Github.
+
+## Custom manifests
+
+While being the most flexible approach, its also the most advanced one as you are configuring a manifest from scratch. However, it does enable you to deal with use-cases that are often encountered in post-production workflows, or to meet special requirements like
+
+* specialized manifests for different platforms,
+* manifests with a limited set of renditions of SD-subscribers of your service,
+* re-creating manifests for contents where an additional audio/video/subtitle track became available (these tracks have to be encoded in the same way as the already exisiting ones, otherwise they won't comply with manifest requirements)
+* and more.
+
+So, creating a custom manifest enables you to utilize the flexibility of streaming formats, and cross-reference the outputs of different encodings, and create them exactly how you want them to be. You do need to know how MPEG-DASH or HLS manifests are structured and work, in order to do that as you have to create their structure as needed.
+
+### API endpoints
+
+DASH: [Create Custom DASH Manifest](/encoding/reference/postencodingmanifestsdash)  
+HLS: [Create Custom HLS Manifest](/encoding/reference/postencodingmanifestshls)  
+Smooth Streaming: [Create Smooth Streaming Manifest](/encoding/reference/postencodingmanifestssmooth)
+
+Note that for custom configurations, the `Manifest` resource is only the starting point. Additional endpoints are available that allow adding sub-resources to it, depending on the manifest type (e.g. Periods for DASH, Media elements for HLS).
+
+When you've created all desired resources, your manifest is ready for generation. To start manifest generation, choose one of the two options described in [Creating manifests with the Bitmovin API](/encoding/docs/how-to-create-manifests-for-your-encodings#generation-method).
+
+The following example outlines this process for a DASH manifest.
+
+### Example for DASH
+
+Creating a very basic DASH Manifest (with some video and audio renditions) requires the following steps:
+
+1. Create a `DashManifest` resource: [Create Custom DASH Manifest](/encoding/reference/postencodingmanifestsdash)
+2. Add a `Period` to it: [Add Period](/encoding/reference/postencodingmanifestsdashperiodsbymanifestid)
+3. Add a `VideoAdaptationSet` to the `Period`: [Add Video AdaptationSet](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsvideobymanifestidandperiodid)
+4. Add an `Fmp4Representation` for each video representation to the `VideoAdaptationSet` you want to be available to a player for bitrate adaptation: [Add fMP4 Representation](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsrepresentationsfmp4bymanifestidandperiodidandadaptationsetid)
+5. Add a `AudioAdaptationSet` to the `Period`: [Add Audio AdaptationSet](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsaudiobymanifestidandperiodid)
+6. Add an `Fmp4Representation` for each audio representation to the `AudioAdaptationSet` you want to be available to a player for bitrate adaptation: [Add Audio AdaptationSet](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsaudiobymanifestidandperiodid)
+7. Start the manifest generation: [Start DASH Manifest Creation](/encoding/reference/postencodingmanifestsdashstartbymanifestid)
+
+## Comparison
+
+| Default manifests                                     | Custom manifests                                                                                                                                                                                                                                                                               |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Offer one simple solution that fits most use-cases    | Build manifests to meet the needs for complex video delivery workflows                                                                                                                                                                                                                         |
+| Configuring requires nothing more than an encoding ID | All content needs to be added to the manifest explicitly. This means the IDs of the relevant encoding resources (streams, muxings, DRMs, thumbnails,...) need to be known. Either your encoding workflow needs to store this metadata or you retrieve it at a later time via the Bitmovin API. |
+| Does not allow combining output of multiple encodings | Allows combining output of multiple encodings in one manifest (when using [post-encoding](/encoding/docs/how-to-create-manifests-for-your-encodings#post-encoding) generation), e.g. to augment an existing asset with an additional audio track.                                              |

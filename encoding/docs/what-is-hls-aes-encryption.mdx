@@ -1,0 +1,14 @@
+---
+title: "What is HLS AES Encryption?"
+---
+
+## Apple HTTP Live Streaming Encryption
+
+HLS DRM does not always need to be a Hollywood grade DRM. Sometimes it’s enough to just add another layer of security through AES encryption. The Bitmovin encoding service and player enable this workflow for HLS and MPEG-DASH.
+
+## HLS AES Encryption
+
+Apple HLS supports two encryption methods:
+
+* **AES-128** It encrypts the whole segment with the Advanced Encryption Standard (AES) using a 128 bit key, Cipher Block Chaining (CBC) and PKCS7 padding.The CBC will be restarted with each segment using the Initialization Vector (IV) provided.
+* **SAMPLE-AES** It encrypts each individual media sample (e.g., video, audio, etc.) by its own with AES. The specific encryption and packaging depends on the media format, e.g., H.264, AAC, etc. SAMPLE-AES allows fine grained encryption modes, e.g., just encrypt I frames, just encrypt 1 out of 10 samples, etc. This could decrease the complexity of the decryption process. Several advantages result out of this approach as fewer CPU cycles are needed and for example mobile devices need less power consumption, higher resolutions can be effectively decrypted, etc.

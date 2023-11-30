@@ -1,0 +1,51 @@
+---
+title: "How to create an Akamai NetStorage Upload Account"
+---
+
+## Overview
+
+In this tutorial we will walk through how to create a dedicate Upload Account for an existing Akamai NetStorage Setup. If you don't have one yet, but want to create one, please consult the [official documentation of Akamai](https://learn.akamai.com/en-us/webhelp/netstorage/netstorage-user-guide/).
+
+If you already know how create an upload account, and where to find the necessary details you can already proceed with the following tutorials:
+
+* [How to create an Akamai NetStorage Input](/encoding/docs/how-to-setup-an-akamai-netstorage-input)
+* [How to create an Akamai NetStorage Output](/encoding/docs/how-to-setup-an-akamai-netstorage-output)
+
+---
+
+## Create/Edit your Akamai Upload Account
+
+Upload accounts can be created in the Backend portal of your Akamai account and are dedicated "user" credentials used to control what and how someone can access your NetStorage and its content. What we are looking into here is how to enable the `HTTP Access Method`, respectively where you can find the information you need to create an Akamai NetStorage Input/Output in our service.
+
+1. Login to your Akamai Account at [https://control.akamai.com](https://control.akamai.com/)
+2. In the menu click on `CONFIGURE` \=> `NetStorage` \=> `Configuration`
+3. In the side bar on the left, click on the `Upload Accounts` icon
+
+### Create a new Upload Account
+
+If you have no upload account available yet, you will have to create one first, please follow this guide in the [Akamai documentation](https://learn.akamai.com/en-us/webhelp/netstorage/netstorage-configuration-guide-for-objectstore-ns4/GUID-F73DFBAB-85FB-44F7-BC8E-B33733BA0813.html).
+
+![](/images/encoding/docs/6f8ea8e-image.png)
+
+### Edit an existing Upload Account
+
+If you already have an upload account that can access the directories you want to transfer your encodings to, you can simply edit this one and grant it permissions to HTTP Access as well. In your Upload account overview you also see the access methods that are already enabled for your existing upload accounts. If the one you want to use already states `HTTP`, this account can be used already to create an Akamai NetStorage Input/Output in your Bitmovin account.
+
+![](/images/encoding/docs/0ecff0a-image.png)
+
+## Get your HTTP API credentials
+
+Your Akamai NetStorage HTTP API credentials consist of the `HTTP API Key` and `Username` of your upload account.
+
+* `Username` \- The username is shown in your Upload account overview in the column `Upload Account`
+* `HTTP API Key` \- This key is used to authenticate against the `Akamai NetStorage HTTP API` and is shown only when you edit an Upload account  
+   1. Find your upload account in your overview, click on the three dots on the right side of the row and select `Edit`.  
+   2. Find the "Access Method" area. If no key is listed yet, create a new one with a click on `Add or Rotate HTTP API Key` (1). Then copy the `Key` (2).
+
+![](/images/encoding/docs/1dc9a86-image.png)
+
+## Find your NetStorage HTTP API URL
+
+This URL is shown in the details view of your Storage Group in the Akamai Backend: Select the "Storage Group" section on the left side (blue cloud symbol), then select the storage group you are using in the list by clicking on it. You will be presented with a view like in the image below. The URL stated next NetStorage HTTP API, is the one you would have to use the host URL when creating an Akamai NetStorage Input/Output in our service.
+
+![](/images/encoding/docs/d29fd83-image.png)

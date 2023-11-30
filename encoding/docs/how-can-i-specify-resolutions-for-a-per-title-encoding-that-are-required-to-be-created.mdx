@@ -1,0 +1,11 @@
+---
+title: "How can I specify resolutions for a Per-Title encoding that are required to be created?"
+---
+
+Based on our \[How to create a pertitle [general tutorial on Per-Title encoding](/encoding/docs/how-to-create-a-per-title-encoding), you can do the following:
+
+Add Per-Title template Streams for every possible resolution that you want to support. The codec configuration needs to contain at least the height, or the width in that case. If only one of the both resolutions is specified the [aspect ratio](/encoding/docs/how-do-i-configure-an-codec-configuration-to-maintain-aspect-ratio-of-the-original-video) will be kept.
+
+Add one or more muxings to the Per-Title template Stream, e.g., MP4 muxing if you want to have single progressive MP4 files as output, or segmented fMP4 muxing for DASH/HLS. Also define an output path with the supported placeholders to make it unique: `{uuid}`, `{bitrate}`, `{width}`, `{height}`. We always encourage to make `{uuid}` part of the output path to ensure it will be unique. E.g., `/video/{bitrate}_{uuid}`.
+
+In the start call of the encoding you can find a Per-Title configuration object and inside this object a configuration per codec, e.g., h264Configuration. You do not need to configure anything specific here if you want the default values to apply. That’s it! Start your encoding in this configuration and the Per-Title algorithm will generate an optimal bitrate ladder using the resolutions you have defined for your asset. Please note that the algorithm might decide to not use a specific resolution if it does not make sense for a specific asset.

@@ -1,0 +1,32 @@
+---
+title: "How do I configure an codec configuration to maintain aspect ratio of the original video?"
+---
+
+You can create an codec configuration, that will keep the aspect ratio of the original video by just omitting either the width or the height when you create it. Doing so, our service will maintain the aspect ratio of your input file, and calculate the omitted value based on that.
+
+In the following an example for an encoding profile that will keep aspect ratio:
+
+**Open API SDK Java Example - Create an H264 Codec Configuration that maintains the aspect ratio:**
+
+Java
+
+`//Maintain the aspect ratio of the input file by providing "height" only
+H264VideoConfiguration config = new H264VideoConfiguration();
+config.setName("H264 - 1080p");
+config.setPresetConfiguration(PresetConfiguration.VOD_STANDARD);
+config.setBitrate(4800000L);
+config.setHeight(1080L):
+
+return bitmovinApi.encoding.configurations.video.h264.create(config);
+
+//Maintain the aspect ratio of the input file by providing "width" only
+H264VideoConfiguration config = new H264VideoConfiguration();
+config.setName("H264 - 1080p");
+config.setPresetConfiguration(PresetConfiguration.VOD_STANDARD);
+config.setBitrate(4800000L);
+config.setWidth(1920L);
+
+return bitmovinApi.encoding.configurations.video.h264.create(config);
+`
+
+This example is based on our [Open API SDK for Java](https://github.com/bitmovin/bitmovin-api-sdk-java), which is available on Github. Please see our [Open API SDK overview](/encoding/reference/sdks) for all our supported programming languages, and our [GH API SDK Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) for further examples.

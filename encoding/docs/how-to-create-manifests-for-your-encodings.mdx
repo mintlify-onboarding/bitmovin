@@ -1,0 +1,80 @@
+---
+title: "Creating manifests with the Bitmovin API"
+---
+
+## Overview
+
+Encoding your content into a streamable format is the first big step towards improving viewer experience. For ABR (adaptive bitrate) capable players to make the most out of it, creating a manifest file is the second step. Our service supports multiple kinds of manifests and multiple ways of creating them, to ideally suit your requirements and workflow.
+
+There are four dimensions to be considered:
+
+| dimension            | options                                     |
+| -------------------- | ------------------------------------------- |
+| manifest type        | **DASH** / **HLS** / **Smooth Streaming**   |
+| configuration method | **custom** vs **default**                   |
+| generation method    | **just-in-time** (JIT) vs **post-encoding** |
+| generator version    | **V2** vs **LEGACY**                        |
+
+### Manifest type
+
+Different players / end user devices require different manifest types. The most widespread standard is DASH (Dynamic Adaptive Streaming over HTTP). HLS (HTTP Live Streaming) is the de-facto standard on all Apple devices, while Smooth Streaming covers a couple of applications in the Microsoft universe.
+
+To serve the widest range of viewers possible, it's advisable to create multiple manifests for the same encoded content, which is just a finger exercise with Bitmovin.
+
+### Configuration method
+
+This decision depends on the degree of customization that is required regarding the exact structure of the manifest file and its contents (video and audio renditions, thumbnails, sprites, subtitles, DRM information,...).
+
+A "default manifest" is the worry-free option that will be configured fully automatically, depending on what output your encoding creates. This is a good starting point for most low to medium complexity workflows.
+
+If you need more control, go for a custom manifest. This will be your choice for complex workflows, e.g. if you want to configure ad breaks.
+
+See [Default vs custom manifests](/encoding/docs/default-vs-custom-manifest) for further details. Once you have created a Manifest resource and configured it to your choice, the next step is trigger the generation of the actual manifest file(s).
+
+### Generation method
+
+This is about triggering the process of building the actual manifest text file(s), based on the manifest API resource that you configured beforehand.
+
+#### Just-in-time (JIT)
+
+JIT manifests are generated along with an encoding (technically speaking, on the same cloud instance). For publishing new content as quickly as possible, this is the way to go. For LIVE encodings it is the only option.
+
+From an API perspective, the encoding process and manifest generation are triggered via the same “start” call. To generate manifests just-in-time, add them to the following list properties of the [Start Encoding](/encoding/reference/postencodingencodingsstartbyencodingid) or [Start Live Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid) request:
+
+* DASH: `vodDashManifests`
+* HLS: `vodHlsManifests`
+* Smooth Streaming: `vodSmoothManifests` (VoD only)
+
+**Preview manifests** are a special kind of JIT manifests that allow to “live” stream the output of a VoD encoding while it’s still in progress. A preview manifest is typically used in addition to a regular manifest for extremely time-critical applications. Just add the IDs of the Manifest resources to the following list properties of the [Start Encoding](/encoding/reference/postencodingencodingsstartbyencodingid) request:
+
+* DASH: `previewDashManifests`
+* HLS: `previewHlsManifests`
+
+#### Post-encoding
+
+As the name suggests, post-encoding manifests can be generated at any later time after encoding.  
+They allow combining outputs from multiple encodings (e.g. using different codecs) into one manifest, which we refer to as a **multi-encoding** manifest. It’s also possible to make LIVE encodings (or parts thereof) available as VoD content (see [How to implement a **Live-to-VoD** workflow with the Bitmovin API](https://developer.bitmovin.com/encoding/docs/how-to-implement-a-live-to-vod-workflow-with-the-bitmovin-api)).
+
+Post-encoding manifest generation is triggered by a separate "start" call:
+
+* DASH: [Start DASH Manifest Creation](/encoding/reference/postencodingmanifestsdashstartbymanifestid)
+* HLS: [Start HLS Manifest Creation](/encoding/reference/postencodingmanifestshlsstartbymanifestid)
+* Smooth Streaming: [Start Smooth Streaming Manifest Creation](/encoding/reference/postencodingmanifestssmoothstartbymanifestid)
+
+Ensure that all referenced encodings are in state `FINISHED` before generating a manifest for them, otherwise the generation can fail. If you do not want to care about encoding state, consider using just-in-time generation.
+
+#### Comparison
+
+| just-in-time                                                                                                                                                                   | post-encoding                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A single start call triggers both the encoding process and the manifest generation, simplifying workflow implementation (fire & forget).                                       | Encoding process and manifest generation are triggered via separate start calls.                                                                                                                                                                                     |
+| The minor version of the manifest generator is bound to the used encoder version. To take advantage of the latest improvements and fixes, use the most recent encoder version. | Always uses the most recent minor version of the manifest generator. However, some improvements/fixes may rely on information that is only provided by newer encoder versions. If this is the case, release notes will mention the minimum required encoder version. |
+| For LIVE encodings and preview manifests, this is the only option.                                                                                                             | For Live-to-VoD and multi-encoding manifests (combining the output of multiple encodings), this is the only option.                                                                                                                                                  |
+
+### Generator version
+
+The manifest generator is the component that builds the actual manifest text file(s) that are written to the output storage, based on a manifest API resource which you configured beforehand.
+
+If your organization signed up before 2023-06-01, you may be using an outdated manifest generator by default and should consider migrating to the current version. For a detailed list of improvements and migration guide, see [Manifest Generator V2](/encoding/docs/manifest-generator-v2).
+
+If your organization is newer than that, you're automatically using the new generator version and cannot use the old one, so there is no choice to take.

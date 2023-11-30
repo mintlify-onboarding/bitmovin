@@ -1,0 +1,77 @@
+---
+title: "How to use re-transfer to retry transfer errors of successful encoding jobs"
+---
+
+## Context
+
+Ideally, all parts of a workflow are 100% reliable and work as expected every single time. As we all know, this is not the case and that's why a system has to be designed in a resilient way to make up for the instability of single parts within.
+
+One way in which Bitmovin helps to make the workflow more resilient is the re-transfer functionality. Encoded content is stored on a temporary storage for 72 hours and if anything goes wrong during the transfer to your output storage, it can be retried without needing to re-encode the content.
+
+## Basic usage
+
+_Re-transfer needs to be enabled for your account. Please reach out if you are not sure if it's enabled for you._ To get started with using the re-transfer functionality, all you have to do is the following steps shown as example with our Java SDK.
+
+**1\. Configure the transfer error webhook**
+
+Configure the transfer-error webhook to be informed about a transfer problem for a specific encoding.
+
+Java
+
+`Webhook transferErrorWebhook = new Webhook();
+transferErrorWebhook.setUrl("https://yourservice.com/webhooks/transfer-error");
+transferErrorWebhook.setMethod(WebhookHttpMethod.POST);
+transferErrorWebhook = bitmovinApi
+    .notifications
+    .webhooks
+    .encoding
+    .encodings
+    .transferError
+    .createByEncodingId("<INSERT THE ENCODING ID>", transferErrorWebhook);
+
+`
+
+**2\. Configure the encoding finished webhook**
+
+Configure a webhook to be informed when the transfer retry finished successfully and the encoding status changes.
+
+Java
+
+`Webhook encodingFinishedWebhook = new Webhook();
+encodingFinishedWebhook.setUrl("https://yourservice.com/webhooks/encoding-finished");
+encodingFinishedWebhook.setMethod(WebhookHttpMethod.POST);
+encodingFinishedWebhook = bitmovinApi
+    .notifications
+    .webhooks
+    .encoding
+    .encodings
+    .finished
+    .createByEncodingId("<INSERT THE ENCODING ID>", encodingFinishedWebhook);
+`
+
+**3\. Trigger the transfer retry**
+
+This is how a transfer-error webhook receiving application could look like. Please see the [transfer-error webhook specification](/encoding/reference/getnotificationswebhooksencodingencodingstransfererrorbywebhookid) for details on the webhook payload for access to the information you will need to pass to the next call.
+
+Call the [transfer retries endpoint](/encoding/reference/postencodingencodingstransferretrybyencodingid) for this encoding ID to start the transfer retry.
+
+Java
+
+`WebhookPayload webhookPayload = getWebhookPayload(); // getWebhookPayload() deserializes the webhook payload into a WebhookPayload object
+String encodingId = webhookPayload.getEncoding().getId();
+TransferRetry transferRetry = bitmovinApi
+    .encoding
+    .encodings
+    .transferRetries
+    .create(encodingId);
+`
+
+**4\. Success**
+
+When the transfer retry finished successfully, all the files should be present in the Output storage that was set for the encoding, and the encoding-finished webhook gets triggered.
+
+## Summary
+
+With the examples above you should be able to set up your workflow to handle encodings which are successful but are not able to transfer to your output storage.
+
+This small but impactful change can save significant costs, as you don't have to run the encoding again just for retrying the transfer.

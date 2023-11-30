@@ -1,0 +1,132 @@
+---
+title: "How to create Fairplay DRM protected content"
+---
+
+## Overview
+
+Fairplay is the Apple DRM and was initially used only in the iTunes store to protect AAC encoded audio files but got soon also adopted for Apple’s video products that are now part of the iTunes store. Fairplay is specifically designed for Apple HTTP Live Streaming (HLS) with Apple playback devices such as iPhone, iPad, Apple TV and Mac OS X. Fairplay is also used as Content Decryption Module (CDM) of the Safari browser. This enables HTML5 native playback of DRM encrypted Fairplay streams without plugins in Safari.
+
+## Fairplay DRM Requirements
+
+* You need a Fairplay certificate from Apple in order to be able to use Fairplay DRM. This certificate is needed in order to use DRM provider to control the playback of your content. To get one, you have to request a FPS Deployment package. More details about Fairplay are available at [https://developer.apple.com/streaming/fps/](https://developer.apple.com/streaming/fps/).
+* FairPlay DRM Playback is supported on Apple devices only. Please see our [Player DRM support](https://developer.bitmovin.com/playback/docs/drm-content-protection) overview for more details.
+
+## About this example
+
+The code snippets shown here are based on the [full example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java) called `CencDrmContentProtection.java`, using our [Bitmovin SDK for Java](/encoding/docs/how-to-create-fairplay-drm-protected-content#get-started-with-a-bitmovin-sdk).
+
+> **Hint:** If you haven't created any encodings with our Service yet, its recommended to start with our quick start guide called "[Get Started with the Bitmovin API](/encoding/reference/get-started-with-the-bitmovin-api)" first, before you continue :)
+
+## Encoding with DRM Configuration
+
+### Encryption details
+
+To encrypt your content so it can be used with FairPlay DRM, an `encryption key` (referred to as `DRM_KEY` in the example) is required. All other values are optional, however sometimes required by specific DRM vendors, therefore have to be set (`DRM_FAIRPLAY_IV`, `DRM_FAIRPLAY_URI`, ...).
+
+These values of the Fairplay DRM configuration are expected in the following format:
+
+* DRM\_KEY: (required) You need to provide a key that will be used to encrypt the content (16 byte encryption key, represented as 32 hexadecimal characters)
+* DRM\_FAIRPLAY\_IV: The initialization vector is optional. If it is not provided we will generate one for you. (16 byte initialization vector, represented as 32 hexadecimal characters)
+* DRM\_FAIRPLAY\_URI: If provided, this URI will be used for license acquisition, (e.g. skd://userspecifc?custom=information)
+
+> **HINT:** Some DRM providers provide you with a dedicated service to create and safely store Encryption Keys, so you don't have to create and manage them by yourself. These values, along with the Apple certificate, are required to generate a proper playback license using DRM solution providers like Irdeto, EZDRM, ExpressPlay, Axinom, BuyDRM, etc. to control playback permissions on the client side. [Learn more](https://bitmovin.com/digital-rights-management-everything-to-know/).
+
+### Muxing DRM Configuration
+
+When you create an encoding, you define `Streams` which point to the video track of the input file, and couple them with an `Codec Configuration` of your choice. These `Streams` are then used by `Muxings` which determine the desired output format of your content.
+
+Since iOS 10, respectively macOS Sierra/Safari 10, you can use the output of `fMP4 Muxings` for HLS with Fairplay DRM. Older iOS devices still require MPEG-TS, therefore you have to use `TS Muxings` to support those. In order to configure a `Muxing` to create DRM encrypted content, you add a `CencDRM Configuration` ([API reference](/encoding/reference/postencodingencodingsmuxingsfmp4drmcencbyencodingidandmuxingid)) to it. Its a general DRM configuration object, where you can provide the required `key` to encrypt the content, along with DRM solution specific details.
+
+---
+
+The example creates two `Streams` \- one for the video-`Stream` (H264) and one for the audio-`Stream` (AAC). For each of the `Streams` and `fMP4 Muxing` is created, without providing a output destination.
+
+**Java SDK Example - create Encoding** ([Line in Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L97))
+
+Java
+
+`Encoding encoding =
+    createEncoding("fMP4 muxing with CENC DRM", "Example with CENC DRM content protection");
+
+HttpInput input = createHttpInput(configProvider.getHttpInputHost());
+Output output =
+    createS3Output(
+        configProvider.getS3OutputBucketName(),
+        configProvider.getS3OutputAccessKey(),
+        configProvider.getS3OutputSecretKey());
+
+H264VideoConfiguration h264Config = createH264VideoConfig();
+AacAudioConfiguration aacConfig = createAacAudioConfig();
+
+Stream videoStream =
+    createStream(encoding, input, configProvider.getHttpInputFilePath(), h264Config);
+Stream audioStream =
+    createStream(encoding, input, configProvider.getHttpInputFilePath(), aacConfig);
+    
+Fmp4Muxing videoMuxing = createFmp4Muxing(encoding, videoStream);
+Fmp4Muxing audioMuxing = createFmp4Muxing(encoding, audioStream);
+...
+`
+
+In typical DRM Encoding workflows the `Output` configuration is part of The DRM Config **only**. It is added to the muxing by the `createDrmConfig` method. So, it defines which output shall be used to store the encrypted content.
+
+**Java SDK Example - Add DRM Config to Muxing** ([Line in Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L118))
+
+Java
+
+`createDrmConfig(encoding, videoMuxing, output, "video");
+createDrmConfig(encoding, audioMuxing, output, "audio");
+`
+
+> **IMPORTANT:** You can still provide an `Output` config to the fMP4 Muxing as well, but it would push the _unencrypted version of your encoded content_ to this `Output` destination. So, if you want to create encrypted content only, provide an `Output` configuration exclusively as part of your DRM Config.
+
+**Java SDK Example - createDrmConfig() Method** ([Line in Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L266))
+
+Java
+
+`private static CencDrm createDrmConfig(
+    Encoding encoding, Muxing muxing, Output output, String outputPath) throws BitmovinException {
+  CencDrm cencDrm = new CencDrm();
+  cencDrm.addOutputsItem(buildEncodingOutput(output, outputPath));
+  cencDrm.setKey(configProvider.getDrmKey());
+  cencDrm.setKid(configProvider.getDrmWidevineKid());
+  
+  ...
+  
+  CencFairPlay cencFairPlay = new CencFairPlay();
+  cencFairPlay.setIv(configProvider.getDrmFairplayIv());
+  cencFairPlay.setUri(configProvider.getDrmFairplayUri());
+  cencDrm.setFairPlay(cencFairPlay);
+  
+  return bitmovinApi.encoding.encodings.muxings.fmp4.drm.cenc.create(
+      encoding.getId(), muxing.getId(), cencDrm);
+}
+`
+
+That's it, so we can start this encoding now with `executeEncoding()` and create HLS and MPD manifests for it, after the encoding is finished.
+
+**Java SDK Example - Start Encoding and create HLS and MPD Manifests** ([Line in Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L121))
+
+Java
+
+`executeEncoding(encoding);
+
+generateDashManifest(encoding, output, "/");
+generateHlsManifest(encoding, output, "/");
+`
+
+`generateDashManifest` and `generateHlsManifest` are using the DefaultManifest API call for MPEG-DASH ([Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L421)) and HLS ([Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L398)). These methods are easy to configure and enable to you create a simple manifest that for each streaming format that reference all the contents that were created and can be used by the respective Streaming Format.
+
+While your MPD, will only show the DRM protected Video- and Audio track protected with Widevine DRM, your HLS manifest holds the details to play this content with Widevine or Fairplay DRM.
+
+## Get Started with a Bitmovin SDK
+
+| Bitmovin API SDK                                                               | Description                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Java](https://github.com/bitmovin/bitmovin-api-sdk-java)                      | Integrate the SDK into your Java Project easily and add it to the config of your dependency manager like Maven or Gradle. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-java#installation) |
+| [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples) | Integrate the SDK into your Javascript/Typescript based project easily by adding it as a dependency via NPM. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-javascript#installation)        |
+| [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples)                | Integrate the SDK into your Python based project easily by adding it as a dependency via pip or Setuptools. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-python#installation)             |
+| [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples)                  | Integrate the SDK into your .NET based project easily by adding it as a dependency via nuget. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-dotnet#installation)                           |
+| [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples)                   | Integrate the SDK into your PHP based project easily by adding it as a dependency via composer. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-php#installation)                            |
+
+Visit our [Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) that provides you with examples for all Bitmovin SDK's available.

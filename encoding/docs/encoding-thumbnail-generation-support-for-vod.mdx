@@ -1,0 +1,68 @@
+---
+title: "Encoding - Thumbnail generation support for VoD"
+---
+
+## Compatibility
+
+The table below summarizes the thumbnails types supported by Bitmovin Encoding.
+
+| Thumbnail Type | Protocol   | Thumbnail container     | Image Format |
+| -------------- | ---------- | ----------------------- | ------------ |
+| Single image   | NA         | None (Images only)      | jpeg / png   |
+| Sprites        | HLS / DASH | WebVTT                  | jpeg / png   |
+| Sprites        | DASH       | Image Adaptation Sets   | jpeg / png   |
+| Roku BIF       | HLS/DASH   | Base Index Frames (BIF) | jpeg         |
+| I-frame        | HLS        | I-frame only playlist   | Video frame  |
+
+> ⚠️
+> 
+> Currently, thumbnail generation is supported only for VoD use case, not for live encoding.
+
+## Overview
+
+Thumbnails are still images that enable preview of videos. Depending on the platform, protocol and thumbnails types, thumbnails images can be used for several use cases, for instance:
+
+* Thumbnails as **single images** \- for example for feeding CMS (Content Management Systems) with imagery.
+* Thumbnails for **trick play / trick mode** \- usually showing preview images while users scrubs through the seek bar or while doing fast-forward operation during a playback session.
+
+Bitmovin encoding supports the generation of a wide range of thumbnails types to support those use cases, and the following sections will provide details of the different types we support with the Bitmovin Encoding solution
+
+> ℹ️
+> 
+> To check what thumbnails types we support with Bitmovin Player see [Player - Thumbnail Preview Support](https://developer.bitmovin.com/playback/docs/thumbnail-preview-support).
+
+## Thumbnails as single images
+
+The Bitmovin Encoding solution supports the generation of `jpeg`/`png` single images from the input video asset. Within the Bitmovin API, we know these single images as _Thumbnails_.
+
+The Bitmovin encoding API supports several configuration options for single image thumbnails, such as setting image size, image interval generation, file name pattern, etc. For more information check out the [Bitmovin API for adding Thumbnails to an Encoding](/encoding/reference/postencodingencodingsstreamsthumbnailsbyencodingidandstreamid).
+
+## Thumbnails for trick play
+
+### WebVTT Sprites
+
+The Bitmovin encoding solution supports the generation of `jpeg`/ `png` Sprites and its respective WebVTT file. A _Sprite_ is a `jpeg` or `png` file that contains smaller images stitched together into a single one that is referenced within a WebVTT file. Each WebVTT file has the proper mapping information for referencing each Sprite and its respective images within a specific time range for playback.
+
+When creating a Sprite, the Bitmovin API allows to set the number of images per sprite, the Sprite dimensions - rows and columns, image interval, image size, etc. For more information check out the [Bitmovin API for adding Sprites to an Encoding](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid).
+
+Some players (including the Bitmovin web player) can be configured to use such thumbnails, without need for them to be added to the manifests.
+
+### Images Adaptation Sets for DASH
+
+The Bitmovin encoding solution supports the generation of `jpeg`/ `png` Sprites based on the [DASH-IF IOP specification](https://dashif.org/docs/DASH-IF-IOP-v4.3.pdf) \-section 6.2.6\. According to the DASH specification, thumbnails are added as a new `AdaptationSet` with `@contentType="image"`. In this way, each Image Adaptation Set provides the timing and the proper addressing mechanism just as for other audio/video `AdaptationSet`, allowing mapping of images (or sections in the sprite) to the specific time ranges for playback. Within the Bitmovin API, we refer to this mechanism as `ImageAdaptationSet`.
+
+For more information check out the [Bitmovin API for adding ImageAdaptationSet to DASH manifests](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsimagebymanifestidandperiodid), which relies on Sprites having been created first - as explained in the previous section.
+
+### I-frame only playlist for HLS
+
+The Bitmovin encoding solution supports the generation of video I-frames as defined in the standard HLS specification - [rfc8216](https://datatracker.ietf.org/doc/html/rfc8216#section-4.3.4.3). According to this spec, video I-frames are used to render images for operations such as trick play and seek.
+
+For more information check out the [Bitmovin API for adding I-Frames to HLS manifests](/encoding/reference/postencodingmanifestshlsstreamsiframebymanifestidandstreamid).
+
+### Base Index Frames (BIF)
+
+Bitmovin encoding supports the generation of BIF files - a [Roku specification that allows trick mode support](https://developer.roku.com/en-gb/docs/developer-program/media-playback/trick-mode/trick-mode.md). This format is not used by other playback platforms. For more information checkout the [API for creating BIF files](/encoding/reference/postencodingencodingsstreamsbifsbyencodingidandstreamid).
+
+> ⚠️
+> 
+> In addition to BIF, Roku specifications also allows to use [HLS Image Media Playlist](https://github.com/image-media-playlist/spec) for trick mode playback, however HLS Image Media Playlist are not currently supported with our encoder. Please inform your account manager if this is a format you require.

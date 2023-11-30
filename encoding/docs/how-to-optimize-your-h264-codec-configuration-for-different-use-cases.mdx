@@ -1,0 +1,84 @@
+---
+title: "How to optimize your H264 codec configuration for different use-cases"
+---
+
+## Overview
+
+`Codec Configurations` are a collection of settings to control the behaviour of a codec supported by our service. As most of its settings have a default value, those are chosen to provide good results for multitude of use-cases. However, most of time you will find yourself to optimize your Live or VoD workflow to a specific use case. As Codecs have in general a broad set of settings, finding the right mix for your Codec Configurations and use-case can be very time consuming and requires a deep knowledge of how a particular codec works as well.
+
+`Preset Configurations` make it easy to achieve this optimizations and let you select between several configuration templates optimized to improve encoding speed, quality and more. If you know what you are doing, you can also use them as a base configuration template, and simply overwrite specific settings with your own values to perfectly optimize them to your needs.
+
+---
+
+If you are just looking for a table listing all H264 Preset Configurations and their settings, please [click here](/encoding/docs/h264-presets) :)
+
+---
+
+## Create a H264 Codec Configuration with Preset Configuration
+
+`Preset Configurations` are templates, a codec configuration can be based on. You are still able to define your own values for certain settings as usual by defining them specifically when you create a codec configuration, so they will simply overwrite the template value.
+
+Java
+
+`BitmovinApi bitmovinApi = BitmovinApi.builder()
+           .withApiKey("YOUR_BITMOVIN_API_KEY")
+           .build();
+
+H264VideoConfiguration h264VideoConfiguration = new H264VideoConfiguration();
+h264VideoConfiguration.setName("Your first CodecConfig with Presets");
+h264VideoConfiguration.setProfile(ProfileH264.HIGH);
+h264VideoConfiguration.setBitrate(4500000L);
+h264VideoConfiguration.setPresetConfiguration(PresetConfiguration.VOD_HIGH_QUALITY);
+
+h264VideoConfiguration = bitmovinApi.encoding.configurations.video.h264.create(h264VideoConfiguration);
+`
+
+As of now, 10 preset configurations are available, which are either optimized to achieve higher speeds, quality or low-latency when it comes to live-encodings.
+
+**For Live Encodings:**
+
+* `LIVE_HIGH_QUALITY`
+* `LIVE_LOW_LATENCY`
+
+**For VoD Encodings:**
+
+* `VOD_HIGH_QUALITY`
+* `VOD_STANDARD`
+* `VOD_SPEED`
+* `VOD_HIGH_SPEED`
+* `VOD_VERYHIGH_SPEED`
+* `VOD_EXTRAHIGH_SPEED`
+* `VOD_SUPERHIGH_SPEED`
+* `VOD_ULTRAHIGH_SPEED`
+
+## Use-Cases explained
+
+As you can tell already from their names, Preset Configurations are designed to optimize a codec configuration for particular use-cases. Their requirements can be typically reduced to either quality, speed or a mix of both. Therefore lets look at some common use-cases and which Preset Configuration would fit best.
+
+### High quality video content
+
+Your VoD platform offers movies, or TV shows which are released based on fixed schedule. You most likely have enough time to process this video content and therefore strive to provide high quality video content to your user base. So, as speed is not crucial, and your focus will be on creating high quality outputs with your encodings, the Preset Configuration `VOD_HIGH_QUALITY` is a good configuration to start.
+
+_Hint:_ While the codec config is tweaked, the bitrate is still a static value and therefore prone to be set too low or too high, which either results in quality loss, or increased CDN delivery costs if too much bitrate is used. Per-Title encoding enables you to perfectly optimize for quality and bitrate consumption on a "per title" basis. [Give it a try!](https://bitmovin.com/dashboard/encoding/per-title-ladder-benchmark-tool)
+
+### News clips
+
+Something happened somewhere in the world and you want to be the first to show it to everyone, so turn around time is critical. While other factors have an impact on that time as well, using Preset Configurations like `VOD_HIGH_SPEED`, or `VOD_ULTRAHIGH_SPEED` enable you to lower the time needed to encode the content and therefore upload it to your storage as soon as possible.
+
+### Live Sports / Interactive Streaming / eSports
+
+All these use-cases are low latency scenarios. Their requirements are still a bit different therefore make sure you know your own requirements and what latency you actually need. Using the Preset Configuration `LIVE_LOW_LATENCY` is a first step to optimize your live-encoding workflow.
+
+### User generated Content
+
+User generated content comes in all kind of formats, resolutions and qualities. Depending on your use-case, either a quick turn around time or general good quality output is relevant, probably both :) If you don't enforce certain minimum requirements, like resolutions, bitrates, or formats this can get really tricky. Therefore going with a mid range preset configuration like `VOD_STANDARD` or `VOD_SPEED` would be a good first step to generate good quality content in a faster manner.
+
+Those are all common use-cases, however they are also just the tip of the iceberg of use-cases you can handle with integrating our services. So, if you are wondering how your use-case can be covered effectively, [let us know](https://bitmovin.com/contact-bitmovin/) :)
+
+## Other codecs
+
+The examples above used the H264 codec. The majority of the profiles are also usable with H265 and VP9\. For a full list of the presets of each codec, and the detail of the codec parameters they set, please follow these links
+
+* [H264 Presets](/encoding/docs/h264-presets)
+* [H265 Presets](/encoding/docs/h265-presets)
+* [VP9 Presets](/encoding/docs/vp9-presets)

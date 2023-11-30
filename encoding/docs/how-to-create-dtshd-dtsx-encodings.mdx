@@ -1,0 +1,96 @@
+---
+title: "How to create DTS:HD / DTS:X Encodings"
+---
+
+## Overview
+
+Bitmovin and its Encoding Service is officially and fully certified by Xperi to create certified DTS:HD and DTS:X audio content! This is great news as it enables you to easily deliver certified High Quality Audio content to your end users and their DTS compatible end devices! In this tutorial we will walk through the specific features of this new Audio Codec Configuration object for DTS:HD/DTS:X and when/how to use them.
+
+## Requirements
+
+**Encoder Version:** v2.88.0 or higher **API SDK Version:** v1.83.0 or higher
+
+## Known Limitations
+
+* **Support Workflows:** VoD only
+* **DRM:** not supported yet
+* **Audio Sample rate:** 48kHz only
+* **Audio Sample Format:** 16, 24 Bit
+* **Supported Muxings:** MP4, segmented RAW
+* **Supported Streaming Formats:**  
+   * MPEG-DASH (SegmentBase only)  
+   * HLS (EXT-X-BYTE-RANGE only)
+
+### DTS:HD Specific Limitations
+
+* **Supported Channel Layouts:** 5.1 only
+* **Supported Bitrates:** 255 kbps, 384 kbps, 768kbps
+* **Supported Modes:** Express, Digital Surround
+
+### DTS:X Specific Limitations
+
+* **Supported Channel Layouts:** 5.1, 5.1.4
+* **Supported Bitrates:**  
+   * 5.1: 160, 192, 224, 256, 288, 320 kbps  
+   * 5.1.4: 288, 384, 448 kbps
+
+## DTS:HD Codec Configuration Details
+
+DTS:HD comes with two different modes - `EXPRESS`, and `DIGITAL SURROUND`. While both support 5.1 Channel layouts, `DIGITAL SURROUND` is used mostly for audio on DVD's. DTS Express also supports 5.1, and further allows for a higher compression rate as it was developed for audio streaming services.
+
+As for every Audio Codec Configuration, a DTS:HD Codec Configuration requires at least: `name` and `bitrate`.
+
+**Supported Bitrates by Mode:**
+
+* DTS Express: 255, 384 kbps
+* DTS Digital Surround: 768 kbps
+
+**Using `EXPRESS` mode:**
+
+Java
+
+`private static DtsAudioConfiguration createDtsHdExpressAudioConfig() {
+    DtsAudioConfiguration config = new DtsAudioConfiguration();
+    config.setMode(DtsMode.EXPRESS_AUDIO);
+    config.setBitrate(255000L);
+    //config.setBitrate(384000L);
+    return bitmovinApi.encoding.configurations.audio.dts.create(config);
+}
+`
+
+**Using `DIGITAL_SURROUND` mode:**
+
+Java
+
+`private static DtsAudioConfiguration createDtsHdDigitalSurroundAudioConfig() {
+    DtsAudioConfiguration config = new DtsAudioConfiguration();
+    config.setMode(DtsMode.DIGITAL_SURROUND);
+    config.setBitrate(768000L);
+    return bitmovinApi.encoding.configurations.audio.dts.create(config);
+}
+`
+
+## DTS:X Codec Configuration Details
+
+Compared to DTS:HD, DTS:X supports besides 5.1, also 5.1.4 as channel format. The third digit refers to 4 additional channels which are firing from above the same points as the left, right, back left and back right channel.
+
+**Supported Loudness Control Modes:**
+
+* `DTSX_OTT_LOUDNESS_INPUT`: The `lkfs` value has to be provided by the user as part of the audio codec configuration, and will be stored in the encoded content.
+* `DTSX_OTT_LOUDNESS_TARGET`: the `lkfs` value has to be provided by the user as part of the audio codec configuration, and the loudness of the source audio will be adjusted accordingly.
+* `DTSX_OTT_LOUDNESS_DETECT`: It determines the loudness of the source file and stored in the encoded content. An `lkfs` value, if provided, will be ignored.
+
+**Audio Codec Configuration Example:**
+
+Java
+
+`private static DtsXAudioConfiguration createDtsXAudioConfig() {
+    DtsXAudioConfiguration dtsXAudioConfiguration = new DtsXAudioConfiguration();
+    dtsXAudioConfiguration.setBitrate(320000L);
+    dtsXAudioConfiguration.setChannelLayout(DtsXChannelLayout.CL_5_1);
+    dtsXAudioConfiguration.setOttLoudnessMode(OttLoudnessMode.DTSX_OTT_LOUDNESS_INPUT);
+    dtsXAudioConfiguration.setLkfsValue(-23.0d); //reduces loudness by -23dB
+    dtsXAudioConfiguration.setSyncInterval(5L); //place a audio synchronization frame every 5 seconds
+    return bitmovinApi.encoding.configurations.audio.dtsx.create(config);
+}
+`

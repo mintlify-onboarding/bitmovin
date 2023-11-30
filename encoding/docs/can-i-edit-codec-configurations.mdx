@@ -1,0 +1,14 @@
+---
+title: "Can I edit codec configurations?"
+---
+
+No, codec configurations and other resources can't be edited. Therefore, you would have to create a new codec configuration and delete the previous one accordingly. 
+
+**HINT:** You can apply `Stream Conditions` to a stream and its attached codec configuration, in order to either use or ignore a specific stream during the encoding process, if the condition is fulfilled based on the result of the input file analysis. This can be used to prevent upscaling or ignore certain streams and their audio codec configuration, if there is no audio track available in the input file. More details are available in our blog post [here](https://bitmovin.com/stream-conditions-video-encoding-workflows/).
+
+**Examples:**
+
+* Java API SDK - [Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/FixedBitrateLadder.java#L268)
+* Javascript API SDK - [Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/javascript/src/FixedBitrateLadder.ts#L282)
+
+These and other examples for all our Bitmovin API SDK's can be found in our [public Github example repository!](https://github.com/bitmovin/bitmovin-api-sdk-examples/)

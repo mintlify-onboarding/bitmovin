@@ -1,0 +1,32 @@
+---
+title: "Bitmovin Encoder Lifecycle"
+---
+
+## Overview
+
+The feature set of the Bitmovin Encoder naturally evolves over time, including additional features, fixes and performance improvements in newer releases to increase efficiency. Upgrading to new releases is however possible as soon as a new release is available, and Bitmovin recommends the use of the Encoder version currently in Stable stage for production environments.
+
+When the version you are currently using gets deprecated, you will need to update to a newer version, as we will make versions unavailable when reaching their end of life date. Thus, users must ensure that they use a newer version of the Bitmovin Encoder before the end of life date, in order to guarantee uninterrupted functionality.
+
+Please note that this document is referring to the [Encoder](/encoding/docs/encoder) and not the Bitmovin REST API. Release processes and cycles are different for [REST API Services](/encoding/docs/rest-api-services).
+
+## Encoder Version Lifecycle
+
+A release of the Bitmovin Encoder will follow lifecycle stages as described in this table. Note that all releases will not necessarily go through each stage.
+
+| Version Status              | Schedule                                                   | Description                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **BETA**                    | Every new release                                          | New releases of the Bitmovin Encoder will be in status _BETA_ by default. _BETA_ versions will contain the newest features and updates. Features in Beta versions might be subject to change.                                                                                                                                                                                                                                                |
+| **STABLE**(Recommended)     | Typically about every 4 weeks we update the STABLE version | A _BETA_ version eventually becomes a _Stable_ version. A STABLE version offers the most complete, up-to-date, tested, and stable codebase. _STABLE_ versions are intended to be used in production environments.                                                                                                                                                                                                                            |
+| **SUPPORTED**               | Whenever a new release is promoted to STABLE               | A _SUPPORTED_ version was _STABLE_ once but got replaced by a newer release of the Bitmovin Encoder. It doesn't contain the latest feature set, and may hold functionality that is outdated.Furthermore, _SUPPORTED_ versions might not offer the most efficient encoding capabilities. If you're using a _SUPPORTED_ version, we recommend that you upgrade to the _STABLE_ version, as _SUPPORTED_ versions will ultimately be deprecated. |
+| **LONG TERM SUPPORT (LTS)** | Once a year                                                | A _LTS_ version was _STABLE_ at one time and will be supported for 2 years from the date of the release. Support includes security- and vulnerability fixes but does not contain functional enhancements (features) or non-security or non-vulnerability related fixes. Enterprise support is required to use this version.                                                                                                                  |
+| **DEPRECATED**              | 4 months after release date                                | A _DEPRECATED_ version is outdated and should not run in production environments. If you're using a _DEPRECATED_ version, update to the _STABLE_ version at your earliest convenience but anytime before the end of life date.                                                                                                                                                                                                               |
+| **END OF LIFE**             | 6 months after release date                                | A _END OF LIFE_ version is no longer available (this includes all relevant documentation).                                                                                                                                                                                                                                                                                                                                                   |
+
+## Which Encoder Version should I use?
+
+The Bitmovin Team recommends to use the `STABLE` version in most cases. Using this version tag ensures that your video encoding workflows are always benefiting from our latest patches, security fixes, and performance improvements. Furthermore, you won't have to care about upgrading encoder versions by yourself on a regular basis.
+
+## What happens if I use an "End Of Life" encoder version in my configuration?
+
+Encodings setup with an encoder version that is no longer available as it reached its `End Of Life`, it will be overwritten with `STABLE` instead.

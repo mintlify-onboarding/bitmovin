@@ -1,0 +1,55 @@
+---
+title: "Bitmovin Video Encoder v1 to v2 migration guide"
+---
+
+## Breaking changes that may impact your encoding workflows
+
+Some of the changes to our new encoder will impact your existing encoding workflows. In this section, we’ll cover those key breaking changes and show you what they entail exactly. The list below explains how these changes reflect in our API, where to find the related section in our documentation and which exact properties are concerned.
+
+* Start Encoding (Encoding Mode): Default set to TWO\_PASS This change sets the new default encoding mode to two-pass encoding from single-pass encoding as the previous default.  
+   * API call: [Start Encoding](/encoding/reference/postencodingencodingsstartbyencodingid)  
+   * API property: encodingMode  
+   * New value: TWO\_PASS  
+   * Old value: STANDARD
+
+The following changes impact the encoder’s **input resilience**:
+
+* **Add Stream (Decoding Error Mode): Default set to `DUPLICATE_FRAMES`** With this setting, the encoding will not fail if a frame cannot be decoded, but instead other frames are duplicated to compensate. The encoding can continue and an error message is displayed.  
+   * API call: [Add Stream](/encoding/reference/postencodingencodingsstreamsbyencodingid)  
+   * API property: `decodingErrorMode`  
+   * New value: `DUPLICATE_FRAMES`  
+   * Old value: `FAIL_ON_ERROR`
+* **Start Encoding (Variable FPS): `handleVariableInputFps` set to true per default** Impacts the way input streams with variable FPS are being handled. With the new default, the encoder will process files with a dynamic framerate automatically and adjust (e.g. by dropping or duplicating frames) if a constant framerate is required for the output file. For input streams with a fixed framerate, this change does not have any impact.  
+   * API call: [Start Encoding](/encoding/reference/postencodingencodingsstartbyencodingid)  
+   * API property: `handleVariableInputFps`  
+   * New value: `true`  
+   * Old value: `false`
+* **Start Encoding (Tweaks): `audioVideoSyncMode` set to `RESYNC_AT_START` by default** By setting the synchronization mode to “RESYNC\_AT\_START” the encoder re-syncs the audio and the video stream, based on the values transported in the metadata. This is useful for workflows containing previously encoded content.  
+   * API call: [Start Encoding](/encoding/reference/postencodingencodingsstartbyencodingid)  
+   * API property: `tweaks` \-> `audioVideoSyncMode`  
+   * New value: `RESYNC_AT_START`  
+   * Old value: `STANDARD`
+
+## Migration quick guide: how to revert back to the old defaults
+
+If you intend to use Bitmovin Encoder in the exact way that you used to before the update, you can do so by simply changing the settings from the new default values to the old values. The table below shows you which properties you will need to change to revert back to the previous behavior.
+
+| **API property**                                              | **Change to value** | **API call in our API reference**                                                                   |
+| ------------------------------------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------- |
+| Start Encoding > **encodingMode**                             | SINGLE\_PASS        | [Start (encodingMode)](/encoding/reference/postencodingencodingsstartbyencodingid)                  |
+| Start Encoding > trimming > **ignoreDurationIfInputTooShort** | FALSE               | [Start (ignoreDurationIfInputTooShort)](/encoding/reference/postencodingencodingsstartbyencodingid) |
+| Start Encoding > **handleVariableInputFps**                   | FALSE               | [Start (handleVariableInputFps)](/encoding/reference/postencodingencodingsstartbyencodingid)        |
+| Start Encoding > tweaks > **audioVideoSyncMode**              | STANDARD            | [Start (audioVideoSyncMode)](/encoding/reference/postencodingencodingsstartbyencodingid)            |
+| Add Stream > **decodingErrorMode**                            | FAIL\_ON\_ERROR     | [Add Stream](/encoding/reference/postencodingencodingsstreamsbyencodingid)                          |
+
+## Get Started with a Bitmovin SDK
+
+| Bitmovin API SDK                                                               | Description                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Java](https://github.com/bitmovin/bitmovin-api-sdk-java)                      | Integrate the SDK into your Java Project easily and add it to the config of your dependency manager like Maven or Gradle. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-java#installation) |
+| [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples) | Integrate the SDK into your Javascript/Typescript based project easily by adding it as a dependency via NPM. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-javascript#installation)        |
+| [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples)                | Integrate the SDK into your Python based project easily by adding it as a dependency via pip or Setuptools. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-python#installation)             |
+| [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples)                  | Integrate the SDK into your .NET based project easily by adding it as a dependency via nuget. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-dotnet#installation)                           |
+| [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples)                   | Integrate the SDK into your PHP based project easily by adding it as a dependency via composer. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-php#installation)                            |
+
+Visit our [Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) that provides you with examples for all Bitmovin SDK's available.

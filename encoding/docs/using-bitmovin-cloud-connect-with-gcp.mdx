@@ -1,0 +1,212 @@
+---
+title: "Using Bitmovin Cloud Connect with GCP"
+---
+
+## Bitmovin Cloud Connect with GCP - Tutorial
+
+This document explains how to set up Bitmovin Encoding on Google Cloud infrastructure so that the Bitmovin platform can run encoders using the Compute Engine API.
+
+The instructions in this document for the [REST API Services](/encoding/docs/rest-api-services)apply to live encoding and file-based encoding. For a complete list of formats and input types, see the [Bitmovin website](/encoding/docs/supported-input-and-output-formats).
+
+## Prerequisites
+
+_This feature requires a commercial agreement and needs to be specifically activated for a Bitmovin Account. It is not available by default. You will not be able to complete the configuration below without this activation._
+
+* A Bitmovin account, enabled for use of the Cloud Connect feature
+* A [Google Cloud account](https://cloud.google.com/billing/docs/how-to/manage-billing-account)
+* A [Google Cloud project](https://cloud.google.com/resource-manager/docs/creating-managing-projects). It is recommended to have a project dedicated for encoding with Bitmovin
+* [Compute Engine API enabled](https://console.cloud.google.com/apis/library/compute.googleapis.com) for this project.
+
+## Google Cloud Configuration
+
+### Create a service account
+
+The service account is used by the Bitmovin platform to get access to your GCP account and create compute resources to run parts of the the encoding service within it, including starting and stopping GCE instances.
+
+1. [Create a service account](https://console.cloud.google.com/iam-admin/serviceaccounts)
+2. Grant [Compute Instance Admin (v1)](https://cloud.google.com/compute/docs/access/iam#compute.instanceAdmin.v1) permissions to it.
+3. [Create a service account key](https://cloud.google.com/iam/docs/creating-managing-service-account-keys) and download the JSON file containing the private key.
+
+### Set up a VPC
+
+By default, the Bitmovin platform assumes that you are running instances in an [auto mode VPC](https://cloud.google.com/vpc/docs/vpc#subnet-ranges) named “default”.
+
+If you prefer creating a specific custom mode VPC in your GCP account, make a note of the VPC name and subnet(s) that you create.
+
+_Note: the ability to use custom VPC is supported from Encoder version 2.51.0 and above._ 
+
+### Set up firewall rules
+
+These are the basic firewall rules, without which starting an encoding will fail.
+
+1. Go to the [Firewall page](https://console.cloud.google.com/networking/firewalls/list) in the Cloud Console
+2. For each of the tables below, create a new Ingress firewall rule that allows specific traffic.
+* Ensure that you select the appropriate network, in particular if you have created a custom VPC.
+* Target all instances in the network.
+* Unless specified, leave other fields at their default value.
+
+| Name                | default-allow-internal                                                                          |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| Description         | For communication between the session manager VM instance and its instance manager VM instances |
+| Source filters      | 10.0.0.0/8 (or add all VPC Subnets)                                                             |
+| Protocols and Ports | tcp:0-65535udp:0-65535icmp                                                                      |
+
+| Name                | encoder-service                                              |
+| ------------------- | ------------------------------------------------------------ |
+| Description         | For communication with the service that manages the encoding |
+| Source filters      | 104.199.97.13/3235.205.157.162/32                            |
+| Protocols and Ports | tcp:9999                                                     |
+
+| Name                | default-allow-ssh                                                   |
+| ------------------- | ------------------------------------------------------------------- |
+| Description         | For incoming commands (i.e. pulling and starting docker containers) |
+| Source filters      | 104.199.97.13/3235.205.157.162/32                                   |
+| Protocols and Ports | tcp:22                                                              |
+
+Additional firewall rules are required if you are encoding live streams transported over SRT, Zixi or RTMP.
+
+#### Firewall rules necessary for RTMP live streams
+
+| Name                | rtmp-listener                                                                  |
+| ------------------- | ------------------------------------------------------------------------------ |
+| Description         | For RTMP live streams                                                          |
+| Source filters      | 0.0.0.0/0 (or the specific set of addresses where streams will originate from) |
+| Protocols and Ports | tcp:1935                                                                       |
+
+#### Firewall rules necessary for SRT live streams
+
+| Name                | srt-listener                                                                   |
+| ------------------- | ------------------------------------------------------------------------------ |
+| Description         | For SRT live streams                                                           |
+| Source filters      | 0.0.0.0/0 (or the specific set of addresses where streams will originate from) |
+| Protocols and Ports | tcp:2088udp:2088udp:2089udp:2090udp:2091                                       |
+
+#### Firewall rules necessary for Zixi live streams
+
+| Name                | zixi-listener                                                                  |
+| ------------------- | ------------------------------------------------------------------------------ |
+| Description         | For Zixi live streams                                                          |
+| Source filters      | 0.0.0.0/0 (or the specific set of addresses where streams will originate from) |
+| Protocols and Ports | tcp:4444                                                                       |
+
+---
+
+## Bitmovin Configuration
+
+Before you continue, make sure you have collected the following information:
+
+From your GCP account:
+
+* `project_id`
+
+From the JSON service account key:
+
+* `private_key`
+* `client_email`
+
+In case you use a custom VPC:
+
+* `network_id`
+* `subnet_id`
+
+### Create an Infrastructure ...
+
+To enable your Bitmovin account to run encodings in your GCP project, you need to create an Infrastructure object, and afterwards request access to its machine images.
+
+#### ... With the Dashboard
+
+1. In the Bitmovin dashboard, go to the [Infrastructure section](https://bitmovin.com/dashboard/encoding/infrastructure)
+2. Click the **Add new Infrastructure** button and select the **GCE** icon.
+3. Fill in the details, with the `project_id`, `client_email` and `private_key` details collected previously.
+4. Select the infrastructure just created with **Show details**
+5. For each GCE region in which you want to run encodings, **add new Region Settings**  
+   * Fill in the details for that region, using the relevant `network_id`  
+   * If not using the default VPC, also set the “Subnet ID” to the relevant `subnet_id`
+
+Please note that the inbound rules are checked when you make an “Add GCE Region Setting” request to Bitmovin API. If there is any permission or configuration issue, the region will not be created and you will be returned to the previous screen showing the details of the infrastructure.
+
+#### ... With the bitmovin APIs
+
+Using the [Add GCE Account](/encoding/reference/postencodinginfrastructuregce) endpoint, submit the following JSON and replace the respective `serviceAccountEmail`, `privateKey`, and `projectId` values with the appropriate values collected in the previous steps:
+
+JSON
+
+`{
+   "name": "GCP Connect - <gcp_project_id>",
+   "serviceAccountEmail": "<service_account_client_email>",
+   "privateKey": "<service_account_private_key>",
+   "projectId": "<gcp_project_id>"
+ }
+`
+
+**Optional:** If you have created a custom VPC, you will then need to create GCE Account Region Settings for each region that you want to run encodings in. Use the [Add Google Cloud Region Setting](/encoding/docs/postencodinginfrastructuregceregionsbyinfrastructureidandregion) endpoint to do so, with the following payload:
+
+`   {
+    "network": "/global/networks/<network_id>",
+    "subnetId": "/regions/<gcp_region>/subnetworks/<subnet_id>"
+   }
+`
+
+_For example, if your VPC is named “custom-vpc” and has a subnet called “custom-vpc-subnet1”, and you want to run encodings in europe-west1, you will need to submit the following payload to this endpoint:_
+
+`<https://api.bitmovin.com/v1/encoding/infrastructure/gce/><infastructure-id>/regions/EUROPE_WEST_1
+`
+
+`    {
+     "network": "/global/networks/custom-vpc",
+     "subnetId": "/regions/europe-west1/subnetworks/custom-vpc-subnet1"
+    }
+`
+
+### Request access to machine images
+
+The Bitmovin platform uses private machine images (MIs) from which to create encoder instances in GCE. After you have created all infrastructure objects in the account (or accounts) that you need, ask your Bitmovin technical contact to whitelist access to the MIs for your specific GCP service account.
+
+You will need to provide
+
+* the `client_email` of your GCP service account, and
+* your Bitmovin Account’s Organisation ID (or email address).
+
+---
+
+## Run encoding jobs in GCP
+
+After configuration has been completed, you will be able to run encoding jobs in your own GCP account. To do so, use the Bitmovin API client SDKs to submit encoding jobs, in the same way as you would do for encodings running in the Bitmovin Managed Cloud service. The only difference is that you need to specify the new infrastructure instead of public cloud regions.
+
+Here is a Python snippet demonstrating how to link your encoding to your infrastructure.
+
+Python
+
+`    # ID of the Infrastructure object created in step 5.
+    infra_id = ‘<infrastructure_id>’ 
+
+    # GCP region of the GPP-connect setup
+    infra_region = CloudRegion.GOOGLE_EUROPE_WEST_1
+    
+    infrastructure = InfrastructureSettings(infrastructure_id=infra_id, 
+                    cloud_region=infra_region)
+    encoding = Encoding(name='gcp connect encoding',
+    cloud_region=CloudRegion.EXTERNAL,
+    infrastructure=infrastructure,
+    encoder_version='STABLE')
+`
+
+---
+
+## Resource Quotas
+
+If you want to run several encodings in parallel, then the default quota limits may not be sufficient. In that case, you will have to request limit increases for the following quotas in your regions, through the [Quotas page](https://console.cloud.google.com/iam-admin/quotas) in the Cloud Console.
+
+| Quota name               | Limit to request                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| In-use IP addresses      | (maximum number of encodings) \* (maximum number of instances per encoding)                 |
+| CPUs                     | (maximum number of encodings) \* 8                                                          |
+| Preemptible CPUs         | (maximum number of encodings) _(maximum number of instances per encoding)_ 8                |
+| Persistent Disk SSD (TB) | (maximum number of encodings) _0.5 + ((number of instances)_ (number of encodings)) \* 0.05 |
+| VM instances             | (maximum number of encodings) \* (maximum number of instances per encoding)                 |
+
+The values above assume 8-core instances. If you believe that your use case requires instances with a different number of cores, this number may need to be increased after discussion with your Bitmovin team.
+
+The maximum number of instances needed depends on the maximum number of parallel encodings multiplied by the maximum number of instances for one encoding. The number of instances used by one encoding varies depending on the input file size and the number and data rate of the encoder representations.
+
+Generally, it is a good idea to multiply the expected limit calculated for your current situation by 2, to have some margin in case you need to ramp up.

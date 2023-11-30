@@ -1,0 +1,19 @@
+---
+title: "What is Per-Title Encoding?"
+---
+
+A regular encoding simply follows the rules you define in its stream-, codec-, and muxing configurations. A Per-Title Encoding in comparison not only uses the given configuration but evaluates the asset itself. Based on that data, the algorithm adjusts the parameters width, height, and bitrate, optimizing your bitrate ladder to increase quality while reducing the required bandwidth to deliver it. The below graphic compares the so-called Convex Hull (basically an envelope of the regions where certain resolution/bitrate combinations work best) of a standard (non-dynamic) bitrate ladder and the Per-Title one.
+
+![](/images/encoding/docs/bee9c72-image.png)
+
+Fig.1 - Comparison between Per-Title and Standard Profile in terms of Quality and Bitrate
+
+As you can see, the Per-Title Profile is able to achieve a much better quality by using lower bitrates in the human perceptual range (roughly between 35dB and 45dB). Furthermore, it removes the resolution/bitrate tuples above 45dB, which do not lead to a visual quality improvement anymore.
+
+## Try it yourself
+
+If you don't have an Bitmovin Acccount yet, simply [sign up here](https://bitmovin.com/dashboard) and use our [Per-Title Benchmark Tool](https://bitmovin.com/dashboard/encoding/per-title-ladder-benchmark-tool) for free as part of the trial of your account. All you have to do is to provide it with an URL to your input file and provided it with the bitrate ladder you are currently using. Then it will compare an encoding processed with your static ladder against the one derived automatically by the Per-Title algorithm.
+
+## Create a Per-Title Encoding
+
+While you can leave the decisions entirely to the Per-Title Encoding, you can also provide it with some ground rules that have to be met regardless its own results. You might want to do this to accommodate requirements from your clients or content providers who want to have specific resolutions to be present, or to use different encryption keys for specific renditions, and so on. How to do that, and how you adjust the configuration of an Per-Title Encoding is shown in this [tutorial](/encoding/docs/how-to-create-a-per-title-encoding).

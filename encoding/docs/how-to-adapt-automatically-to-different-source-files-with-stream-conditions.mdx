@@ -1,0 +1,216 @@
+---
+title: "How to adapt automatically to different source files with stream conditions"
+---
+
+## Context
+
+In an ideal world, as a content publisher, you would only be asked to work with a single type of source file, which would allow you to have a single encoding workflow configured, and complete predictability about what your output streams will look like. However, we all know this: this ideal world doesn't exist. You just have to open a newspaper if you need convincing...
+
+When it comes to video workflows, in many situations the input file might not fit the output profiles. This could cause it to waste computing resources, generate outputs that are not suitable for downstream systems such as players or content partners, or stop your encoding workflow altogether.
+
+The traditional way to get around this is to create multiple versions of your workflow, with subtle differences between them to handle the differences in your input file. You would then need on an additional analysis step in the workflow before you start the encoding, to make decisions on what workflow to execute, or to create the whole configuration on the fly. Tools like [MediaInfo](https://mediaarea.net/en/MediaInfo) or [ffprobe](https://ffmpeg.org/ffprobe.html) will provide a lot of information and have been used by generations of video developers, but require additional logic to parse and interpret the results in ways that are meaningul when it comes to this logic.
+
+Luckily, with the Bitmovin encoder's smart defaults, there is a reduced need to go through all this, but when you need that additional level of control, stream conditions will give you all the tools you should need!
+
+## Principles
+
+Stream Conditions are a feature in our encoding stack that allows you to pre-configure the behaviour of your encoding based on the input file (or files) that it receives. Before instructions to create streams are passed to the encoder, the pre-defined conditions attached to it are checked against the internal results of an analysis step; if they evaluate negatively, those streams will not get encoded. Furthermore all muxings depending on this streams will also be ignored.
+
+This makes it quite easy to only have one encoding configuration, which works with a variety of input files, and to adapt it over time to cover more variation in the input specs.
+
+## Basic usage
+
+Let's start from a simple script that might generate a fixed bitrate ladder from a source file, with a top rendition at 4K (3280x2160). For the top rendition, the code might look something like this (with your own functions taking care of creating other resources, such as codec configurations, stream inputs, etc. in much the same way as you will typically find [in our examples](https://github.com/bitmovin/bitmovin-api-sdk-examples)):
+
+`H265VideoConfiguration videoConfig2160 = createH265VideoConfig(2160, 10_000_000L);
+
+Stream stream2160 = new Stream();
+stream2160.addInputStreamsItem(videoStreamInput);
+stream2160.setCodecConfigId(videoConfig2160.getId());
+stream2160 = bitmovinApi.encoding.encodings.streams.create(encoding.getId(), stream2160);
+
+MuxingStream muxingStream2160 = new MuxingStream();
+muxingStream2160.setStreamId(stream2160.getId());
+
+Mp4Muxing muxing2160 = new Mp4Muxing();
+muxing2160.addOutputsItem(encodingOutput);
+muxing2160.setFilename("video2160.mp4");
+muxing2160.addStreamsItem(muxingStream2160);
+muxing2160 = bitmovinApi.encoding.encodings.muxings.mp4.create(encoding.getId(), muxing2160);
+`
+
+That's all well and good, but what if your input file only has an HD resolution (1920x1080)? You could obvioulsy have another workflow that takes care of those, but what if the only difference between them is a couple of extra renditions for those higher resolutions? Enter stream `Condition`s... let's modify the example to check on the file's height, by introducing the following snippet before the call to the API on line 6:
+
+`Condition heightIs2160 = new Condition();
+heightIs2160.setAttribute("HEIGHT");
+heightIs2160.setOperator(ConditionOperator.EQUAL);
+heightIs2160.setValue("2160");
+stream2160.setConditions(heightIs2160);
+`
+
+Now, the encoder will only create this 2160 stream and the _video2160.mp4_ file if your source file has a height of 2160 pixels
+
+If you source file is of different resolution, that stream won't get created. And to make sure that the muxing associated with that stream does not cause an encoding error, we can also add the following instruction to instruct the encoder to completely drop that muxing:
+
+`muxing2160.setStreamConditionsMode(StreamConditionsMode.DROP_MUXING);
+`
+
+This last step is not strictly necessary however, since it is the default setting on all muxing types anyway.
+
+## Combining conditions
+
+Let's go a step further. What if in addition to this, you also want to have different output bitrates for that rendition based on the input frame rate? If the frame rate is anything up to 30 fps, you want a lower bitrate than for any source above that. Easy enough! You can combine multiple conditions through logical operators AND or OR, by using conjunctions such as `AndConjunction` and `OrConjunction` resources. So, here we'll create 2 configurations and 2 streams, one for each set of condition:
+
+`H265VideoConfiguration videoConfig2160_10Mbps = createH265VideoConfig(2160, 10_000_000L);
+Stream stream2160_10Mbps = new Stream();
+stream2160_10Mbps.addInputStreamsItem(videoStreamInput);
+stream2160_10Mbps.setCodecConfigId(videoConfig2160_10Mbps.getId());
+
+H265VideoConfiguration videoConfig2160_16Mbps = createH265VideoConfig(2160, 16_000_000L);
+Stream stream2160_16Mbps = new Stream();
+stream2160_16Mbps.addInputStreamsItem(videoStreamInput);
+stream2160_16Mbps.setCodecConfigId(videoConfig2160_16Mbps.getId());
+
+Condition heightIs2160 = new Condition();
+heightIs2160.setAttribute("HEIGHT");
+heightIs2160.setOperator(ConditionOperator.EQUAL);
+heightIs2160.setValue("2160");
+
+Condition fpsMin30 = new Condition();
+fpsMin30.setAttribute("FPS");
+fpsMin30.setOperator(ConditionOperator.GREATER_THAN);
+fpsMin30.setValue("30");
+AndConjunction heightIs2160AndFpsUpTo30 = new AndConjunction();
+heightIs2160AndFpsUpTo30.setConditions(Arrays.asList(heightIs2160, fpsMin30));
+
+Condition fpsMax30 = new Condition();
+fpsMax30.setAttribute("FPS");
+fpsMax30.setOperator(ConditionOperator.LESS_THAN_OR_EQUAL);
+fpsMax30.setValue("30");
+AndConjunction heightIs2160AndFpsAbove30 = new AndConjunction();
+heightIs2160AndFpsAbove30.setConditions(Arrays.asList(heightIs2160, fpsMax30));
+
+stream2160_10Mbps.setConditions(heightIs2160AndFpsUpTo30);
+stream2160_16Mbps.setConditions(heightIs2160AndFpsAbove30);
+
+stream2160_10Mbps = bitmovinApi.encoding.encodings.streams.create(encoding.getId(), stream2160_10Mbps);
+stream2160_16Mbps = bitmovinApi.encoding.encodings.streams.create(encoding.getId(), stream2160_16Mbps);
+`
+
+Beyond that, the world is your oyster. You can create more conditions, and even nest multiple conjunctions.
+
+## Stream conditions mode
+
+We've seen above how to use `DROP_MUXING` as `Muxing.streamConditionsMode` to ensure that the muxing will not be generated if any of the streams it should contain fails to meet the conditions.
+
+There is another option, `DROP_STREAM`, which, as the name should make clear, will not drop the muxing, but will attempt to create it without that stream.
+
+A good use case for this is when handling audio sources. Let's imagine that we want our encoding to be able to handle source files that normally contain a stereo audio track, but may also contain a 5.1 track in addition to it. We want our encoding outputs to reflect that setup, but we don't want to fail if the surround track is missing.
+
+Here's such a setup. This time we use Python _(if only because it's a little more compact than Java and this article is getting long...)_
+
+Python
+
+`config_video = bitmovin_api.encoding.configurations.video.h264.create(
+    h264_video_configuration=H264VideoConfiguration(bitrate=5_000_000, preset_configuration=PresetConfiguration.VOD_STANDARD))
+config_audio_stereo = bitmovin_api.encoding.configurations.audio.aac.create(
+    aac_audio_configuration=AacAudioConfiguration(bitrate=128000, channel_layout=AacChannelLayout.CL_STEREO))
+config_audio_surround = bitmovin_api.encoding.configurations.audio.ac3.create(
+    ac3_audio_configuration=Ac3AudioConfiguration(bitrate=384000, channel_layout=Ac3ChannelLayout.CL_5_1))
+
+stream_input_video = StreamInput(input_id=input.id, input_path=input_path,
+                                 selection_mode=StreamSelectionMode.VIDEO_RELATIVE, position=0)
+stream_input_audio_0 = StreamInput(input_id=input.id, input_path=input_path,
+                                   selection_mode=StreamSelectionMode.AUDIO_RELATIVE, position=0)
+stream_input_audio_1 = StreamInput(input_id=input.id, input_path=input_path,
+                                   selection_mode=StreamSelectionMode.AUDIO_RELATIVE, position=1)
+
+input_stream_exists = Condition(attribute="INPUTSTREAM", operator=ConditionOperator.EQUAL, value="true")
+
+stream_video = bitmovin_api.encoding.encodings.streams.create(
+    encoding_id=encoding.id,
+    stream=Stream(codec_config_id=config_video.id,
+                  input_streams=[stream_input_video]))
+
+stream_audio_stereo = bitmovin_api.encoding.encodings.streams.create(
+    encoding_id=encoding.id,
+    stream=Stream(codec_config_id=config_audio_stereo.id,
+                  input_streams=[stream_input_audio_0],
+                  conditions=input_stream_exists))
+stream_audio_surround = bitmovin_api.encoding.encodings.streams.create(
+    encoding_id=encoding.id,
+    stream=Stream(codec_config_id=config_audio_surround.id,
+                  input_streams=[stream_input_audio_1],
+                  conditions=input_stream_exists))
+
+muxing = bitmovin_api.encoding.encodings.muxings.mp4.create(
+    encoding_id=encoding.id,
+    mp4_muxing=Mp4Muxing(filename="output.mp4",
+                         outputs=[EncodingOutput(output_id=output.id, output_path=output_path)],
+                         streams=[stream_video, stream_audio_stereo, stream_audio_surround],
+                         stream_conditions_mode=StreamConditionsMode.DROP_STREAM))
+`
+
+Notice how we use a single type of condition to test whether any of the streams we expect in the source is indeed present. With the last line, we state that should either of those be missing, we should still create a muxing with just those streams that are possible to create. A side effect of this setup is that even if the source file has no audio at all, the muxing will succeed and only contain a video stream. It's up to you whether that's a good thing or not (and to tune the code to your desires).
+
+I hear you ask: "But what if our files had tracks containing either stereo, surround or both, and we wanted to only output a single audio output stream, with a preference for 5.1 if it's available in the source?". We've got you covered! After small alterations to the code above, lines 15 and following become:
+
+Python
+
+`has_1_audio_stream = Condition(attribute="AUDIOSTREAMCOUNT", operator=ConditionOperator.EQUAL, value="1")
+has_2_audio_streams = Condition(attribute="AUDIOSTREAMCOUNT", operator=ConditionOperator.GREATER_THAN_OR_EQUAL, value="2")
+is_stereo = Condition(attribute="CHANNELFORMAT", operator=ConditionOperator.EQUAL, value="2")
+is_surround = Condition(attribute="CHANNELFORMAT", operator=ConditionOperator.EQUAL, value="6")
+
+stream_video = bitmovin_api.encoding.encodings.streams.create(
+    encoding_id=encoding.id,
+    stream=Stream(codec_config_id=config_video.id,
+                  input_streams=[stream_input_video]))
+
+stream_audio_stereo_from_track_0 = bitmovin_api.encoding.encodings.streams.create(
+    encoding_id=encoding.id,
+    stream=Stream(codec_config_id=config_audio_stereo.id,
+                  input_streams=[stream_input_audio_0],
+                  conditions=AndConjunction(conditions=[has_1_audio_stream, is_stereo])))
+stream_audio_surround_from_track_0 = bitmovin_api.encoding.encodings.streams.create(
+    encoding_id=encoding.id,
+    stream=Stream(codec_config_id=config_audio_surround.id,
+                  input_streams=[stream_input_audio_0],
+                  conditions=AndConjunction(conditions=[has_1_audio_stream, is_surround])))
+stream_audio_surround_from_track_1 = bitmovin_api.encoding.encodings.streams.create(
+    encoding_id=encoding.id,
+    stream=Stream(codec_config_id=config_audio_surround.id,
+                  input_streams=[stream_input_audio_1],
+                  conditions=has_2_audio_streams))
+
+muxing = bitmovin_api.encoding.encodings.muxings.mp4.create(
+    encoding_id=encoding.id,
+    mp4_muxing=Mp4Muxing(filename="output.mp4",
+                         outputs=[EncodingOutput(output_id=output.id, output_path=output_path)],
+                         streams=[stream_video,
+                                  stream_audio_stereo_from_track_0,
+                                  stream_audio_surround_from_track_0,
+                                  stream_audio_surround_from_track_1],
+                         stream_conditions_mode=StreamConditionsMode.DROP_STREAM))
+`
+
+## Summary and additional advantages
+
+Hopefully, you have a good idea of what's possible at this stage. Beyond allowing your workflows to cater for more use cases when it comes to the input files, it is also worth nothing other advantages that may be gained by using stream conditions:
+
+* Simplify your workflow: no need for an extra analysis process in your workflow - the conditions will be evaluated during the encoding process which will only take a few milliseconds
+* Speed up the encoding: no extra time spent encoding streams you don't need
+* Simplify maintenance: you can just adapt your encoding script instead of needing multiple versions
+* Reduce encoding costs: streams are only encoded when they match the conditions
+* Reduce storage and CDN costs: streams that are not encoded require no storage (duh!)
+* Avoid upscaling and quality loss
+* Avoid unnecessary audio resampling
+* Avoid encoding errors
+
+You can also use stream conditions together with most of the features provided by the Bitmovin encoder, such as algorithms like per-title and 3-pass.
+
+Finally, a word of caution. You should only really use stream conditions when they are warranted. If all you want to achieve is to have the output of your encoding match settings from the input, such as frame rate, resolution, audio layout, it is better to not specify those on your codec configuration. By default, unless specified, the Bitmovin encoder will apply smart defaults!
+
+## Reference
+
+A complete reference of all attributes and values available when using conditions can be found in [this article](/encoding/docs/stream-conditions)

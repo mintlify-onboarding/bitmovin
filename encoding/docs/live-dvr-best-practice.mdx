@@ -1,0 +1,74 @@
+---
+title: "Live DVR (timeshift) configuration guide"
+description: "A guide on setting the most suitable DVR window based on your live encoding configuration"
+---
+
+## What DVR functionality provides
+
+DVR typically means Digital Video Recorder and in the hardware world this would be a feature in digital set top boxes that recorded the content from the tuned channel service to a local cache such as a hard disk, allowing the user to go back in time and playback content from the past. 
+
+Today some OTT platforms also want to offer the same experience to their users, allowing them to start a live event, and go back in time to points they may missed or wish to see again. 
+
+This is often described as a DVR "window", as the number of hours or minutes that the user can go back it time in will be offset from the current moment in time. A two hour DVR window will allow users watching at 10am UTC the option to go back and watch content from 8 - 10am, but an hour later than window will have moved to 9 - 11am. 
+
+In Bitmovin this feature can be enabled using the timeshift parameter. 
+
+## Configuring timeshift in the manifest
+
+When configuring the manifest for a live encoding, set the timeshift parameter (in seconds) this is seen in the API POST request, under hlsManifest and dashManifest object arrages for:
+
+[Start Live Encoding](https://developer.bitmovin.com/encoding/reference/postencodingencodingslivestartbyencodingid) (using the Custom Live Configurations option)
+
+[Start HD Options](https://developer.bitmovin.com/encoding/reference/postencodingencodingslivechannelstartbyencodingid) (using the Live Encoding HD options)
+
+An example of how this would look in a script using Java is shown below, see the setTimeshift parameters. 
+
+Java
+
+`DashManifest dashManifest = createDashManifest(output, "/", encoding);
+HlsManifest hlsManifest = createHlsManifest(output, "/", encoding);
+
+LiveDashManifest liveDashManifest = new LiveDashManifest();
+liveDashManifest.setManifestId(dashManifest.getId());
+liveDashManifest.setTimeshift(300D);
+liveDashManifest.setLiveEdgeOffset(90D);
+
+LiveHlsManifest liveHlsManifest = new LiveHlsManifest();
+liveHlsManifest.setManifestId(hlsManifest.getId());
+liveHlsManifest.setTimeshift(300D);
+`
+
+### Recommended timeshift settings
+
+As the timeshift parameter defines the number of segments that the manifest will reference, the larger the DVR window or timeshift value, the greater the number of elements that the manifest must reference each time it is written. Through testing we have found that the maximum number of elements the manifest should contain is **54,000**. 
+
+If the manifest contains more than 54,000 elements it is observed that devices will begin to struggle with playback and the service can not write to the manifest file fast enough. The result is an increasing latency in playback. Our recommendation for a default settings that will work for most configurations would be: 
+
+> 👍
+> 
+> Bitmovin recommends a 3 hours DVR window (a timeshift value of **10800**)
+
+### Calculating your maximum timeshift setting
+
+Because the size of the DVR window depends on: a constant of the maximum number of elements in the manifest, the segment length and number of renditions that the encoding is configured with, different configurations will have a different value for the maximum timeshift value. 
+
+To calculate what the maximum value for your configuration should be, use the following formula. 
+
+![](/images/encoding/docs/41b94ca-image.png)
+
+#### Examples
+
+The table below provides some guidance using some example settings. 
+
+| Variants | Segment length | timeshift value (seconds) | DVR window (hours) |
+| -------- | -------------- | ------------------------- | ------------------ |
+| 3        | 1              | 18000                     | 5                  |
+| 3        | 1.28           | 23040                     | 6.4                |
+| 3        | 2.56           | 46080                     | 12.8               |
+| 3        | 3.84           | 69120                     | 19.2               |
+| 3        | 7.68           | 138240                    | 38.4               |
+| 6        | 1              | 9000                      | 2.5                |
+| 6        | 1.28           | 11520                     | 3.2                |
+| 6        | 2.56           | 23040                     | 6.4                |
+| 6        | 3.84           | 34560                     | 9.6                |
+| 6        | 7.68           | 69120                     | 19.2               |

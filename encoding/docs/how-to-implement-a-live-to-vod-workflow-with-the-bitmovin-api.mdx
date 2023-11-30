@@ -1,0 +1,156 @@
+---
+title: "How to implement a Live-to-VoD workflow with the Bitmovin API"
+---
+
+## Overview
+
+Live-to-VoD is a common feature used in live streaming applications, and roughly covers scenarios that convert live streams into on-demand assets. The goal is to allow users to watch the replay of a live event after it has ended. It also creates opportunities to reuse the content while a live event is still running, for example, for doing clipping and promotional highlights for social media marketing, or “latest news” snippets.
+
+Thanks to the flexibility of the Bitmovin API, a Live-to-VoD use case is easily supported by making just a few API calls. Over the next sections, we will cover a general overview of this feature in a Bitmovin workflow, some API details to consider when implementing this in practice, and some code snippets to get started.
+
+## General Live-to-VoD workflow
+
+Customers can initiate a Live-to-VoD workflow at any point in time after the encoding either has been created, is still running or even has finished (1). In this way, we can convert a live stream to VoD almost independently of the main live encoding workflow status. In practice, this workflow enables use cases where a Live to VoD conversion is needed either for a live event that is waiting to get started, being streamed or has already ended.
+
+(1) See our [encoding status API](/encoding/reference/getencodingencodingsstatusbyencodingid) for more details about the encoding status we report.
+
+## VoD manifest generation
+
+![](/images/encoding/docs/1cf824b-image.png)
+
+When talking about Live-to-VoD generation, what Bitmovin does specifically is the generation of a VoD manifest or playlist which contains references to the segments already generated - or to be generated, for the live stream. In this way, when we trigger the Live-to-VoD workflow, we are basically creating a new VoD manifest while keeping the original live encoding workflow untouched. Since Bitmovin is not re-encoding neither re-packaging the live content but just creating a new manifest pointing to the proper live segments, the Live-to-VoD process is really fast, making it possible to have a new VoD manifest available in matter of seconds. Additionally, Bitmovin Live-to-VoD workflow makes it possible to define what portion(2) of the main live event needs to be included in the VoD manifest.
+
+As any other manifest creation process supported by Bitmovin, we support a fully manifest customization - so new manifests can even differ from the original one, for instance, some renditions may be omitted, new periods could be added or new manifest type (HLS or DASH) could be created, etc.
+
+(2) The Live-to-Vod creation process provides a segment base granularity. In this way, the VOD manifest start and end point match the start or end of the live segments.
+
+## Common use cases
+
+* Recording full live events - A full live event could be recorded as a VoD content. Additionally, customers are able to trim the content in order to remove unnecessary segments for the very beginning or the end of the transmission.
+* Highlighting content - Several highlights can be created from a live stream while the live event is still active, for instance to share clips or generate highlights from Sports events, News, Concerts, etc. Each highlight or clipping would be consider as a new VoD content, so in practice, the customers can create as many highlights as they need.
+* Creating VoD chapters - Some live events may be splitted into smaller pieces such as chapters to better organize how the content will be stored and consumed once the event finishes. Each chapter could be considered a new VoD content.
+
+## API and workflow details
+
+In the following section we will walk trough the required steps to set a Live-to-Vod workflow. This should be setup in addition to the [standard live streaming configuration](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/php/src/RtmpLiveEncoding.php).
+
+From the Bitmovin APIs point of view, Live-to-VoD is not more than just a manifest creation process but carefully referencing to encodings, muxes and streams that should have been created during the standard live encoding workflow - see the diagram below as a reference.
+
+![](/images/encoding/docs/7cb8f26-image.png)
+
+* Required fields from the live encoding object - The live encoding objects `<LIVE-ENCODING-ID>`, `<LIVE-MUXING-ID>`, `<LIVE-STREAM-ID>` are required when creating a new VoD manifest.
+* Optional fields -  
+   * startSegment, endSegment - Start and end segments that define the segment range included in the Vod manifest. If not provided, all the live segments are included.  
+   * `<LIVE-OUTPUT-ID>` and `<LIVE-OUTPUT-PATH>` objects may be required. This ensures that the segments into the VoD manifest reference to exactly the same live segments storage location.
+
+## Sample code - DASH Manifest
+
+The following sample code shows how to generate a VoD Dash manifest from a specific range of live encoding segments using our PHP SDK. The variables called `$live_* refers` to values obtained from the live workflow
+
+PHP
+
+`// Create a new VoD Dash Manifest
+$dashManifest = new DashManifest();
+$dashManifest->name("stream_vod.mpd");
+$dashManifest->manifestName("stream_vod.mpd");
+$dashManifest->outputs([buildEncodingOutput($live_Output, $live_OutputPath)]);
+$dashManifest = $bitmovinApi->encoding->manifests->dash->create($dashManifest);
+
+// Add a new Period into the Dash Manifest
+$period = new Period();
+$period = $bitmovinApi->encoding->manifests->dash->periods->create($dashManifest->id, $period);
+
+// Add a new video adaptation set into the Period
+$videoAdaptationSet = new VideoAdaptationSet();
+$videoAdaptationSet = $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->video->create($dashManifest->id, $period->id, $videoAdaptationSet);
+
+// Add a new video representation into the Adaptation Set
+$videoRepresentation = new DashFmp4Representation();
+$videoRepresentation->type(DashRepresentationType::TEMPLATE());
+$videoRepresentation->encodingId($live_EncodingId);
+$videoRepresentation->muxingId($live_1080p_Fmp4MuxingId);
+$videoRepresentation->segmentPath($live_1080p_SegmentPath);
+$videoRepresentation->startSegmentNumber($startSegment);
+$videoRepresentation->endSegmentNumber($endSegment);
+$bitmovinApi->encoding->manifests->dash->periods->adaptationsets->representations->fmp4->create($dashManifest->id, $period->id, $videoAdaptationSet->id, $videoRepresentation);
+`
+
+1. First, a new VoD $dashManifest is created. For this specific sample code, the manifest will be written at the same live output location, i.,e, `$live_OutputPath`.
+2. A new `$period` and a new `$videoAdaptationSet` is created into the VoD `$dashManifest`. This is the standard process for defining the manifest with Bitmovin APIs.
+3. Also, when defining the `$videoRepresentation` to be added, the VoD `$videoRepresentation` must point to the existing live encoding objects, i.e., `$live_EncodingId`, `$live_1080p_Fmp4MuxingId`. Additionally, for this sample code, we considered that either live and VoD segments are located in the same location, i.e, `$live_1080p_SegmentPath`.
+4. The VoD manifest contains the segments between `$startSegment` and `$endSegment`.
+5. The Same approach applies to creating and trim the audio representations into the same Dash Manifest, for instance:
+
+PHP
+
+`// Add a new audio adaptation set into the Period
+$audioAdaptationSet = new AudioAdaptationSet();
+$audioAdaptationSet = $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->audio->create($dashManifest->id, $period->id, $audioAdaptationSet);
+
+// Add a new audio adaptation set into the Period
+$audioRepresentation = new DashFmp4Representation();
+$audioRepresentation->type(DashRepresentationType::TEMPLATE());
+$audioRepresentation->encodingId($live_EncodingId);
+$audioRepresentation->muxingId($live_audio_Fmp4MuxingId);
+$audioRepresentation->segmentPath($live_audio_SegmentPath);
+$audioRepresentation->startSegmentNumber($startSegment);
+$audioRepresentation->endSegmentNumber($endSegment);
+$bitmovinApi->encoding->manifests->dash->periods->adaptationsets->representations->fmp4->create($dashManifest->id, $period->id, $audioAdaptationSet->id, $audioRepresentation);
+`
+
+1. Finally, the dash manifest is created
+
+PHP
+
+`$bitmovinApi->encoding->manifests->dash->start($dashManifest->id);
+`
+
+## Sample code - HLS Manifest
+
+The following sample code shows how to create an HLS manifest from a live encoding.
+
+PHP
+
+`// Create a new HLS Manifest
+$hlsManifest = new HlsManifest();
+$hlsManifest->name('Live to Vod Manifest');
+$hlsManifest->manifestName("master_vod.m3u8");
+$hlsManifest->outputs([buildEncodingOutput($live_output, $live_outputPath)]);
+$hlsManifest = $bitmovinApi->encoding->manifests->hls->create($hlsManifest);
+
+// Create a new streamInfo into the Manifest
+$streamInfo = new StreamInfo();
+$streamInfo->uri('video_vod.m3u8');
+$streamInfo->encodingId($live_EncodingId);
+$streamInfo->streamId($live_1080p_StreamId);
+$streamInfo->muxingId($live_1080p_Fmp4MuxingId);
+$streamInfo->startSegmentNumber($startSegment);
+$streamInfo->endSegmentNumber($endSegment);
+$streamInfo->audio('audio');
+$streamInfo->segmentPath($live_1080p_SegmentPath);
+$bitmovinApi->encoding->manifests->hls->streams->create($hlsManifest->id, $streamInfo);
+
+// Create a new audioMediaInfo into the Manifes
+$audioMediaInfo = new AudioMediaInfo();
+$audioMediaInfo->groupId('audio');
+$audioMediaInfo->name('en');
+$audioMediaInfo->uri('audio_vod.m3u8');
+$audioMediaInfo->encodingId($live_EncodingId);
+$audioMediaInfo->streamId($live_audio_StreamId);
+$audioMediaInfo->muxingId($live_audio_Fmp4MuxingId);
+$audioMediaInfo->segmentPath($live_audio_SegmentPath);
+$audioMediaInfo->startSegmentNumber($startSegment);
+$audioMediaInfo->endSegmentNumber($endSegment);
+$audioMediaInfo->language('en');
+$bitmovinApi->encoding->manifests->hls->media->audio->create($hlsManifest->id, $audioMediaInfo);
+$bitmovinApi->encoding->manifests->hls->start($hlsManifest->id);
+`
+
+The process is pretty similar to the DASH VoD manifest creation, for instace:
+
+1. First, a new VoD `$hlsManifest` is created. The manifest will be written at the same live output location, i.,e, `$live_Output $live_OutputPath`.
+2. A new `$streamInfo` is created into the VoD `$hlsManifest`.
+3. When defining the `$streamInfo`, it point to the existing live encoding objects, i.e., `$live_EncodingId`, `$live_1080p_StreamId`, `$live_1080p_Fmp4MuxingId`.
+4. VoD segments are located in the same live location, i.e, `$live_1080p_SegmentPath`.
+5. The VoD manifest is trimmed to `$startSegment` and `$endSegment` numbers.
+6. Same workflow applies for `$audioMediaInfo`.

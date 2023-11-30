@@ -1,0 +1,252 @@
+---
+title: "Bitmovin CDN Output"
+---
+
+## Overview
+
+The Bitmovin Content Delivery Network (CDN) helps set up your workflows faster by simplifying your content distribution. It’s easy to use and removes the need to set up your own output storage. Your content will be automatically distributed around the globe, enabling fast and efficient delivery to all your viewers without any additional effort.
+
+## Requirements
+
+* SDK Version: 1.111.0 or higher
+* Content-Type: VoD (1.111.0 or higher), LIVE (1.113.0 or higher)
+* Available to Bitmovin Accounts created after April 5th, 2022 that have  
+   * Starter or PAYG subscription, and  
+   * Users during their 30-Day Encoding Trial.
+
+## Supported Features
+
+* Simple Encoding API for VoD and LIVE
+* customized encoding workflows for VoD
+
+## Usage in the Dashboard
+
+The Bitmovin CDN Output is listed in the Outputs overview, where you find your existing Output resources as well. So, you can also use it as an Output destination in Step 6 when you [create a new Encoding](https://bitmovin.com/dashboard/encoding/create/vod) through the Dashboard:
+
+1. Go to [https://bitmovin.com/dashboard/](https://bitmovin.com/dashboard/)
+2. On the left, open the "Encoding" section, and select "Encodings"
+3. In the upper right corner of the Overview, click "Create new encoding"
+4. Go through each step and select your Input and all desired renditions and manifests for your encoding.
+5. In step 5, select "CDN Output" in the Existing Output List
+![](/images/encoding/docs/158638d-image.png) 
+1. In step 6 of the Encoding Wizard, click "Start Encoding", then "Go to Encoding" once the encoding successfully started to open its encoding detail view.
+2. There, select the “Manifests” tab. You will find the CDN URL to your encoded content there. Click the “Preview” button to view in the dashboard right away 🙂:![](/images/encoding/docs/179b684-image.png)
+
+> ℹ️
+> 
+> The domain name in this URL is unique to your account. It gets set up the first time you use the CDN as output for an encoding. So, it can take a couple of minutes for its DNS entry to become globally available. As soon as it is reachable, you will be able to play your content as expected.
+
+## Usage with the Simple Encoding API
+
+This API is the most simple, and easy way to start an encoding today. Using your dedicated CDN Output only requires to provide `outputs:[{ type: "CDN" }]` in your Simple Encoding API request:
+
+Shell
+
+`curl --location --request POST 'https://api.bitmovin.com/v1/encoding/simple/jobs/vod' \
+  --header 'x-api-key: YOUR_BITMOVIN_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "name": "simple_encoding_name",
+    "encodingTemplate": "H264",
+    "inputs": [
+        {
+            "url": "s3://my-bucket/path/file.mp4",
+            "credentials": {
+                "accessKey": "S3_INPUT_ACCESS_KEY",
+                "secretKey": "S3_INPUT_SECRET_KEY"
+            }
+        }
+    ],
+    "outputs": [
+        {
+            "type": "CDN"
+        }
+    ]
+  }'
+`
+
+Using the **Bitmovin SDK for Java (v1.111 or higher)**, this translates to
+
+Java
+
+`simpleEncodingJob.addOutputsItem(new SimpleEncodingVodJobCdnOutput());
+`
+
+Doing so, you tell the Simple Encoding API to use the Bitmovin CDN Output that is present in your account.
+
+Java
+
+`// define input
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("s3://my-bucket/path/file.mp4");
+
+// input credentials
+var inputCredentials = new SimpleEncodingVodJobAccessKeyCredentials();
+inputCredentials.setAccessKey(S3_INPUT_ACCESS_KEY);
+inputCredentials.setSecretKey(S3_INPUT_SECRET_KEY);
+input.setCredentials(inputCredentials);
+
+// put it all together
+SimpleEncodingVodJobRequest simpleEncodingJob = new SimpleEncodingVodJobRequest();
+simpleEncodingJob.setEncodingTemplate(EncodingTemplate.H264) //or EncodingTemplate.AV1
+simpleEncodingJob.addInputsItem(input);
+// define CDN output
+simpleEncodingJob.addOutputsItem(new SimpleEncodingVodJobCdnOutput());
+
+// call the API to start the Job
+api.simple.jobs.vod.create(simpleEncodingJob);
+`
+
+## Usage with the Bitmovin API
+
+> ℹ️
+> 
+> Take a look at our [Getting Started Guide](/encoding/docs/java-sdk) to learn how to use the Bitmovin API to create your first custom encoding workflow.
+
+Using the Bitmovin API, you will have to look up the CDN Output in your account to obtain its ID first to use it in the `EncodingOutput` Configuration Objets of your encoding workflow. The simplest way to do that is to use the “List CDN Outputs” endpoint:
+
+Java
+
+`CdnOutput cdnOutput = bitmovinApi.encoding.outputs.cdn.list().getItems().get(0);
+`
+
+or, you obtain its details by using its ID. You can look up its ID in the dashboard under “Encoding => [Outputs](https://bitmovin.com/dashboard/encoding/outputs)“. Click on the "CDN" Output there to open its detail view, copy its ID, and replace with it `yourCdnOutputId` in the code snippet below:
+
+Java
+
+`CdnOutput cdnOutput = bitmovinApi.encoding.outputs.cdn.get("yourCdnOutputId");
+`
+
+### Output paths for CDN Outputs
+
+When you create an encoding you configure it as you do usually. Once an encoding is started, all `EncodingOutput` Configuration Objects that refer to `CDN Output` will be automatically adjusted to meet CDN Output file structure requirements:
+
+* Every `outputPath` of an `EncodingOutput` Configuration Object will be pre-fixed with an `Asset ID` which is unique within an encoding. Doing so, it is ensured that all resources created by an encoding share the same root folder on your CDN Output.
+* ACL permissions are set to `PRIVATE` to ensure the content on the CDN storage is only accessible through its attached CDN Endpoint URL.
+
+### Obtain the CDN URL for your encoded contents
+
+`outputPath`s only contain relative URLs. By concatenating the `domainName` of your CDN Output with those output paths you will obtain the URL to a particular resource on your CDN storage.
+
+> ℹ️
+> 
+> The `domainName` of an CDN Output is only available, after it was used at least once by an successful encoding.
+
+The following example show how you can programmatically obtain the CDN URL for an output of an Progressive MP4 Muxing:
+
+Java
+
+`// retrieve updated CDN output details 
+CdnOutput cdnOutput = bitmovinApi.encoding.outputs.cdn.get(cdnOutput.getId())
+
+// retrieve updated muxing details (https://bitmovin.com/docs/encoding/api-reference/all#/Encoding/GetEncodingEncodingsMuxingsByEncodingIdAndMuxingId)
+Mp4Muxing retrievedMuxing =
+    bitmovinApi.encoding.encodings.muxings.mp4.get(encoding.getId(), muxing.getId());
+
+// find the EncodingOutput of the muxing that refers to the CdnOutput (in case there are more than one)
+EncodingOutput cdnEncodingOutput =
+    retrievedMuxing.getOutputs().stream()
+        .filter(encodingOutput -> encodingOutput.getOutputId().equals(cdnOutput.getId())).findFirst().get();
+
+// build the CDN URL
+String pathOnCdn = String.format("https://%s/%s%s", cdnOutput.getDomainName(), cdnEncodingOutput.getOutputPath(), retrievedMuxing.getFilename());
+`
+
+The following example shows how you can programmatically obtain the CDN URL for a Manifest:
+
+Java
+
+`// retrieve updated output details (domainName is only available after the first usage) (https://bitmovin.com/docs/encoding/api-reference/sections/outputs#/Encoding/GetEncodingOutputsCdnByOutputId)
+CdnOutput cdnOutput = bitmovinApi.encoding.outputs.cdn.get(cdnOutput.getId())
+
+// retrieve updated manifest details (https://bitmovin.com/docs/encoding/api-reference/sections/manifests#/Encoding/GetEncodingManifestsDashByManifestId)
+DashManifest retrievedManifest = 
+    bitmovinApi.encoding.manifests.dash.get(manifest.getId());
+
+// find the EncodingOutput of the muxing that refers to the CdnOutput (in case there are more than one)
+String manifestOutputPath =
+    retrievedManifest.getOutputs().stream()
+        .filter(encodingOutput -> encodingOutput.getOutputId().equals(cdnOutput.getId()))
+        .findFirst()
+        .map(EncodingOutput::getOutputPath).get();
+
+// build the absolute path
+String pathOnCdn =
+    String.format(
+        "https://%s/%s%s",
+        cdnOutput.getDomainName(),
+        manifestOutputPathOptional.get(),
+        manifest.getManifestName());
+`
+
+## Known Limitations
+
+* When using the Bitmovin CDN Output for the first time, it can take a couple of minutes until the necessary DNS entries for your CDN are propagated. The storage for your CDN is immediately available.
+* Only [automatically generated manifests](/encoding/docs/how-to-create-manifests-for-your-encodings#option-1---new---automatically-create-manifests-as-part-of-the-encoding-process) that are created as part of the Encoding Start Request, can be used when using the Bitmovin CDN Output.
+* Live Encodings don’t support the Bitmovin CDN Output at the moment.
+
+## CDN Usage Statistics API
+
+In order to retrieve the usage statistics of your CDN, a GET request can be made to the following endpoint [https://api.bitmovin.com/v1/encoding/statistics/cdn/usage?from={time-stamp}&to={time-stamp}](https://api.bitmovin.com/v1/encoding/statistics/cdn/usage?from=%7Btime-stamp%7D&to=%7Btime-stamp%7D), where the `from` and `to` query parameters determine the time period for which the usage statistics are retrieved.
+
+> ℹ️
+> 
+> Note: both of the following date formats are accepted in the request: `yyyy-MM-dd` and `yyyy-MM-ddThh:mm:ssZ`. The maximum retrieval time period is of 100 days.
+
+Shell
+
+`curl 'https://api.bitmovin.com/v1/encoding/statistics/cdn/usage?from=2022-04-12&to=2022-04-15' \
+  --header 'x-api-key: YOUR_BITMOVIN_API_KEY' \
+  --header 'Content-Type: application/json'
+`
+
+The request will return to the total amount of transfer usage and storage usage, as well as those usages by day:
+
+JSON
+
+`{
+    "from": "2022-04-12T00:00:00Z",
+    "to": "2022-04-15T00:00:00Z",
+    "transferUsageTotal": 260.0,
+    "storageUsageTotal": 170.0,
+    "usage": 
+    [
+        {
+            "from":"2022-04-12T00:00:00Z",
+            "to":"2022-04-13T00:00:00Z",
+            "storageUsage": 100.0,
+            "transferUsage": 120.0
+        }, 
+        {
+            "from":"2022-04-13T00:00:00Z",
+            "to":"2022-04-14T00:00:00Z",
+            "storageUsage": 100.0,
+            "transferUsage": 0.0
+        }, 
+        {
+            "from":"2022-04-14T00:00:00Z",
+            "to":"2022-04-15T00:00:00Z",
+            "storageUsage": 50.0,
+            "transferUsage": 50.0
+        }, 
+        {
+            "from":"2022-04-15T00:00:00Z",
+            "to":"2022-04-16T00:00:00Z",
+            "storageUsage": 10.0,
+            "transferUsage": 0.0
+        }
+    ]
+}
+`
+
+> ℹ️
+> 
+> The measure unit for storage is GB/month, conveying how many gigabytes per month are consumed for storage, while the measure unit for transfer is GB, which conveys the number of gigabytes transferred.
+
+**Dashboard**
+
+In the dashboard, the CDN usage statistics can be found under the billing statistics page. The data for the last 2 days has a latency, so it may be either incomplete or not available yet.
+
+![](/images/encoding/docs/93093e0-image.png)
+
+![](/images/encoding/docs/4c84ab8-image.png)

@@ -1,0 +1,28 @@
+---
+title: "Supported Input and Output Storages"
+---
+
+## Overview
+
+Bitmovin supports a wide variety of input and output storage types, which are listed on this page. If you don’t see your storage solution here, feel free to [contact our support](/cdn-cgi/l/email-protection#cfe0e0bcbabfbfa0bdbb8fada6bba2a0b9a6a1e1aca0a2) for direct help.
+
+## Inputs & Outputs
+
+| Name                           | Input | Output | VOD | Live |
+| ------------------------------ | ----- | ------ | --- | ---- |
+| AWS S3                         | ✅     | ✅      | ✅   | ✅    |
+| Google Cloud Storage           | ✅     | ✅      | ✅   | ✅    |
+| Azure Blob                     | ✅     | ✅      | ✅   | ✅    |
+| FTP                            | ✅     | ✅      | ✅   |      |
+| SFTP                           | ✅     | ✅      | ✅   |      |
+| HTTP(S)                        | ✅     | ✅      |     |      |
+| Akamai NetStorage              | ✅     | ✅      | ✅   | ✅    |
+| Akamai Media Services Live 4.x | ✅     | ✅      |     |      |
+| S3 compatible (see below)      | ✅     | ✅      | ✅   | ✅    |
+| Aspera                         | ✅     | ✅      |     |      |
+
+---
+
+## S3 Compatible Storages
+
+If your storage solution is reachable from our encoder (on the public internet or within your Cloud Connect account), and provides an S3-like API, you may find that it is also supported with our [S3 Generic Input](/encoding/reference/postencodinginputsgenerics3) and [Output](/encoding/reference/postencodingoutputsgenerics3) features. Testing is likely to be required to validate each individual storage product.

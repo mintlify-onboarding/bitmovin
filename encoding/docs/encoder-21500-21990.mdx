@@ -1,0 +1,564 @@
+---
+title: "Encoder 2.150.0 - 2.184.0"
+---
+
+### 2.184.0 (BETA)
+
+Released 2023-11-28  
+**Added**
+
+* Support for a new H264 profile `HIGH422`. This can be configured when creating an [h264 codec configuration](https://developer.bitmovin.com/encoding/reference/postencodingconfigurationsvideoh264).
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.183.0
+
+Released 2023-11-14  
+**Fixed**
+
+* When using h264 hardware acceleration of Apple Silicon chips and ingesting via OBS with 60 fps there was no output written for Live streams.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+### 2.182.0 (STABLE)
+
+Released 2023-10-31  
+**Fixed**
+
+* Improved handling of network failures that could lead to failed encodings.
+* Fixed [Custom Tags with PositionMode KEYFRAME](https://developer.bitmovin.com/encoding/reference/postencodingmanifestshlsstreamscustomtagbymanifestidandstreamid) not working properly for encodings with FPS change since version Encoder v2.179.0.
+* Deinterlace filter (enhanced or normal) created with [autoEnable](https://developer.bitmovin.com/encoding/reference/postencodingfiltersdeinterlace) value not set to `ALWAYS_ON`, sometimes resulted in activating the deinterlace filter for non-interlaced inputs.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.181.0
+
+Released 2023-10-17  
+**Fixed**
+
+* Fixed a bug that caused errors when SRT is used with backup ingest streams that are coming from a different IP address.
+* Significantly improved the performance of generating Live HLS manifests with longer timeshift and DVR windows.
+* The [AudioVolume](postencodingfiltersaudiovolume) filter is now working for Live Encodings.
+
+---
+
+### 2.180.0
+
+Released 2023-10-03  
+**Added**
+
+* Support for new Azure region: `US_WEST`
+
+**Fixed**
+
+* Fixed an AV out of sync issue with a specific combination of frame rate conversion and segment length.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.179.0
+
+Released 2023-09-26  
+**Added**
+
+* Creation of [keyframes](https://developer.bitmovin.com/encoding/reference/postencodingencodingskeyframesbyencodingid) now works with Smart Chunking.
+* Added support of keyframes creation for Dolby Vision encodings.
+* Support for new Azure regions: `ASIA_EAST`, `ASIA_SOUTHEAST`, `BRAZIL_SOUTH`, `CANADA_CENTRAL`, `FRANCE_CENTRAL`, `INDIA_CENTRAL`, `INDIA_SOUTH`, `JAPAN_EAST`, `JAPAN_WEST`, `KOREA_CENTRAL`, `US_CENTRAL`, `US_EAST2`, `US_SOUTH_CENTRAL`
+
+**Fixed**
+
+* Fixed a bug where encodings that used progressive subtitles together with segmented subtitles were outputting wrong progressive subtitles.
+* Fixed performance issues in HLS manifest generation that caused delays in live encodings with a big timeshift.
+
+**Changed**
+
+* Improved startup time for AWS regions, leading to shorter queuing times.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.178.0
+
+Released 2023-09-19  
+**Fixed**
+
+* SRT input was getting disconnected after few seconds of the first connection.
+* Connection failures, sometimes happening due to backup SRT inputs, are now fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.177.0
+
+Released 2023-09-05  
+**Fixed**
+
+* For multi-pass encodings with prores or j2k inputs, overriding the colorConfig object attached to a codec configuration (for example [here](https://developer.bitmovin.com/encoding/reference/postencodingconfigurationsvideoh264) for h264) was not working as expected.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.176.0
+
+Released 2023-08-30  
+**Fixed**
+
+* Fixed a bug where some specific mov inputs resulted in failed encoding.
+* Further improved stability for long-running live encodings.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.175.1
+
+Released 2023-08-17  
+**Fixed**
+
+* Fixed timescale for WebVtt chunked text muxings in DASH manifests. Previously, Timescale was set to same value as for video representation, even when the duration of WebVtt segments didn't match with the timescale.
+* Fix codec string in DASH manifests for WebVtt this was set to 'vtt' now it is set correctly to 'wvtt'.
+* Encodings with an input that has change in color configuration (at frame level) would have failed. This color conversion is now handled.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.174.0
+
+Released 2023-07-25  
+**Fixed**
+
+* Improved stability for long-running live encodings.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.173.0
+
+Released 2023-07-18  
+**Fixed**
+
+* A regression that was introduced in 2.164.0 leading to missing analysis details for streams in cases when pertitle and audio was configured.
+* Fixed an issue with VP9 encodings where it could happen that a level violation was triggered in the encoder for SINGLE\_PASS encodings. This was fixed by disabling alternate reference frames for all VP8/VP9 SINGLE\_PASS encodings.
+* Queueing time considerably reduced when using Pre-warmed Encoder Pools.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.172.0
+
+Released 2023-07-11
+
+**Added**
+
+* Internal stability improvements.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.171.0
+
+ Released 2023-07-05
+
+**Added**
+
+* Improved stability of Dolby Atmos audio-only encodings, which could have failed in the case the input duration was a multiple of the defined segment duration.
+
+**Fixed**
+
+* Fixed a buffer overflow in Audio Service when using Akamai MSL/Netstorage output.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.170.0
+
+Released 2023-06-20  
+**Fixed**
+
+* For Live Encodings, when using `AesEncryptionDrm` with a specified `keyFileUri`, the keyFile was not properly uploaded to the designated output. This has been fixed.
+* Improved resilience in case of intermittent infrastructure hiccups. If recovery is not possible, the encoding would eventually fail rather than stalling.
+* Improve s3 download speed in case the bucket location is not set for the encoding or can't be queried, which can be caused by a missing `s3:GetBucketLocation` permission.
+
+**Added**
+
+* The behaviour of `isDefault` in hls manifest's mediainfo was changed. Setting a value of `isDefault = false` will now be flagged in manifests as `DEFAULT=NO` when using manifest V2.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.169.0
+
+Released 2023-06-06
+
+**Added**
+
+* Internal stability improvements
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.168.0
+
+Released 2023-06-01
+
+**Fixed**
+
+* Fixed a bug which could cause Dolby Vision encodings to fail on AWS in case they had large Metadata files and segmented output configured.
+* Fixed a bug which could cause Dolby Vision encodings from JPEG2000 or high-resolution ProRes mezzanine files to stall in case segmented output was configured.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.167.0
+
+Released 2023-05-23
+
+**Fixed**
+
+* Under rare conditions, inputs with negative timestamps at the start (e.g. due to B-frames before the first I-frame in presentation order) could result in audio and video being out of sync.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.166.0
+
+Released 2023-05-16
+
+**Fixed**
+
+* In cases where Dolby Vision with segmented muxing is configured, _MuxingInformation_ was not calculated correctly for any additional audio or subtitle stream. This was fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.165.0
+
+ Released 2023-05-09
+
+**Fixed**
+
+* The issue impacting long running LIVE/VOD Encodings, identified in the previous release, is fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.164.0
+
+ Released 2023-05-03
+
+**Added**
+
+* _autoLevelSetup_: property for video configurations ([h264](postencodingconfigurationsvideoh264), [h265](postencodingconfigurationsvideoh265), [av1](postencodingconfigurationsvideoav1), [vp9](postencodingconfigurationsvideovp9)) to enable/disable the automatic calculation of level, maximum bitrate, and buffer size based on the lowest level that satisfies maximum property values for picture resolution, frame rate, and bitrate. In the case the target level is set explicitly, the maximum bitrate and buffer size are calculated based on the defined level. The _autoLevelSetup_ is enabled by default and is automatically disabled if the maximum bitrate or buffer size is set.
+
+**Fixed**
+
+* PerTitle Algorithm was sometimes losing a configured FIXED\_RESOLUTION\_AND\_BITRATE when the configuration contained two FIXED\_RESOLUTION\_AND\_BITRATE with the same resolution.
+* Fixed rare failures for encodings using three-pass with specific content.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* **Long running LIVE/VOD Encodings could potentially fail. We highly recommend using [the STABLE version](/encoding/docs/encoder-21000-21490#21490-stable) or the higher versions (from 2.165.0 onwards) for such encodings.**
+
+---
+
+### 2.163.0
+
+Released 2023-04-25
+
+**Changed**
+
+* In addition to the [encoding start](postencodingencodingsstartbyencodingid) call, the limit for the _Maximum VOD encodings queued_ is now also checked for the [encoding create](postencodingencodings) call.
+* _Debug_ messages will not be returned by the [Encoding Status API](getencodingencodingsstatusbyencodingid) anymore.
+* Additional internal stability improvements.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.162.0
+
+Released 2023-04-18
+
+**Fixed**
+
+* Fixed a bug where using a closed caption media info lead to an error in HLS manifests.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.161.0
+
+Released 2023-04-12
+
+**Changed**
+
+* Internal stability improvements.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.160.0
+
+Released 2023-04-04
+
+**Added**
+
+* Smart Chunking is now enabled for VP9.
+
+**Fixed**
+
+* Fixed a bug where paths in manifests were not correctly updated for live encodings after automatically detecting the output resolution.
+* [Zixi](/encoding/reference/postencodinginputszixi) and [SRT](/encoding/reference/postencodinginputssrt) ingest systems have been completely overhauled, resulting in improved stability and error handling.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.159.0
+
+Released 2023-03-29
+
+**Added**
+
+* For DASH manifests, when using `profile: ON_DEMAND` and `manifestGenerator: V2`, the `duration` property of Periods is now set when the manifest has multiple Periods.
+* WebM Muxing now supports SPEKE PlayReady encryption for VP9 video streams.
+
+**Fixed**
+
+* Fixed a bug that caused the LIVE input probing to fail in some situations.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+## [](#section-)
+
+### 2.158.0
+
+Released 2023-03-14
+
+**Added**
+
+* WebM Muxing now supports CENC PlayReady encryption for VP9 video streams using fMP4
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.157.0
+
+Released 2023-03-07
+
+**Added**
+
+* Smart Chunking enabled in Dolby Vision to HDR10 and SDR workflows with frame rate changes.
+
+**Changed**
+
+* Internal stability improvements.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.156.0
+
+Released 2023-02-28
+
+**Added**
+
+* Smart Chunking is enabled for Dolby Vision workflows without frame rate changes.
+
+**Changed**
+
+* For HDR manifests the `ManifestGenerator.V2` does not write the `profile` attribute on AdaptationSet level anymore.
+
+**Fixed**
+
+* Improved the turnaround times for encodings with 4K inputs shorter than 16 seconds.
+* Creation of a GcsInput or GcsOutput was failing randomly with "Unable to query location of the bucket" if a bucket with the same name existed on AWS S3\. The same could also happen for S3Input or S3Output for a bucket with the same name on GCS.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.155.0
+
+Released 2023-02-23
+
+**Fixed**
+
+* Stability improvements for Dolby Vision workflows with ProRes inputs
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Creating a GcsInput or GcsOutput might fail randomly with "Unable to query location of the bucket" if a bucket with the same name exists on AWS S3\. The same may happen for S3Input or S3Output and a bucket with the same name on GCS.
+
+---
+
+### 2.154.0
+
+Released 2023-02-14
+
+**Added**
+
+* **Smart Chunking**  
+   * We completely overhauled the general bitrate distribution in our outputs to prevent quality drops at segment borders thus leading to a smoother playback experience.  
+   * This optimization is automatically applied to all encodings except when using the following features which will be added over the course of the next releases:  
+         * Dolby Vision mezzanine input  
+         * [Concatenation](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid)  
+         * [set Keyframe](/encoding/reference/postencodingencodingskeyframesbyencodingid)  
+         * [VP9](/encoding/reference/postencodingconfigurationsvideovp9) or [AV1](/encoding/reference/postencodingconfigurationsvideoav1) output codec  
+         * [PSNR](/encoding/reference/activatepsnrstreamqualitymetrics) feature
+
+**Changed**
+
+* Codec settings for VP9 will now be automatically optimized for Live Encodings.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Creating a GcsInput or GcsOutput might fail randomly with "Unable to query location of the bucket" if a bucket with the same name exists on AWS S3\. The same may happen for S3Input or S3Output and a bucket with the same name on GCS.
+
+---
+
+### 2.153.0
+
+Released 2023-02-07
+
+**Changed**
+
+* We completely overhauled our muxing engine for [fMP4 output](/encoding/reference/postencodingencodingsmuxingsfmp4byencodingid) with codecs H.264, AAC, HE-AAC, and HE-AACv2\. For more details about the changes, [read this article](/encoding/docs/changes-to-fmp4-outputs-in-encoder-version-21530).
+
+**Fixed**
+
+* Manifest segment durations were calculated inaccurately when a concatenation contained fractional and non-fractional framerate changes. Now the segment duration calculation is based on the number of encoded frames.
+* Corrected an issue which lead to Nielsen audio watermarking with multiple output video renditions to not be correctly applied under certain conditions.
+
+**Known Issues**
+
+* **Live Encodings using fMP4 or Webm muxings could potentially fail after running longer than appr. 6 hours. We highly recommend using [the STABLE version](/encoding/docs/encoder-21000-21490#21490-stable) or the higher versions (from 2.154.0 onwards) for such encodings.**
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.152.0
+
+Released 2023-01-31
+
+**Changed**
+
+* Internal stability improvements
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.151.0
+
+Released 2023-01-24
+
+**Added**
+
+* [LIVE\_STANDARD](/encoding/docs/h265-presets) preset is now available for [H265](/encoding/reference/postencodingconfigurationsvideoh265) Codec Configuration.
+
+**Fixed**
+
+* Configuring a lot of muxings sometimes resulted in failed encoding.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.150.0
+
+Released 2023-01-17
+
+**Changed**
+
+* Internal stability improvements
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.

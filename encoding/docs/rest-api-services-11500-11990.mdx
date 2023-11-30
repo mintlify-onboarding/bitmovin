@@ -1,0 +1,307 @@
+---
+title: "REST API Services 1.150.0 - 1.179.0"
+---
+
+### 1.179.0
+
+Released 2023-11-28  
+**Added**
+
+* Featuring a new preset ([H264](https://developer.bitmovin.com/encoding/reference/postencodingconfigurationsvideoh264) and [H265](https://developer.bitmovin.com/encoding/reference/postencodingconfigurationsvideoh265)) to run your encodings faster than before - `VOD_HARDWARE_SHORTFORM`. Aimed at [short-form content](https://dashboard.bitmovin.com/encoding/demos/short-form-content) (input duration under 5 minutes), this new preset makes use of GPUs. This currently comes with restricted feature set and hence the following limitations hold:  
+   * VOD only encoding scheduled on AWS (Azure and GCP currently are not supported) for YUV420 to YUV420 pixel format.  
+   * Any additional features used (video filters, Per-Title, DolbyVision, Forensic Watermark, BurnInSubtitle, Thumbnail, PSNR, MultiPass) would result in a fail-fast.  
+   * Currently not supported for Cloud-Connect.
+
+**Changed**
+
+* Removing an Infrastructure Account (AWS | Google | Azure) will remove also the stopped pre-warmed pools. If a pool is still running on this infrastructure then the removal of the infrastructure will fail without removing any pre-warmed pools.
+* Removing a "Region Setting" will remove also the stopped pre-warmed pools from that particular region. If a pool is still running on this region then the removal of the region setting will fail without removing any pre-warmed pools.
+
+---
+
+### 1.178.0
+
+Released 2023-11-14  
+**Added**
+
+* Accelerated turnaround for short-form content: In region`AWS EU-WEST-1` all encodings using the `STABLE` encoder version and inputs shorter than 5 minutes are now automatically benefitting from drastically reduced queuing times.
+* Correct error messages when trying to start encodings in Azure cloud regions with old encoder versions which do not support those new regions:  
+Encoder versions < 2.179.0: `AZURE_ASIA_EAST`, `AZURE_ASIA_SOUTHEAST`, `AZURE_BRAZIL_SOUTH`, `AZURE_CANADA_CENTRAL`, `AZURE_FRANCE_CENTRAL`, `AZURE_INDIA_CENTRAL`, `AZURE_INDIA_SOUTH`, `AZURE_JAPAN_EAST`, `AZURE_JAPAN_WEST`, `AZURE_KOREA_CENTRAL`, `AZURE_US_CENTRAL`, `AZURE_US_EAST2` and `AZURE_US_SOUTH_CENTRAL`  
+Encoder versions < 2.180.0: `AZURE_US_WEST`
+
+---
+
+### 1.177.0
+
+Released 2023-10-31  
+**Added**
+
+* Pre-warmed Pools can now dynamically adjust their size (increase/decrease) based on the pool usage. This feature can be activated using the new dynamicPool flag when [creating a Pre-warmed Pool](https://developer.bitmovin.com/encoding/reference/postencodinginfrastructureprewarmedencoderpools).
+
+---
+
+### 1.176.0
+
+Released 2023-10-17  
+**Added**
+
+* Introduced new sorting and filtering parameters for [Encoding Filters](https://developer.bitmovin.com/encoding/reference/getencodingfilters).
+
+**Fixed**
+
+* Fixed cases where ENCODING\_STATUS\_CHANGED webhooks were not triggered for certain encodings.
+
+---
+
+### 1.175.0
+
+Released 2023-10-03  
+**Changed**
+
+* Internal stability improvements
+
+---
+
+### 1.174.0
+
+Released 2023-09-26  
+**Fixed**
+
+* Fixed DASH subtitle duration and timescale issues for WebVTT ChunkedText muxings.
+
+---
+
+### 1.173.0
+
+Released 2023-09-19  
+**Added**
+
+* Added support for ChunkedTextMuxing with WebVttSubtitleConfigurations in [DASH V2 Default manifests](https://developer.bitmovin.com/encoding/reference/postencodingmanifestsdashdefault) and [HLS V1 Default manifests](https://developer.bitmovin.com/encoding/reference/postencodingmanifestshlsdefault).
+
+**Fixed**
+
+* Using [Custom channelLayout](https://developer.bitmovin.com/encoding/reference/postencodingconfigurationsaudioaac) for audio muxings with [HD Option LIVE Encoding](https://developer.bitmovin.com/encoding/reference/postencodingencodingslivechannelstartbyencodingid) resulted in failed encodings.
+
+---
+
+### 1.172.0
+
+Released 2023-09-05  
+**Changed**
+
+* Improvement of internal scheduling decisions to avoid out-of-memory errors which occurred when the width and height of video streams were not explicitly set.
+
+---
+
+### 1.171.0
+
+Released 2023-08-30  
+**Changed**
+
+* Internal stability improvements
+
+---
+
+### 1.170.0
+
+Released 2023-08-09  
+**Fixed**
+
+* LIVE encodings stayed in QUEUED state if an error occurred in hd start call.
+
+---
+
+### 1.169.0
+
+Released 2023-07-25  
+**Added**
+
+* Enabled starting of [HD option encodings](https://developer.bitmovin.com/encoding/reference/postencodingencodingslivechannelstartbyencodingid) via API clients.
+
+**Fixed**
+
+* The return value of [output-paths](https://developer.bitmovin.com/encoding/reference/getencodingoutputpathsbyencodingid) for an encoding always returns a JSON array, even when there is no output.
+
+---
+
+### 1.168.0
+
+Released 2023-07-18  
+**Added**
+
+* Queueing time considerably reduced when using Pre-warmed Encoder Pools.
+* Live encodings can now be started using HD encoder options in the dashboard. With these options a lower and simplified pricing using "Live Units" is applied. For more information see: [https://bitmovin.com/live-encoding-live-streaming/](https://bitmovin.com/live-encoding-live-streaming/)
+
+---
+
+### 1.167.0
+
+Released 2023-07-11
+
+**Changed**
+
+* In the [List all encodings endpoint](https://developer.bitmovin.com/encoding/reference/getencodingencodings), the `includeTotalCount` flag is now by default set to `false`.
+
+---
+
+### 1.166.0
+
+Released 2023-07-05
+
+**Fixed**
+
+* Added SPEKE authentication method via API key. This method will set the X-API-Key header in HTTP requests to the SPEKE provider.
+
+**Added**
+
+* Manifest creation is now possible for Bitmovin CDN outputs. The AssetID needs to be added to the output path of the manifest outputs and the individual segment paths.
+* Introduced a fail-fast when trying to create DASH manifest representations with incorrect linked muxings
+
+---
+
+### 1.165.0
+
+Released 2023-06-20
+
+**Fixed**
+
+* For Live Encodings, when using `AesEncryptionDrm` with a specified `keyFileUri`, the keyFile was not properly uploaded to the designated output. This has been fixed.
+
+---
+
+### 1.164.0
+
+Released 2023-06-06
+
+**Changed**
+
+* Internal stability improvements
+
+---
+
+### 1.163.0
+
+Released 2023-06-01
+
+**Added**
+
+* Manifest Generator V2 is now available for DASH manifests by specifying `manifestGenerator=V2` in the DASH Start-Manifest Request. For customers who sign up after June 1st 2023 `V2` will be the default manifestGenerator. The minimum encoder version for that feature is 2.121.0\. Differences to the `LEGACY` generator can be found [here](https://developer.bitmovin.com/encoding/docs/manifest-generator-v2).
+* Added a check for Live encodings to allow `ProgramDateTimeSource EMBEDDED` only for SRT and ZIXI ingest. Configuring it with RTMP ingest now triggers a fail-fast.
+* Added a check for Live encodings to allow `ProgramDateTimeSource EMBEDDED` only with ManifestGenerator V2\. Configuring it with ManifestGenerator LEGACY will now result in a fail-fast.
+
+---
+
+### 1.162.0
+
+Released 2023-05-23
+
+**Changed**
+
+* Internal stability improvements.
+
+---
+
+### 1.161.0
+
+Released 2023-05-16
+
+**Added**
+
+* An option to configure the source of _ProgramDateTime_ for [Live HLS manifests](postencodingencodingslivestartbyencodingid).  
+Supported sources are SYSTEM\_CLOCK (default, using UTC time of segment written) and EMBEDDED (using the first UTC timecode in the source video stream and current date).
+
+---
+
+### 1.160.0
+
+Released 2023-05-09
+
+**Changed**
+
+* Internal stability improvements.
+
+---
+
+### 1.159.0
+
+Released 2023-05-03
+
+**Added**
+
+* _autoLevelSetup_: property for video configurations ([h264](postencodingconfigurationsvideoh264), [h265](postencodingconfigurationsvideoh265), [av1](postencodingconfigurationsvideoav1), [vp9](postencodingconfigurationsvideovp9)) to enable/disable the automatic calculation of level, maximum bitrate, and buffer size based on the lowest level that satisfies maximum property values for picture resolution, frame rate, and bitrate. In the case the target level is set explicitly, the maximum bitrate and buffer size are calculated based on the defined level. The _autoLevelSetup_ is enabled by default and is automatically disabled if the maximum bitrate or buffer size is set.
+
+---
+
+### 1.158.0
+
+**Fixed**
+
+* Fixed an inconsistency when reserving a static IP in Google Compute Engine.
+
+---
+
+### 1.157.0
+
+**Fixed**
+
+* Fixed a bug where using a closed caption media info lead to an error in HLS manifests.
+
+---
+
+### 1.156.0
+
+**Changed**
+
+* Internal stability improvements.
+
+---
+
+### 1.155.0
+
+**Added**
+
+* Fixed handling of certain HTTP/HTTPS input URLs in the Simple Encoding API.
+
+---
+
+### 1.154.0
+
+**Added**
+
+* For DASH manifests, when using `profile: ON_DEMAND` and `manifestGenerator: V2`, the `duration` property of Periods is now set when the manifest has multiple Periods.
+
+---
+
+### 1.153.0
+
+**Changed**
+
+* Internal stability improvements.
+
+---
+
+### 1.152.0
+
+**Changed**
+
+* Internal stability improvements.
+
+---
+
+### 1.151.0
+
+**Changed**
+
+* For HDR manifests the `ManifestGenerator.V2` does not write the `profile` attribute on AdaptationSet level anymore.
+
+**Fixed**
+
+* The [output permission check](/encoding/reference/postencodingoutputscheckpermissionsbyoutputid) does not check for the `GetBucketLocation` permission anymore if `cloudRegion` of the S3Output is set.
+
+---
+
+### 1.150.0
+
+**Changed**
+
+* The "STANDARD" mode for [LIVE Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid) now defaults to SINGLE\_PASS (previously was TWO\_PASS).

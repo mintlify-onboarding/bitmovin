@@ -1,0 +1,845 @@
+---
+title: "Encoder 2.100.0 - 2.149.0"
+---
+
+### 2.149.0
+
+Released 2023-01-10
+
+**Changed**
+
+* Usage of conform filter in combination with relaxed concatenation setup (enabled in [2.142.0](/encoding/docs/encoder-21000-21490#21420)) is not supported!
+
+**Fixed**
+
+* A bug that led to incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast had been added for the impacted encoder versions: 2.137.0 - 2.148.0.
+* For 3-pass H.265 encodings, some resolutions could lead to encoding failures. This is fixed now.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.148.0
+
+Released 2022-12-20
+
+**Fixed**
+
+* When configuring segmented muxings for Generic S3 output always signature V2 was used. Now setting Generic S3 with signature V4 will correctly use signature V4.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.147.0
+
+Released 2022-12-13
+
+**Fixed**
+
+* Applying the [conform](/encoding/reference/postencodingfiltersconform) filter on encodings that [concatenate](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) inputs with different framerates could have led to missing frames when AAC was configured for audio.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.146.0
+
+Released 2022-12-06
+
+**Changed**
+
+* Internal stability improvements
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.145.0
+
+Released 2022-11-29
+
+**Added**
+
+* Reduced the startup time for Live Encodings by appr. 25%
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.144.0
+
+Released 2022-11-15
+
+**Fixed**
+
+* Encodings in two scenarios could have failed:  
+   * An audio-mix input stream was used with a non audio-mix input stream  
+   * The audio mix filter was used and the input file was in a ts container or interlaced
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.143.0
+
+Released 2022-11-08
+
+**Fixed**
+
+* Improved resilience of Azure cloud encodings that were failing due to intermittent internal server errors.
+* In very rare cases three-pass encodings could have randomly crashed.
+* Fixed a bug that prevented manifests for live encodings from being created if a Speke DRM was used.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.142.0
+
+Released 2022-10-25
+
+**Added**
+
+* Concatenations with [concatenationInputStreams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) containing only [timebasedTrimmingInputStreams](/encoding/reference/postencodingencodingsinputstreamstrimmingtimebasedbyencodingid) which again have only [IngestInputStreams](/encoding/reference/postencodingencodingsinputstreamsingestbyencodingid) as inputs got more flexible. It is now possible to  
+   * configure different number of inputs per ConcatenationInputStream  
+   * configure different trimming settings for the trimmings that have the same position in all concatenationInputStreams.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.141.0
+
+Released 2022-10-18
+
+**Added**
+
+* Encodings of input assets with conflicting framerate information will now be reported with a warning.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.140.0
+
+Released 2022-10-10
+
+**Changed**
+
+* Internal stability improvements
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.139.0
+
+Released 2022-10-04
+
+**Added**
+
+* Optimized start-up of Live Encodings leading to reduced start-up times up to 40 %.
+
+**Fixed**
+
+* [TargetQualityCrf](/encoding/docs/per-title-configuration-options-explained#general-codec-configuration-options) is now correctly applied in AV1 encodings using per title. This leads to a slight improvement of the per title results for AV1 when using the default value for targetQualityCrf.
+* Fix for full range (jpeg range) YUV input files where the output is also configured as YUV full range. In this case an incorrect transform was applied to the limited range (mpeg range).
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.138.0
+
+Released 2022-09-27
+
+**Added**
+
+* HLG output which is backward compatible with SDR is now supported: Using [enableHlgSignaling](/encoding/reference/postencodingconfigurationsvideoh265) in addition to setting the ARIB STD-B67 color transfer function will perform an ARIB STD-B67 conversion but signal it as BT.2020 10 bit. The ARIB STD-B67 conversion will be signaled in the SEI messages.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.137.0
+
+Released 2022-09-20
+
+**Fixed**
+
+* Fixed that inputs with variable video fps that also have a stream with VP8, VP9, AV1, or Opus codec the Encoding would fail.
+* Converting Dolby Vision inputs to HDR10 or SDR when combined with an fps change resulted in abrupt jumps in brightness in the outputs.
+* Combining Dolby Vision output filters (Dolby Vision, HDR10, SDR) in a single encoding is not supported. A fail-fast for such configs was added.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Incorrect brightness levels on encodes with DolbyVision inputs using 2 Pass & 3 Pass Encoding. Fail-fast is in place. Please use version 2.149.0 or higher for this use-case.
+
+---
+
+### 2.136.0
+
+Released 2022-09-13
+
+**Added**
+
+* Internal stability improvements.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.135.0
+
+Released 2022-09-06
+
+**Fixed**
+
+* Fixed failing long duration encodes with many audio streams.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.134.0
+
+Released 2022-08-30
+
+**Fixed**
+
+* Fixed a regression where the Dolby Vision to SDR and Dolby Vision to HDR10 workflows were producing invalid output.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.133.0
+
+Released 2022-08-22
+
+**Removed**
+
+* Experimental feature of object detection
+
+**Fixed**
+
+* When validating [concatenation](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) the position property of the ConcatenationInputConfiguration was not respected. This led to fail-fasts on valid concatenation configurations.
+
+**Known Issues**
+
+* Conversions from Dolby Vision mezzanine files to SDR or HDR10 output create assets with incorrect colors
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.132.0
+
+Released 2022-08-16
+
+**Fixed**
+
+* Encodings containing 0-Duration-[Trimming(s)](/encoding/reference/postencodingencodingsinputstreamstrimmingtimebasedbyencodingid) on [video concatenation configurations](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) could have stalled.
+* Improved stability of Dolby Vision encodings with long duration and a high number of renditions.
+* Fixed an internal issue which caused 3-pass encodings to fail in rare cases.
+
+**Known Issues**
+
+* Conversions from Dolby Vision mezzanine files to SDR or HDR10 output create assets with incorrect colors
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.131.0
+
+Released 2022-08-09
+
+**Added**
+
+* Reworked RTMP Live ingest stream handling, improving stability, modularity and testability.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.130.0
+
+Released 2022-08-02
+
+**Added**
+
+* `input color primaries` and the `input color transfer` for an encoding can now be overridden ([H262](/encoding/reference/postencodingconfigurationsvideoh262), [H264](/encoding/reference/postencodingconfigurationsvideoh264), [H265](/encoding/reference/postencodingconfigurationsvideoh265), [VP8](/encoding/reference/postencodingconfigurationsvideovp8), [VP9](/encoding/reference/postencodingconfigurationsvideovp9), [AV1](/encoding/reference/postencodingconfigurationsvideoav1))
+
+**Fixed**
+
+* When using different input files for video and audio streams, stream conditions of audio streams are now evaluated against the correct input file.
+* Enhanced stability of the license validation in order to remove misleading error logs around API key verification.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.129.0
+
+Released 2022-07-19
+
+**Fixed**
+
+* Improved stability of Dolby Vision encodings with many output renditions and muxings
+* DASH manifests V2: ContentProtections were being written twice into the same AdaptationSet under particular conditions.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.128.0
+
+Released 2022-07-12
+
+**Added**
+
+* Improved stability of three pass encodings with a long running time (due to input duration, high number of renditions, very complex configurations etc.)
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.127.0
+
+Released 2022-07-05
+
+**Added**
+
+* Per Title encodings with short input files and trimming configured have been optimized leading to faster turnaround times
+
+**Fixed**
+
+* Using the [audio mix filter](/encoding/reference/postencodingfiltersaudiomix) could have caused audio outputs to be swapped to wrong output folders
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.126.0
+
+Released 2022-06-28
+
+**Fixed**
+
+* Fixed a bug that could cause long queue times for live encodings under some circumstances.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.125.0
+
+Released 2022-06-21
+
+**Fixed**
+
+* When concatenating videos with different frame rates single frames could have been dropped or duplicated incorrectly.
+* Optimized the internal caching for S3 role-based output to prevent 503 Throttling errors by the cloud provider for segmented output when running many encodings in parallel.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.124.0
+
+Released 2022-06-14
+
+**Changed**
+
+* Internal stability improvements
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.123.0
+
+Released 2022-06-08
+
+**Fixed**
+
+* In DASH Manifest V2 via [start encoding call](/encoding/reference/postencodingencodingsstartbyencodingid), fixed the calculation of the `presentationTimeOffset` DASH attribute for Segment Template and Segment Timeline Representations in DASH ManifestGenerator.V2 when `startSegmentNumber` or `startKeyframeId` is set in order to keep audio and video in sync.
+* [Dolby visions encodings](/encoding/reference/postencodingencodingsinputstreamsdolbyvisionbyencodingid) configured with MP4 output would fail for some assets with an internal error during video transcoding.
+* [Dolby visions encodings](/encoding/reference/postencodingencodingsinputstreamsdolbyvisionbyencodingid) configured with the progressive muxing output could generate non-compliant Dolby Vision streams.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.122.0
+
+Released 2022-05-31
+
+**Changed**
+
+* Reduced turnaround times for 3-pass encodings up to 10%.
+
+**Fixed**
+
+* Fixed segment paths of manifests for live encodings that are started via the Simple Encoding API.
+* [Dolby Vision encodings](/encoding/reference/postencodingencodingsinputstreamsdolbyvisionbyencodingid) configured with increasing frame rate change for the output (DV to SDR or HDR10) failed earlier. This is fixed now.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.121.0
+
+Released 2022-05-24
+
+**Fixed**
+
+* Fixed a bug for AV1 fMP4 Muxing with CENC encryption where ivSizes were always set to 8 bytes no matter the configuration. Now the [default](/encoding/reference/postencodingencodingsmuxingsfmp4drmcencbyencodingidandmuxingid) of 16 bytes and individually configured values are correctly applied.
+* Encodings will fail early if a [text filter](/encoding/reference/postencodingfilterstext) is set with a [drop-frame timecode](https://en.wikipedia.org/wiki/SMPTE%5Ftimecode#Drop-frame%5Ftimecode) and the corresponding video stream frame rate is not 29.97, 30, 59.94 or 60 FPS, conforming to the SMPTE standard.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.120.0
+
+Released 2022-05-10
+
+**Added**
+
+* [Stream Conditions](/encoding/docs/stream-conditions) can now also be applied to [Live Encodings](/encoding/reference/postencodingencodingslivestartbyencodingid).
+
+**Fixed**
+
+* Option `appendOptionalZeroHour` was fixed for [WebVTT](/encoding/reference/postencodingconfigurationssubtitleswebvtt)
+* Adjusted internal threshold for emitting warnings when duration of the output is is not matching the expected duration to 0.3 seconds
+* Whenever the [input ingest stream](/encoding/reference/postencodingencodingsinputstreamsingestbyencodingid) was reused for multiple audio stream outputs in [concatenation workflow](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) it lead to erroneous mixed-up audio stream outputs. This is fixed now.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.119.0
+
+Released 2022-05-03
+
+**Fixed**
+
+* AudioMixInputStream failed to extract specified L and R channel when mapping each channel to a different stream
+* [SelectionMode for inputStreams](/encoding/reference/postencodingencodingsstreamsbyencodingid) now correctly selects the desired InputStream for Live encodings
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.118.0
+
+Released 2022-04-26
+
+**Added**
+
+* [HLS manifest creation with ManifestGenerator.V2](/encoding/reference/postencodingmanifestsdashstartbymanifestid) now fails with appropriate error messages in the following cases:  
+   * If an empty streamId is given for a [Stream](/encoding/reference/postencodingmanifestshlsstreamsbymanifestid)/[MediaInfo](/encoding/reference/postencodingmanifestshlsmediaaudiobymanifestid), but there are more than one streams present in the muxing.  
+   * If a streamId is given for a [Stream](/encoding/reference/postencodingmanifestshlsstreamsbymanifestid)/[MediaInfo](/encoding/reference/postencodingmanifestshlsmediaaudiobymanifestid) that is not contained in the muxing whose id is given.
+
+**Fixed**
+
+* Fixed an issue with updating the manifests for live encodings. Reading delays for cloud buckets could have caused stalls in updating the live manifests.
+* Fixed an issue with negative video time stamps for input files with aac audio in mxf containers that could lead to stalling when RESYNC\_AT\_START\_AND\_END (default behavior) is enabled.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.117.0
+
+Released 2022-04-12
+
+**Changed**
+
+* For live encodings with RTMP/ZIXI/SRT input:  
+   * Video configurations do not explicitly need to set `rate` (output fps) and both `width` and `height` (only one of that has to be set)  
+   * Audio configurations do not explicitly need to set `rate` (output audio sampling rate)  
+   * These properties are now detected automatically and set according to the input when not provided
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.116.0
+
+Released 2022-04-05
+
+**Added**
+
+* Dolby Vision mezzanine assets can now be converted to h.264 SDR output
+* Added a warning message in case the signaled duration of an input file differs from the duration that could be parsed from the input.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.115.0
+
+Released 2022-03-29
+
+**Fixed**
+
+* Identified and fixed a very rare issue which could potentially lead to less parallelity processing batch jobs when the [Audio Mix](/encoding/reference/postencodingfiltersaudiomix) feature was used
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.114.0
+
+Released 2022-03-22
+
+**Fixed**
+
+* The internal retry mechanism for handling throttling errors on AWS output was significantly improved. Encodings with a big number of renditions and muxings are significantly less likely to fail from throttling errors.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.113.0
+
+Released 2022-03-15
+
+**Fixed**
+
+* Fixed a bug which potentially caused A/V to run out of sync for inputs with variable fps
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.112.0
+
+Released 2022-03-08
+
+**Fixed**
+
+* General stability improvements
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.111.0
+
+Released 2022-02-28
+
+**Added**
+
+* Reduced turnaround times for Dolby Vision to SDR encodings up to 70%
+
+**Fixed**
+
+* Fixed long turnaround times for specific interlaced inputs with wrong signaling of field order.
+* Fixed bug in resource allocation for Dolby Vision encodings which caused encodings to fail in AWS
+* [Time-based Trimming](/encoding/reference/postencodingencodingsinputstreamstrimmingtimebasedbyencodingid) configurations with a negative duration caused encodings to stall. Such configs are now disallowed and will result in a 400 Bad Request response during creation.
+* A configuration with concatenation and trimming will now fail if an input stream is too short and doesn't contain enough data to cover trimming segments for another stream in the corresponding concatenation segment. This configuration previously lead to output being out of AVSync.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.110.0
+
+Released 2022-02-22
+
+**Added**
+
+* [AV1 encodings](/encoding/reference/postencodingconfigurationsvideoav1) support now the following codec presets:  
+   * VOD\_QUALITY - Higher quality  
+   * VOD\_STANDARD - Default quality and speed  
+   * VOD\_SPEED - Faster encoding
+
+**Fixed**
+
+* Encodings configured with [Dolby Vision](/encoding/reference/postencodingencodingsstreamsdolbyvisionhdrmetadatabyencodingidandstreamid) and [Fmp4Muxing](/encoding/reference/postencodingencodingsmuxingsfmp4byencodingid) in combination with fractional frame rate (example: 23.976, 29.97 and 59.94 fps) input could have lead to out of sync output(s).
+* Subtitle segments were not split for KeyFrames during 3-pass encodings.
+* 3-pass encodings could have failed on GCE for specific assets
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.109.0
+
+Released 2022-02-08
+
+**Added**
+
+* [Per-Title](/encoding/reference/postencodingencodingsstreamsbyencodingid) is now available for [AV1](/encoding/reference/postencodingconfigurationsvideoav1) encodings to create the optimal bitrate ladder for each asset
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.108.0
+
+Released 2022-02-01
+
+**Added**
+
+* Manifest Generator V2 is now available for single-encoding SMOOTH manifests by specifying `manifestGenerator=V2` in the SMOOTH Start-Manifest Request. The minimum encoder version for that feature is `1.108.0`. Differences to the LEGACY generator include:  
+   * V2 now correctly sets the "QualityLevels" attribute in the StreamIndex elements to the count of QualityLevel elements present.  
+   * V2 now correctly sets the "Index" attribute in the QualityLevel elements by increasing the number with each element.
+
+**Fixed**
+
+* Improved handling of intermittent networking issues during encoding to prevent stalling
+* Fragment default values are now set in each `traf` box of the segments and not in the `trex` box of the init file for [fMP4 muxings](/encoding/reference/postencodingencodingsmuxingsfmp4byencodingid) for Dolby Digital and Dolby Digital Plus audio codecs which caused playback problems on Roku streaming devices.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.107.0
+
+Released 2022-01-25
+
+**Added**
+
+* Cloud Region `AWS_EU_NORTH_1` (Stockholm) is now available for encoder version `2.107.0` and newer.
+
+**Fixed**
+
+* If the quality metadata ([createQualityMetaData](/encoding/reference/postencodingencodingsstreamsbyencodingid)) was activated for a DASH stream and the file extension of the init file was modified to be something other then "mp4", the mimeType of the init file was set to "application/octet-stream" instead of "video/mp4".
+* Fixed an bug in the V2 HLS manifest generation with [ProgressiveTs](/encoding/reference/postencodingencodingsmuxingsprogressivetsbyencodingid) and [TsMuxings](/encoding/reference/postencodingencodingsmuxingstsbyencodingid) which contain a video and an audio stream which lead to incorrect codec strings in the master playlist.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.106.0
+
+Released 2022-01-18
+
+**Fixed**
+
+* [Sprites](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid) with `creationMode=INTERVAL_START` are now always generated, even if the input duration is shorter than the chosen Sprite's `distance`. For example, distance is set to 10s but video is only 8s long, this will result in a sprite with two images, the first and the last frame.
+* Bugfix for a rare case when multiple input and output audio streams are used with concatenation.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.105.0
+
+Released 2022-01-11
+
+**Added**
+
+* [MP4](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid) and [fMP4 muxings](/encoding/reference/postencodingencodingsmuxingsfmp4byencodingid) can now be used for [AV1 encodings](/encoding/reference/postencodingconfigurationsvideoav1). The following combinations are now supported with AV1:  
+   * DASH manifests  
+   * fMP4 with Widevine and PlayReady  
+   * MP4, fragmented MP4, WebM, and ProgressiveWebM with Widevine  
+   * MP4 with support for muxing video and audio together
+* [AV1](/encoding/reference/postencodingconfigurationsvideoav1) turnaround times are now up to 30% faster
+* Added PTSAlignMode to [fMP4 muxings](/encoding/reference/postencodingencodingsmuxingsfmp4byencodingid). Setting it to `ALIGN_ZERO_NEGATIVE_CTO` will shift the first composition time offset (CTO) to 0\. If B-frames are used, some CTOs will be negative. Therefore, TrackRun (trun) version 1 atoms are being used. This can only be set for h.264 and h.265 streams.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.104.0
+
+Released 2021-12-21
+
+**Added**
+
+* 3-pass can now be used for AV1 encodings to achieve optimal bitrate distribution
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.103.1 (LTS)
+
+Released 2022-11-14
+
+**Added**
+
+* HLG output which is backward compatible with SDR is now supported: Using [enableHlgSignaling](/encoding/reference/postencodingconfigurationsvideoh265) in addition to setting the ARIB STD-B67 color transfer function will perform an ARIB STD-B67 conversion but signal it as BT.2020 10 bit. The ARIB STD-B67 conversion will be signaled in the SEI messages.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.103.0
+
+Released 2021-12-14
+
+**Fixed**
+
+* Fixed a bug where HEVC encodings with long input files could fail.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.102.0
+
+Released 2021-12-07
+
+**Changed**
+
+* Improved the generation of [sprites](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid), [thumbnails](/encoding/reference/postencodingencodingsstreamsthumbnailsbyencodingidandstreamid) and [BIFs](/encoding/reference/postencodingencodingsstreamsbifsbyencodingidandstreamid) when using the Per-Title algorithm. Now, these additional resources are generated only for the rendition which has the highest resolution and bitrate to prevent duplicate generation.
+
+**Fixed**
+
+* Fixed a bug in the manifestGenerator `V2` that caused manifests with [SPEKE DRMs](/encoding/reference/postencodingencodingsmuxingswebmspekebyencodingidandmuxingid) to fail when creating a manifest via the [startEncoding call](/encoding/reference/postencodingencodingsstartbyencodingid) and configuring the V2 ManifestGenerator.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.101.0
+
+Released 2021-11-30
+
+**Fixed**
+
+* 3-pass encodings could have violated the [HLS specification 1.30](https://developer.apple.com/documentation/http%5Flive%5Fstreaming/hls%5Fauthoring%5Fspecification%5Ffor%5Fapple%5Fdevices) where "Max-Bitrate should be no more then 200% of AverageBitrate" when the last segment was only a few frames long. The Max-Bitrate calculation was now adapted to respect that very short segments typically have a very big bitrate value.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.100.0
+
+Released 2021-11-23
+
+**Added**
+
+* Support for adding DASH `Label` elements to [Video](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsvideobymanifestidandperiodid)\-, [Audio](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsaudiobymanifestidandperiodid)\- [Subtitle](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetssubtitlebymanifestidandperiodid)\- and [Image](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsimagebymanifestidandperiodid) Adaptation Sets.
+
+**Changed**
+
+* AV1 encodings:  
+   * Speed - Encodings run now **5x faster**.  
+   * Quality - Encodings now show appr. **30% higher quality** when compared to HEVC/VP9 encodings.  
+   * Cost - Encodings are now significantly more cost effective. See our [Encoding Minute Calculation Methodology](https://bitmovin.com/%5Femcm/) for detailed pricing information.
+* CueIdentifierPolicy default for WebVttConfigurations for inputs with FileInputStreamType TTML and SRT: The default is now INCLUDE\_IDENTIFIERS instead of OMIT\_IDENTIFIERS.
+* Added `startOffset` to TextMuxing and ChunkedTextMuxing. This is used for setting the MPEGTS value for the RFC 8216 (HLS Specification) X-TIMESTAMP-MAP for WebVtt outputs (e.g.: `X-TIMESTAMP-MAP=MPEGTS:900000,LOCAL:00:00:00.000`).
+* WebVttConfigurations with CueIdentifierPolicy INCLUDE\_IDENTIFIERS will now generate CueIds starting from `1` instead of `0` if the FileInputStreamType is WEBVTT.
+
+**Fixed**
+
+* Streams with WebVttConfigurations will now be trimmed with the same offset and duration as the video stream of the same encoding if the FileInputStreamType is WEBVTT (This is the same behavior as TTML and SRT FileInputStreamTypes already used to have).
+* Fixed a bug which caused output subtitle cues' timestamps to be shifted by the value of the first video PTS, if FileInputStream is used for the subtitle stream
+* KeyFrames are now placed correctly for streams with WebVttConfigurations
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.

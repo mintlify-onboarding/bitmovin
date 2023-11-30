@@ -1,0 +1,1246 @@
+---
+title: "Encoder 2.50.0 - 2.99.0"
+---
+
+### 2.99.0
+
+Released 2021-11-16
+
+**Fixed**
+
+* [Enhanced Deinterlacer](/encoding/reference/postencodingfiltersenhanceddeinterlace) potentially created distorted output for non-standard input resolutions.
+* Writing default manifests to Akamai Netstorage had failed
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.98.0
+
+Released 2021-11-03
+
+**Added**
+
+* HDR10 to SDR and HLG to SDR conversions are now possible using the [dynamicRangeFormat property on the H265 codec configuration](/encoding/reference/postencodingconfigurationsvideoh265).
+* Support for adding an [AAC](/encoding/reference/postencodingconfigurationsaudioaac) or [Dolby Atmos](/encoding/reference/postencodingconfigurationsaudiodolbyatmos) audio stream along with a Dolby Vision video stream to a [MP4 muxing](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid).
+
+**Changed**
+
+* Improved the intra-segment rate-control mechanisms for VP9 encodes
+
+**Fixed**
+
+* Potential truncation of last CUE in WebVTT outputs was fixed
+* Encodings using Widevine DRM have correct pssh content now
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.97.0
+
+Released 2021-10-19
+
+**Added**
+
+* Support `DolbyVisionInputStream`s together with other input stream types like `IngestInputStream`, `AudioMixInputStream`, etc.
+
+**Fixed**
+
+* Fixed that corrupt packets at the beginning of an input-stream could lead to an encoding error.
+* Fixed that input concatenation in combination with different input frame-rates could cause an encoding to fail if the stitching point was close to the segment end.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* fMP4 and WebM muxings with Widevine or CENC Widevine DRM have the wrong PSSH set in output segments
+
+---
+
+### 2.96.0
+
+Released 2021-10-12
+
+**Added**
+
+* Encodings for audio and single-file subtitles without videostreams are supported now. The subtitle outputs are not automatically trimmed to the audio duration in this case.
+
+**Fixed**
+
+* The longevity of live encodings has been improved.
+* A fail-fast condition that was triggered for pixel format conversion YUV to YUV was fixed. This fail-fast now correctly triggers only on YUV to YUV conversion with additional Color Range conversion.
+* KeyFrameConfig is now applied correctly for encodings using Dolby Digital (Plus) audio codecs
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* fMP4 and WebM muxings with Widevine or CENC Widevine DRM have the wrong PSSH set in output segments
+
+---
+
+### 2.95.0
+
+Released 2021-10-04
+
+**Added**
+
+With this release we've improved the encoding capabilities with regards to HDR conversions for H265 output. From now on we support
+
+* Dolby Vision to HDR10
+* Dolby Vision to SDR
+* HDR10 to HLG
+* HLG to HDR10
+* SDR to HDR10
+* SDR to HLG
+
+The encoder detects the applicable conversion based on the input and the configured output color settings. To make it easier to correctly configure the output we have added preset configurations for the different dynamic range formats. These can be configured on the [H265](/encoding/reference/postencodingconfigurationsvideoh265) resource via the setting `dynamicRangeFormat`.
+
+Dolby Vision input can be configured with a [Dolby Vision input stream](/encoding/reference/postencodingencodingsinputstreamsdolbyvisionbyencodingid)
+
+**Fixed**
+
+* Fixed a bug for H264 and H265 where the specified chroma location was not signaled correctly in the output bitstream.
+* Fixed a bug with CustomTags inside HLS audio manifests to be inserted at given KeyFrame positions when there is audio and video encoding. The tags were inserted occasionally a few segments before.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.94.0
+
+Released 2021-09-28
+
+**Added**
+
+* Support for setting `duration=null` for [Time-based Trimming](/encoding/reference/postencodingencodingsinputstreamstrimmingtimebasedbyencodingid) to indicate that the whole stream should be used (considering offset). `offset=null` will be defaulted to zero now. We also fixed and issue when setting`duration=0` which lead to different results for video and audio. Setting `duration=0` will now lead to 0 frames for video and audio.
+
+**Fixed**
+
+* Inputs with J2K or ProRes codec could have lead to oversaturated output when configured with bt709 and 1080p output.
+* Fixed an issue that affected some MOV inputs with an edts (EditListBox) atom. The duration of the edit list entry was not considered and therefore also the media data, that should have been discarded, was present in the output.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.93.0
+
+Released 2021-09-21
+
+**Fixed**
+
+* The [MP3 muxing information endpoint](/encoding/reference/getencodingencodingsmuxingsmp3muxinginformationbyencodingidandmuxingid) now returns the same information like the [MP4 muxing information endpoint](/encoding/reference/getencodingencodingsmuxingsmp4muxinginformationbyencodingidandmuxingid).
+* The muxing details endpoints, like [MP4 muxing details](/encoding/reference/getencodingencodingsmuxingsmp4byencodingidandmuxingid), now defaults `minBitrate` to `0` instead of `9223372036854775807`.
+* Improved longevity of live-encodings with encryption enabled for audio using fmp4 output and aac codec has been improved.
+* Improved the [Auto-Shutdown of Live Encodings](/encoding/reference/postencodingencodingslivestartbyencodingid) to detect lost input faster when using a higher `autoShutdownConfiguration.bytesReadTimeoutSeconds` and trigger a shutdown faster.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.92.0
+
+Released 2021-09-14
+
+**Added**
+
+* Automatic shutdown of a live encoding if input is lost and does not reconnect within a certain time period, configurable via the `autoShutdownConfiguration.bytesReadTimeoutSeconds` configuration when starting a [Live Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid).
+* Automatic shutdown of a live encoding after a certain period of time, configurable via the `autoShutdownConfiguration.streamTimeoutMinutes` configuration when starting a [Live Encoding](/encoding/reference/postencodingencodingslivestartbyencodingid).
+
+**Fixed**
+
+* Fixed a bug that led to stalling of Dolby Vision encodings with 50 fps inputs.
+* Fixed failed encodings when a Dolby Vision stream was muxed togheter with another audio stream in a progressive muxing.
+* Fixed the default\_sample\_duration of the init mp4 file for audio codecs with CMAF muxing. This fixes playback issues with DASH and HLS streams.
+* ManifestGenerator `V2`: The Period@start attribute is now set to `0` for the first period. This fixes playback issues for LIVE encodings with DASH manifests in dash.js players.
+* `baseMediaDecodeTime` in the init mp4 file for HE-AAC-V1 and HE-AAC-V2 with fMP4 muxing is now set correctly. This fixes playback issues with DASH and HLS streams.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.91.0
+
+Released 2021-09-07
+
+**Added**
+
+* Added new property for DASH manifests which defines the compatibility of the manifest with the Standard DASH Edition. Setting the dash edition compatibility to V4 will support the endNumber attribute for SegmentTemplate DASH manifest, specifying the last available segment. This feature is supported when creating a new DASH manifest via the [startEncoding call](/encoding/reference/postencodingencodingsstartbyencodingid) and configuring the V2 ManifestGenerator OR when creating the manifest via the [DASH manifest creation endpoint](/encoding/reference/postencodingmanifestsdash)
+
+**Fixed**
+
+* Fixed incorrectly reported number of muxed bytes for Dolby Vision encodes with a mix of fragmented and progressive outputs.
+* Corrupted subtitle packets are now skipped instead of halting Live encodings
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.90.0
+
+Released 2021-08-31
+
+**Added**
+
+* DRM is now supported for [MP4 muxings](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid) with [Dolby Digital](/encoding/reference/postencodingconfigurationsaudiodd) and [Dolby Digital Plus](/encoding/reference/postencodingconfigurationsaudioddplus) audio codecs.
+* Support input files larger than 2TB on AWS.
+
+**Fixed**
+
+* The color configuration conversion has been enhanced to also support a change of the transfer characteristics even if the color space and color primaries of input and output are identical (e.g. HDR10 to HLG).
+* In DASH manifests generated with ManifestGenerator `V2` the AdaptationSet@id attributes were set to UUIDs which caused some players to fail because this property should be an unsigned int.
+* Fixed a bug for the manifestGenerator `V2` in combination with [DtsPassThroughAudioCodecConfigurations](/encoding/reference/postencodingconfigurationsaudiodtspassthrough) which caused encodings with VOD DASH manifests to fail and VOD HLS manifests to have an incorrect targetDuration.
+* When using [ACLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#permissions) to provide access to an S3 bucket from another account, the [GetBucketLocation](https://docs.aws.amazon.com/AmazonS3/latest/API/API%5FGetBucketLocation.html) query could have failed, even though the permissions were set correctly which caused the encoding to fail
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.89.1
+
+Released 2021-07-15
+
+**Fixed**
+
+* Fixed the default\_sample\_duration of the init mp4 file for audio codecs with CMAF muxing. This fixes playback issues with DASH and HLS streams.
+* Fixed failing audio-only encodings when using [concatenation](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) with input files that include a video stream.
+* Fixed a bug with [H264 picture timing trimming](/encoding/reference/postencodingencodingsinputstreamstrimmingh264picturetimingbyencodingid). If the start timing is before the first keyframe of the input, the start timing is now set to the timing of the first keyframe.
+* Fixed a bug which could lead to failed encodings when converting colorspace to BT709.
+* Fixed encodings failing when applying both trimming and conform filter with [Dolby Digital](/encoding/reference/postencodingconfigurationsaudiodd) and [Dolby Digital Plus](/encoding/reference/postencodingconfigurationsaudioddplus) audio codecs.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.89.0
+
+Released 2021-08-24
+
+**Added**
+
+* This version is automatically mapped to 2.89.1
+
+---
+
+### 2.88.0
+
+Released 2021-08-10
+
+**Added**
+
+* Implemented support for the DTS:HD and DTS:X audio codecs. The openAPI can be found [here](/encoding/reference/postencodingconfigurationsaudiodtsx). Only MP4 and internally fragmented muxings are supported for DTS:HD/DTS:X. DRM configurations are not supported with DTS:HD/DTS:X codecs.
+* DRM is now supported for fMP4 muxings with Dolby Digital and Dolby Digital Plus.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.87.0
+
+Released 2021-08-03
+
+**Added**
+
+* Added a new AudioVideoSyncMode `RESYNC_AT_START_AND_END` to the [StartEncodingRequest](/encoding/reference/postencodingencodingsstartbyencodingid). This mode pads audio streams with silence, if the audio streams are shorter than the video stream. This prevents DASH clients trying to download non-existent audio segments, if the mediaPresentationDuration is longer than the duration of the audio stream. This new mode is now also the default value.
+
+**Fixed**
+
+* When running a live encoding with HLS manifests having a `liveEdgeOffset` close to the `segmentLength`, the manifest could have stopped updating after a couple of minutes, although segments are still written correctly
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.86.0
+
+Released 2021-07-27
+
+**Added**
+
+* Manifest generator `V2` is now generally available and supports all manifest features of our API.  
+   * It can be used by directly setting manifest IDs in the [start encoding request](/encoding/reference/postencodingencodingsstartbyencodingid) and setting `manifestGenerator` to `V2`.  
+   * We are therefore deprecating the manifest generator `V2_BETA` option and will remove it from our API SDKs in release `v2.89.0`.  
+   * For more information see our tutorial [here](/encoding/docs/how-to-create-manifests-for-your-encodings).
+
+**Fixed**
+
+* The RFC6381 codec label (e.g. "avc1.64001F") for [CMAF muxings](/encoding/reference/postencodingencodingsmuxingscmafbyencodingid) is now correctly set in DASH and HLS manifests.
+* If the same input source is created twice and used twice in an encoding, we are no longer downloading the input file twice.
+* Fixed a bug with handling HEVC inputs with open GOPs which caused encodings to fail.
+* RASL (Random Access Skip Leading) frames are now correctly removed from the very first GOP of the HEVC inputs.
+* Fixed SegmentTemplate timescale in DASH manifests potentially being set to a wrong value when using variable framerate inputs, causing clients to request a non-existent video segment at the end.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.85.0
+
+Released 2021-07-20
+
+**Added**
+
+* Added support for Thumbnail Letter and Pillarboxing. Supported aspect modes: `CROP`, `PAD`, `STRETCH`. More Details described in the API Calls:  
+   * [BIF](/encoding/reference/postencodingencodingsstreamsbifsbyencodingidandstreamid)  
+   * [Sprite](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid)  
+   * [Thumbnail](/encoding/reference/postencodingencodingsstreamsthumbnailsbyencodingidandstreamid)
+
+**Fixed**
+
+* Muxing an H265 video and Dolby Atmos audio stream into a single MP4 container is now supported.
+* We are now more resilient against Azure connection issues when checking if input files exist.
+* An issue was fixed where VP9 3-PASS encodings could fail if the target bitrate of a single segment was too close to the codec-level's maximum bitrate.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.84.0
+
+Released 2021-07-13
+
+**Added**
+
+* [IMSC as subtitle output format](/encoding/reference/postencodingconfigurationssubtitlesimsc) from TTML and SRT inputs. For TTML, styling passthrough is available.
+
+**Fixed**
+
+* Color conversion to the following color primaries: bt709, smpte170m, smpte240m, bt2020\. As a result, color primaries conversion from smpte432 to bt2020 is not red-shifted anymore.
+* Long running HEVC encodes with 3-pass and `cutree` setting enabled failing in rare cases.
+* For [DASH manifests](/encoding/reference/postencodingmanifestsdash), containing Dolby audio renditions, the `codecs` attribute is not set on `AdaptationSet` level anymore but only on the `Representation` level. This also fixes a rare case of duplicate entries in the `codecs` attribute which could have led to device compatibility issues.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.83.1
+
+Released 2021-07-15
+
+**Added**
+
+* [Dolby Digital](/encoding/reference/postencodingconfigurationsaudiodd) and [Dolby Digital Plus](/encoding/reference/postencodingconfigurationsaudioddplus) codec configurations are now available as replacement for AC3 and EAC3.  
+   * We are therefore deprecating [AC3](/encoding/reference/postencodingconfigurationsaudioac3) and [EAC3](/encoding/reference/postencodingconfigurationsaudioeac3) as the two new codec configurations are producing output, which conforms to Dolby's high certification standards.  
+   * Our [multi-codec example](https://github.com/bitmovin/bitmovin-api-sdk-examples#multi-codec-encoding) now uses Dolby Digital instead of AC3.  
+   * For more information see our tutorial [here](/encoding/docs/how-to-create-dolby-digital-plus-encodings).
+* [Sprite](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid) generation no longer requires both width and height to be set, as long as one of the two values is configured, the other one is automatically computed based on the aspect ratio of the video.
+* [Thumbnail creation](/encoding/reference/postencodingencodingsstreamsthumbnailsbyencodingidandstreamid) has been extended to allow the same options with regards to height and width as sprite generation.
+
+**Fixed**
+
+* Improved internal stall-detection to prevent additional edge cases. These edge cases previously lead to stalls resulting in unexpectedly long running encodings.
+* Dolby Atmos encodings previously failed if there was an additional unused audio stream along the video stream. This has been fixed.
+* Encodings with [input concatenation](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) with inputs that have different fps have occasionally stalled. This was fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* `AdaptationSets` in [DASH manifests](/encoding/reference/postencodingmanifestsdash) could contain the same codec multiple times in the `codecs` attribute, when the manifest contains a Dolby Digital, Dolby Digital Plus or a Dolby Atmos rendition.
+
+---
+
+### 2.83.0
+
+Released 2021-07-06
+
+**Added**
+
+This version is automatically mapped to 2.83.1 because of a bug in Dolby Vision processing for segmented output.
+
+---
+
+### 2.82.1
+
+Released 2021-07-15
+
+**Added**
+
+* `targetDurationRoundingMode` property on [HLS manifest](/encoding/reference/postencodingmanifestshls), which defines the rounding mode for the target duration (normal or upward rounding) for manifests generated during the encoding.
+
+**Fixed**
+
+* [Live encoding restarts](/encoding/reference/postencodingencodingsliverestartbyencodingid) could have taken several minutes or lead to an encoding error
+* Improved internal stall-detection to prevent occurences of unexpectedly long running encodings due to stalls.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.82.0
+
+Released 2021-06-29
+
+**Added**
+
+This version is automatically mapped to 2.82.1 because of a bug in Dolby Vision processing for segmented output.
+
+---
+
+### 2.81.0
+
+Released 2021-06-22
+
+**Added**
+
+* Ability to handle ephemeral infrastructure errors working with genuine S3 has been improved
+* Support for additional output resolutions when encoding from a 3840x2160 Dolby Vision mezzanine file: 480p, 320p, 240p and 160p
+
+**Fixed**
+
+* Fixed a bug where [Sprites](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid) with lots of thumbnails (because of a long video file or a low `duration` value) could lead to a failing or stalling encoding.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.80.0
+
+Released 2021-06-15
+
+**Fixed**
+
+* The stability of live-encodings subtitle streams using Zixi as ingest has been improved.
+* A bug has been fixed for live encodings where the segment duration included fractional seconds. In those cases, the segment duration was erroneously rounded-down to the next full second.
+* Encoding jobs with progressive muxings and DolbyVision output did not handle letterboxing correctly, possibly resulting in the DolbyVision filter being incorrectly applied.
+* When using [S3 Role-based Input](/encoding/reference/postencodinginputss3rolebased) without an externalId to download bigger files could have lead to a failed download if it took more than 15 minutes.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.79.1
+
+Released 2021-06-09
+
+**Fixed**
+
+* A bug has been fixed for live encodings where the segment duration included fractional seconds. In those cases the segment duration was erroneously rounded-down to the next full second.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.79.0
+
+Released 2021-06-08
+
+**Added**
+
+* Added support for SCTE-35\. When running a live encoding, calling this [endpoint](/encoding/reference/postencodingencodingsscte35cuebyencodingid) will trigger the insertion of cue tags in the provided HLS manifests and ads will be inserted.  
+Note: this is an experimental feature.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.78.0
+
+Released 2021-06-01
+
+**Added**
+
+* Improved speed of h.264 encodings with short input files
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.77.2
+
+Released 2021-06-16
+
+**Fixed**
+
+* Encoding jobs with Dolby Vision output that have multiple progressive and/or multiple segmented muxings failed in previous versions. This is properly supported now.
+* The RTMP live-input related error 'broken pipe' now leads to a reconnect-attempt, while previous versions failed immediately.
+* Subtitle stream encoded with the [webvtt](/encoding/reference/getencodingconfigurationssubtitlewebvtt) format and uploaded to S3 did not have the right mimetype set. This has been fixed and the uploaded subtitle file's mimetype is now correctly set to "text/vtt".
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.77.1
+
+Released 2021-05-31
+
+**Added**
+
+* This version is automatically mapped to 2.77.2 because of a bug in the internal chunk-length calculation for progressive muxings in some rare edgecases
+
+---
+
+### 2.77.0
+
+Released 2021-05-25
+
+**Added**
+
+* This version is automatically mapped to 2.77.2 because of a bug in the conform filter when inputs of different FPS were used that is fixed in 2.77.2.
+
+---
+
+### 2.76.0
+
+Released 2021-05-11
+
+**Added**
+
+* Added support for additional [Sprite](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid) features so that they can be used for trick-play with DASH manifests. It's now possible to additionally specify the tile format (`hTiles`/`vTiles`), JPEG quality and a creation mode.
+* Added [Image adaptation sets](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsimagebymanifestidandperiodid) for DASH manifests with [Sprite representations](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsrepresentationsspritebymanifestidandperiodidandadaptationsetid) to enable video players to provide tiled thumbnails based on [Sprites](/encoding/reference/postencodingencodingsstreamsspritesbyencodingidandstreamid).
+
+**Fixed**
+
+* Fixed a bug which could lead to incomplete progressive subtitle output in case that multiple progressive subtitle outputs were configured for the same stream.
+* Fixed an issue related to audio/video sync which could have occured under rare conditions if segmented and progressive muxings are mixed and the input frame-rate is variable.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.75.0
+
+Released 2021-05-04
+
+**Added**
+
+* The status endpoints for [DASH](/encoding/reference/getencodingmanifestsdashstatusbymanifestid), [HLS](/encoding/reference/getencodingmanifestshlsstatusbymanifestid) and [Smooth](/encoding/reference/getencodingmanifestssmoothstatusbymanifestid) manifests are now populated correctly when manifest creation is triggered via the [start encoding call](/encoding/reference/postencodingencodingsstartbyencodingid)
+
+**Fixed**
+
+* Fixed some internal errors that occured for progressive muxings when both fragment length and GOP size have been configured
+* A memory leak has been fixed that caused live encodings to fail after several hours.
+* Fixed a bug where PerTitle's complexity factor was not applied to streams with StreamMode.PER\_TITLE\_TEMPLATE\_FIXED\_RESOLUTION\_AND\_BITRATE.
+* Fixed a bug where the [Live Stop Rest Request](/encoding/reference/postencodingencodingslivestopbyencodingid) wasn't processed correctly if the encoding is just starting up.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.74.0
+
+Released 2021-04-27
+
+**Added**
+
+* Updates in the internals of the TTML to WebVTT subtitle conversion:  
+   * Added support for basic styling in TTML to WebVTT subtitle conversion, configurable via [WebVttConfiguration](/encoding/reference/postencodingconfigurationssubtitleswebvtt)  
+   * Added support for [ChunkedTextMuxing](/encoding/reference/postencodingencodingsmuxingschunkedtextbyencodingid) in TTML to WebVTT subtitle conversion: allows to output segmented WebVTT files
+
+**Changed**
+
+* Adapted internal Dolby Vision processing for encodings from J2K mezzanine files for workflows with segmented muxings
+
+**Fixed**
+
+* Fixed a rarely occurring timing problem at the MP4 muxing step, which caused the encoding to fail.
+* [Packed Audio](/encoding/reference/postencodingencodingsmuxingspackedaudiobyencodingid) segmentlength reverts to default 4.0 seconds.
+* Improved validations and error messages for invalid pixel formats and color configurations.
+* General stability improvements for multi-pass encodings on AWS cloud
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.73.0
+
+Released 2021-04-20
+
+**Added**
+
+* Support of 10-bit VP9 encoding by setting`pixelFormat`[VP9 Codec Configurations](/encoding/reference/postencodingconfigurationsvideovp9) accordingly
+
+**Fixed**
+
+* To avoid rate exceeded errors for assuming IAM roles, caching of temporary credentials for the [S3 role-based](/encoding/reference/postencodingoutputss3rolebased) authentification process was introduced
+* A bug with the generation of HLS manifests for LIVE encodings has been fixed, were floating-point segment lengths were rounded down.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.72.2
+
+Released 2021-05-05
+
+**Fixed**
+
+* A race-condition that could result in encoding jobs to fail in rare circumstances has been fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.72.1
+
+Released 2021-04-28
+
+**Fixed**
+
+* A bug has been fixed that caused live encodings to fail after several hours
+
+**Known Issues**
+
+* A race-condition can result in failing encoding jobs in very rare cases
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.72.0
+
+Released 2021-04-13
+
+**Added**
+
+* A new warning will be triggered and displayed in the [status message of the encoding](/encoding/reference/getencodingencodingsstatusbyencodingid) when the Subtitle Rate in [Broadcast TS muxings](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid) is set too low and some packets got dropped.
+
+**Known Issues**
+
+* Live encodings may fail after several hours! This issue was resolved in [Version 2.72.1](/encoding/docs/encoder-2500-2990#2721)
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.71.0
+
+Released 2021-04-07
+
+**Added**
+
+* Improved bitrate distribution of [VP9 encoded bitstreams](/encoding/reference/postencodingconfigurationsvideovp9) in 3-pass encoding mode: The spikiness in the bitrate distribution, and consequently quality fluctuation in certain frames, in specific usecases has been reduced.
+* Region europe-west3 is now supported in GCE cloud
+* V2 manifest generator (BETA)  
+   * Added support for the `mode` selector in DASH manifest representations when manifests are generated via specifying them in the [StartEncodingRequest](/encoding/reference/postencodingencodingsstartbyencodingid).
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.70.0
+
+Released 2021-03-30
+
+**Added**
+
+* [Broadcast TS muxings](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid) can now configure the PID for subtite streams
+* [Broadcast TS muxings](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid) can now configure the rate for subtitle streams
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.69.0
+
+Released 2021-03-23
+
+**Fixed**
+
+* Removed cue identifiers from [WebVtt](/encoding/reference/postencodingconfigurationssubtitleswebvtt) input if `cueIdentifierPolicy` is set to `OMIT_IDENTIFIERS` when using [Chunked WebVtt muxing](/encoding/reference/postencodingencodingsmuxingschunkedtextbyencodingid).
+* Fixed rounding in target duration calculation based on segment length for HLS manifests.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.68.0
+
+Released 2021-03-16
+
+**Fixed**
+
+* Fixed a bug which lead to artifacts for some assets with mixed open and closed GOPs
+* Failed encodings when converting [SRT](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid) subtitles to [DVB-SUB](/encoding/reference/postencodingconfigurationssubtitlesdvbsubtitle) with an input file without a '.srt' file extension have been fixed
+* Fixed a bug which potentially generated skips in the output when the input had vastly fluctuating FPS
+* Sporadic failures when reading from [Azure storage](/encoding/reference/postencodinginputsazure) have been fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.67.0
+
+Released 2021-03-09
+
+**Added**
+
+* Support for stream conditions for [template streams](/encoding/reference/postencodingencodingsstreamsbyencodingid) of Per-Title Encodings.
+* AES-128 encryption support for [Packed Audio Muxings](/encoding/reference/postencodingencodingsmuxingspackedaudiobyencodingid)
+* Decreased turnaround times for encodings with short input files up to 15%
+
+**Fixed**
+
+* Fixed an issue where encodings using [Azure Output](/encoding/reference/postencodingoutputsazure) have stalled
+
+**Known Issues**
+
+* Due to reduced logging capabilities for livestreams we do NOT recommend this version to be used for live usecases!
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.66.0
+
+Released 2021-03-02
+
+**Fixed**
+
+* Fixed an issue in Per-Title algorithm where an input with extremely low spatial and temporal complexity lead to failures.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.65.0
+
+Released 2021-02-23
+
+**Added**
+
+* On encodings that fail with licensing errors, the corresponding retry hint is set in the [status response](/encoding/reference/getencodingencodingsstatusbyencodingid).
+
+**Fixed**
+
+* Verification for [NexGuard FileMarker Watermarking](/encoding/reference/postencodingencodingsstreamsnexguardfilemarkerbyencodingidandstreamid) that input source FPS and configured keyFrameInterval/GOP corresponds to the requirements if the frame rate is not configured in the codec configuration.
+* Improved stability for Azure Cloud Storage
+* Fixed a bug that lead to failed encodings when applying long trimmings to perTitle encodings.
+* Fixed a bug for HEVC outputs in combination with fMP4 and FairPlay DRM where the parameter sets were incorrectly placed in the samples, causing playback issues in native MacOs devices.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.64.1
+
+Released 2021-02-09
+
+**Fixed**
+
+* Fixed a bug which in some cases lead to pixelation in black areas of the highest output-rendition when using [Nagra NexGuard FileMarker A/B Watermarking](/encoding/reference/postencodingencodingsstreamsnexguardfilemarkerbyencodingidandstreamid) in multipass encodings
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.64.0
+
+Released 2021-02-09
+
+**Added**
+
+* Packed Audio supports segment naming template.
+
+**Fixed**
+
+* When using empty `sourceChannels` in [audio-mix input stream](/encoding/reference/postencodingencodingsinputstreamsaudiomixbyencodingid) the input channels will be automatically mapped to the same output channels by default
+* Fixed a color conversion issue for Dolby Vision Encodes from Prores inputs where the internal color conversion from YUV to RGB was performed using BT709 where is should be BT2020.
+* Fixed a rare bug for HEVC encodes with progressive mp4 output where the parameter sets were not included in the output file correctly.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.63.0
+
+Released 2021-02-02
+
+**Added**
+
+* Securing your assets with [Nagra NexGuard FileMarker A/B Watermarking](/encoding/reference/postencodingencodingsstreamsnexguardfilemarkerbyencodingidandstreamid) is now available
+* Segmented WebVTT subtitles now can be [configured](/encoding/reference/postencodingconfigurationssubtitleswebvtt) to either omit or include WebVTT cue identifiers (included by default). Please note that the following restrictions apply:  
+   * SRT to WebVTT conversion workflow does not support cue identifiers as of now. Therefore it needs to be set to `OMIT_IDENTIFIERS`.  
+   * Cue identifier can not be configured for [non-segmented](/encoding/reference/postencodingencodingsmuxingstextbyencodingid) WebVTT outputs.
+
+**Fixed**
+
+* Fixed a bug where WebVtt Encodings failed with subtitles using [FileInputStreamType SRT](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid). The bug occurred only in combination with video input files, that have negative DTS timestamps at the beginning.
+* Fixed a bug that audio streams were not sent to the [LiveMediaIngest endpoint](/encoding/reference/postencodingoutputslivemediaingest).
+* For a few audio-only input files, the analyze phase might have failed as the duration could not be parsed
+* Fixed a possible situation where duplicate DTS values are present in [segmented TS outputs](/encoding/reference/postencodingencodingsmuxingstsbyencodingid) in case that the [H264 codec](/encoding/reference/postencodingconfigurationsvideoh264) is used with a b-pyramid setting of either 'normal' or 'strict'.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.62.0
+
+Released 2021-01-26
+
+**Added**
+
+* Support for PackedAudioMuxing: Allows to create [Packed Audio Segments](/encoding/reference/postencodingencodingsmuxingspackedaudiobyencodingid) containing encoded audio samples and ID3 tags that are packed together with minimal framing and no per-sample timestamps.
+* Added configuration of PCR interval for [Broadcast TS](/encoding/reference/postencodingencodingsmuxingsbroadcasttsbyencodingid).
+
+**Changed**
+
+* Optimized turnaround times for Dolby Vision 2-pass and 3-pass encoding jobs up to 40%
+
+**Fixed**
+
+* The set `encryptionMethod` is now used when using [CENC encryption](/encoding/reference/postencodingencodingsmuxingsfmp4drmcencbyencodingidandmuxingid) without Fairplay
+* Fixed an issue where trying to detect the subtitle format from the data stream failed and caused an encoding error, by trying to deduce the subtitle format from the file extension in this case. If both fails, the encoding will still fail.
+* Fixed a bug for ProgressiveMovMuxings which caused the output of muxings, that contained more than one audio stream, to only contain the first audio stream.
+* Fixed a bug where the Encoding failed if more than one video representation has been configured in combination with subtitles with [FileInputStreamType SRT](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid).
+* Fixed a rarely occurring race condition during encoding start-up that was preventing our service to use all the computing nodes.
+* The i-frame-playlist manifests for fmp4 encodings have been corrected
+* Downloads might have stalled with HTTP(S) inputs and file paths containing non-alphanumeric characters
+* Fixed an issue with failed encodings when using `channelLayout` in [audio mix input stream](/encoding/reference/postencodingencodingsinputstreamsaudiomixbyencodingid)
+* Fixed a potential issue where interlaced MOV files led to encoding errors because they were detected as interlaced Mp4 has been fixed.
+* Bugfix where HEVC encodes with Level 4.1 set were falsely set to level 4.0.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.61.1
+
+Released 2021-01-11
+
+**Added**
+
+* [Dolby Vision output](/encoding/reference/postencodingencodingsstreamsdolbyvisionhdrmetadatabyencodingidandstreamid) can now also be created from ProRes mezzanine files
+
+**Fixed**
+
+* Fixed an issue with the encoder not being able to extract cdp CEA captions
+* Fixed that VP9 3-Pass encodings could fail in case that the target bitrate of single segments was close to the codec-level's maximum bitrate and QMIN was set to a low value.
+* In rare conditions, an encoding might have stalled in the Analysis phase and go to error after 1 hour
+* If the `ROTATION` [stream condition](/encoding/reference/postencodingencodingsstreamsbyencodingid) is used and the `rotation` property is not present in the input file, a default of `0` will be used.
+* Input subtitle text files with exotic character encoding, BOM markers, exotic end of lines or trailing white-spaces are now sanitized before being decoded.
+* A bug mispredicting the character encoding of a UTF-8 subtitle input file with many languages (not a real-life use case, but useful for testing) has been fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.60.1
+
+Released 2020-12-16
+
+**Fixed**
+
+* Fixed a bug that potentially caused out of sync issues of video and audio for h.264 encodings with CBR and BroadcastTS muxings
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.60.0
+
+Released 2020-12-15
+
+**Added**
+
+* Added DVB-SUB subtitle passthrough for BroadcastTsMuxing.
+* Added SRT to DVB-SUB subtitle conversion for BroadcastTsMuxing.
+* Added support for [SRT file](/encoding/reference/postencodingencodingsinputstreamsfilebyencodingid) to [WebVtt subtitle encoding](/encoding/reference/postencodingconfigurationssubtitleswebvtt) with [text](/encoding/reference/postencodingencodingsmuxingstextbyencodingid)/[chunked-text muxing](/encoding/reference/postencodingencodingsmuxingschunkedtextbyencodingid).
+
+**Fixed**
+
+* SRT subtitle burn-in subtitle feature was corrupting memory when the target pixel format was different from the one from the source video. This has been fixed now.
+* A potential problem has been fixed for 3-pass encodings, where [key-frame-boundaries with segment-cut](/encoding/reference/postencodingencodingskeyframesbyencodingid) was enabled.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.59.0
+
+Released 2020-12-01
+
+**Changed**
+
+* Improved turnaround time for [Enhanced Deinterlace Filter](/encoding/reference/postencodingfiltersenhanceddeinterlace) by more than 60 percent.
+
+**Fixed**
+
+* Fixed a bug where an encoding might finish successfully but not the whole content was encoded when using [Concatenation Input-Streams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) combined with trimming, if at the concatenation boundaries the cumulated duration is an exact multiple of the segment length.
+* Quality improvement for HRD CBR compliant progressive outputs.
+* Set the correct `content-type` when using [Progressive MP4](/encoding/reference/postencodingencodingsmuxingsmp4byencodingid). If it's an audio-only stream it will be set to `audio/mp4`, if it's video only or contains both, it will be set to `video/mp4`
+* Fixed invalid outputs in [Enhanced Deinterlace Filter](/encoding/reference/postencodingfiltersenhanceddeinterlace) when both Field and Frame stream filters are requested in the same encoding.
+* Fixed a crash that was triggered by encoding with the same [Enhanced Deinterlace Filter](/encoding/reference/postencodingfiltersenhanceddeinterlace) mode but different FPS. Example: 50 FPS Field and 25 FPS Field is now working.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.58.0
+
+Released 2020-11-17
+
+**Added**
+
+* Customers using their own [Azure account](/encoding/reference/postencodinginfrastructureazure) can now opt-in, so that all SSH communication comes from one specific IP address. This enables a more rigid network security policy where only one IP is allowlisted for SSH connections.
+
+**Fixed**
+
+* Fixed a bug in the fMP4 muxing of audio segments where the last segment contained 1 single audio frame.
+* Combination of Audio Mix and Audio Merge with StreamInput are now handled properly.
+* The [fMP4 muxing-information](/encoding/reference/getencodingencodingsmuxingsfmp4muxinginformationbyencodingidandmuxingid) endpoint now correctly returns `"codec": "aac"` for muxings with AAC audio codec.
+* Fixed a bug for input files that were creating an empty segment and therefore the encoding failed.
+* A memory leak related to the frame rate change logic has been fixed, which possibly caused encodings to fail, when changing from a higher to a lower frame rate.
+* Fixed an issue, where DASH and HLS manifest creation failed for `SINGLE_PASS` and `TWO_PASS` encodings, which had PRORES or JPEG2000 inputs.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* An encoding might finish successfully with not the whole content encoded when using [Concatenation Input-Streams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) combined with trimming, if at the concatenation boundaries the cumulated duration is an exact multiple of the segment length.
+
+---
+
+### 2.57.0
+
+Released 2020-11-03
+
+**Added**
+
+* Added handling of [SMPTE timecode](/encoding/reference/postencodingencodingsstreamscaptions608708sccbyencodingidandstreamid) with three flavours - `NON_DROP_FRAME`, `DROP_FRAME`, and `AUTO`.
+* Private ACLs are now taken into account for manifests and live encodings
+
+**Fixed**
+
+* DAR values are now correctly set in all progressive webm outputs for VP8/VP9.
+* Encodings failing at the output validation step, with init.mp4 file missing, have been fixed.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* A memory leak related to the frame rate change logic might cause encodings to get stuck or fail, when changing from a higher to a lower frame rate.
+* An encoding might finish successfully with not the whole content encoded when using [Concatenation Input-Streams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) combined with trimming, if at the concatenation boundaries the cumulated duration is an exact multiple of the segment length.
+
+---
+
+### 2.56.2
+
+Released 2020-11-25
+
+**Fixed**
+
+* Fixed a bug where an encoding might finish successfully but not the whole content was encoded when using [Concatenation Input-Streams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) combined with trimming, if at the concatenation boundaries the cumulated duration is an exact multiple of the segment length.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.  
+This information can be found in this FAQ from now on: [Which output options are supported when using per-title?](/encoding/docs/which-output-options-are-supported-when-using-per-title)
+
+---
+
+### 2.56.1
+
+Released 2020-11-16
+
+**Fixed**
+
+* A memory leak related to the frame rate change logic has been fixed, which possibly caused encodings to fail, when changing from a higher to a lower frame rate.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.  
+This information can be found in this FAQ from now on: [Which output options are supported when using per-title?](/encoding/docs/which-output-options-are-supported-when-using-per-title)
+* An encoding might finish successfully with not the whole content encoded when using [Concatenation Input-Streams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) combined with trimming, if at the concatenation boundaries the cumulated duration is an exact multiple of the segment length.
+
+---
+
+### 2.56.0
+
+Released 2020-10-20
+
+**Added**
+
+* A new [Enhanced Deinterlace Filter](/encoding/reference/postencodingfiltersenhanceddeinterlace) is now available.
+* Azure Connect: Encoding on [customer Azure infrastructure](/encoding/reference/infrastructure) is now available for VoD and live encodings.
+* Added support for SRT live input streams with a bitrate >= 40Mbps.
+* Enabled full VBV buffer conformance for progressive h.264 CBR outputs.
+
+**Fixed**
+
+* Fixed the `cache-control` header for manifest uploads in both Live and Vod workflows to contain the correct `max-age:value` instead of `max-age=value` string
+* Fixed a bug for the usage of Display Aspect Ratio (DAR) on VP9 and AV1 encodes if muxed with [ProgressiveWebmMuxing](/encoding/reference/postencodingencodingsmuxingsprogressivewebmbyencodingid) (manifestType=NONE).
+* When using I-Frame playlists with fmp4, the `#EXT-X-TARGETDURATION` and `#EXTINF` attributes are now correctly set based on the segment length
+* Fixed stream playback issue caused by inconsistent first DTS in shorter segments.
+* In certain use cases, using keyframes in conjunction with concatenation workflow lead to failed encoding. This has been fixed.
+* Live encodings did not work when using AWS or GCP connect and being opt-in so that all SSH communication comes from one specific IP address
+* Fixed an issue with default manifests for per-title that potentially lead to failed encodings.
+
+**Known Issues**
+
+* S3 role-based output for segmented muxings: No upload verification available.
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.  
+This information can be found in this FAQ from now on: [Which output options are supported when using per-title?](/encoding/docs/which-output-options-are-supported-when-using-per-title)
+* A memory leak related to the frame rate change logic might cause encodings to get stuck or fail, when changing from a higher to a lower frame rate.
+* An encoding might finish successfully with not the whole content encoded when using [Concatenation Input-Streams](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) combined with trimming, if at the concatenation boundaries the cumulated duration is an exact multiple of the segment length.
+
+---
+
+### 2.55.0
+
+Released 2020-10-06
+
+**Changed**
+
+* Improved download and upload speed for Azure significantly.
+
+**Fixed**
+
+* Fixed playback issue on some devices for HEVC/fMP4 streams. The stream duration was signaled incorrectly in the container.
+* Fixed a bug where the I-frame playlist was missing in the HLS output.
+* Live streams are now working when using [GCP Connect](/encoding/reference/postencodinginfrastructuregce) or [AWS Connect](/encoding/reference/postencodinginfrastructureaws)
+* Fixed a bug for Per-title encodings where specific sample and display aspect ratio combinations caused incorrect width or height of the output.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available.
+* A memory leak related to the frame rate change logic might cause encodings to get stuck or fail, when changing from a higher to a lower frame rate.
+
+---
+
+### 2.54.0
+
+Released 2020-09-22
+
+**Changed**
+
+* Improved download speed of input files in Azure cloud up to 150%
+* Better error messages for failed manifest outputs.
+* HLS VOD manifests now by default include the framerate in the master manifest. (requires a correct streamId being set on the HLS streaminfo)
+* HLS VOD manifests now include PLAYLIST-TYPE:VOD.
+
+**Fixed**
+
+* Fixed an issue where the disk size for Azure encodings was too small which could have lead to failing encodings.
+* Fixed upload manifests to multiple outputs, even if one of the outputs fails.
+* Possible failures in encodings which have MP4 muxings, with DRM and HLS\_BYTE\_RANGE request, have been fixed.
+* Added fix for correcting chromaloc flag for H264 and H265 encoder config.
+* Fixed issue that generated missing audio output when audio input had no pts. WMA Pro Audio inputs with this issue can be encoded correctly now.
+* The size of overlay filters (watermarks, text etc.) was fixed for concatenated input streams with different resolutions and same aspect ratio.
+* Single stream input video files with an RGB pixel format and the RAWVIDEO codec are encoded properly now.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.53.0
+
+Released 2020-09-08
+
+**Added**
+
+* Enabled multiple Per-Title progressive muxings to separate files in the same target directory.
+* Support for VoD SMOOTH manifests as option of start encoding call
+* Support for 3-pass encodings in Azure
+* Improved encoding speed of high bitrate J2K inputs in Azure
+* Support for XDCAM output with the following new codecs / muxings:  
+   * [H262 / MPEG2 video codec configuration](/encoding/reference/postencodingconfigurationsvideoh262), with mandatory preset `XDCAM_HD_422`  
+   * [PCM audio codec configuration](/encoding/reference/postencodingconfigurationsaudiopcm)  
+   * [MXF muxing](/encoding/reference/postencodingencodingsmuxingsmxfbyencodingid)
+
+**Fixed**
+
+* Issue when vbv parameters are set in 3-pass algorithm with the last segment quality was fixed
+* Fixed some combinations of color config with VP9 codec which lead to failures
+* Fixed an error that led to failed 3-pass encodings in the cloud region AWS\_EU\_WEST\_2
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.52.0
+
+Released 2020-08-25
+
+**Added**
+
+* Added support for using the same input audio stream for both [Audio-Mix filter](/encoding/reference/postencodingfiltersaudiomix) and non-filter workflows.
+* If for the encoding no SAR is specified then in the resulting video SAR is available as metadata with the value of 1:1.
+
+**Changed**
+
+* Encodings with at least one UHD+ output stream are up to 33% faster.
+* Improved stability and speed of encodings with longer segment lengths and/or very high input-bitrate in GCE
+
+**Fixed**
+
+* A possibly re-connect issue has been fixed for the live use-case when a timestamp rotation occurs in the following order Video, Subtitle, and Audio and the Subtitle packet was following an Audio packet.
+* Bugfix for Conform filter together with trimming for video streams.
+* A potential problem for live encodings has been fixed that previously led to a restart. This happened whenever a timestamp rotation occurred and the first packed with the updated timestamp has been a subtitle packet and is fixed now.
+* Improved handling of Azure authentication issues.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available.
+
+---
+
+### 2.51.0
+
+Released 2020-08-11
+
+**Added**
+
+* OCR processing of DVB subtitles is now supported for live encodings with an output using the WebVTT codec and a muxing of either ChunkedText or fMP4  
+   * [ChunkedTextRepresentation](/encoding/reference/postencodingmanifestsdashperiodsadaptationsetsrepresentationschunkedtextbymanifestidandperiodidandadaptationsetid) for Segmented WebVtt in DASH Manifests in combination with DVB subtitles  
+   * [DvbSubtitleInputStream](/encoding/reference/postencodingencodingsinputstreamsdvbsubtitlebyencodingid) to allow specifying the Dvb subtitle input stream  
+   * Support for Segmented WebVtt in HLS Manifests in combination with DVB subtitles
+* Added the [GCE region endpoint](/encoding/reference/postencodinginfrastructuregceregionsbyinfrastructureidandregion) to specify the network and the subnet for GCE-Connect.
+* CBR encoding for h.264 is now supported with correct model parameters.
+
+**Changed**
+
+* Per-Title will fail now for cases where a FIXED\_RESOLUTION will not fit inbetween two FIXED\_RESOLUTIONS\_AND\_BITRATE for complex assets because of a configuration problem, i.e., bitrate ranges for FIXED\_RESOLUTIONS\_AND\_BITRATE in combination with the minimum step size.
+* The issue with stalling encodings for inputs with reordered frames in Mov was improved. We will fail instead of stalling.
+
+**Fixed**
+
+* Bugfix for Dolby Vision and trimming. The output could be missing some frames at the end of the encode.
+* Improved stability of the live stream where the input ingest has out of order subtitle packets.
+* Live encoding stability has been improved by detecting a stalled input and trying to re-connect
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.50.1
+
+Released 2020-07-30
+
+**Added**
+
+* With `2.50.0` we improved the download speed for: S3, GCS and Generic S3\. As per this improvement, we require the `GetBucketLocation` permission. If this permission is not set, we will now fall back to the slow download instead of failing.
+
+**Fixed**
+
+* Improved encoding speed for Google regions when using the customer's [GCP infrastructure](/encoding/reference/postencodinginfrastructuregce) together with using the option to run all API communication from a specific IP range, as now also worker nodes are requested using the same IP range.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available
+
+---
+
+### 2.50.0
+
+Released 2020-07-28
+
+**Added**
+
+* Added [Dolby Atmos](/encoding/reference/postencodingconfigurationsaudiodolbyatmos) support  
+   * Input as ADM or DAMF Dolby Master files  
+   * Output to fMP4 in DASH/HLS  
+   * Support for Widevine, PlayReady and FairPlay DRM
+* Improved bitrate distribution over segments for 3-pass encodings  
+   * Especially improves last segment visual quality
+
+**Changed**
+
+* Improve the download speed from the following inputs: S3, GCS and Generic S3
+* The handling of input timestamps for Zixi/SRT live stream encodings is improved.
+
+**Fixed**
+
+* Fixed an issue with customData on filters leading to "scheduling failed" errors
+* Fixed encoding failures for some VP9 encodes and tuned encoder rate control, quality and speed.
+* Fixed a rounding error in the Per-Title algorithm that led to a missing FIXED\_RESOLUTION\_AND\_BITRATE rendition in some very rare circumstances.
+
+**Known Issues**
+
+* Per-Title encodings only work with GCS, S3, Generic S3, Akamai NetStorage or Azure Blob output.
+* Progressive MP4 with CBR encodings might have incorrect HRD buffer signaling.
+* S3 role-based output for segmented muxings: No upload verification available

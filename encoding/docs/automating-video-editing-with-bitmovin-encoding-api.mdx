@@ -1,0 +1,124 @@
+---
+title: "Automating Video Editing with Bitmovin Encoding API"
+---
+
+## Overview
+
+With the emergence of online streaming platforms, distributing broadcast content on online platforms has become common. However, due to copyright issues or the need to customize content for a specific audience, it is often necessary to edit parts of the content before distributing it on the internet. In this tutorial, we will explore how to use the Bitmovin Encoding API to automate the video editing workflow with its powerful trimming and concatenation methods, enabling efficient and flexible video editing.
+
+## Requirements
+
+1. Bitmovin Encoder Version: 2.142.0 or higher
+
+## Video Editing Workflow with Bitmovin API
+
+In this section, we will delve into the procedure of automating the video editing process using the Bitmovin Encoding API. The Bitmovin API provides various trimming and concatenation methods that enable you to create a flexible workflow. You can effortlessly trim the video and audio sections as per your requirement, making it easy to comply with copyright laws or customize content for your intended audience.
+
+With the recent improvements to the Bitmovin Encoder, it has become highly flexible in terms of video concatenation processing. For instance, it is now possible to replace only certain parts of the video that may pose copyright issues or substitute the audio with separately recorded material while preserving the other side of the input stream.
+
+![](/images/encoding/docs/8928c7f-image.png)
+
+![](/images/encoding/docs/161e68c-image.png)
+
+Let's take a closer look at the process for replacing a video section and explore the workflow when using the Bitmovin API in more detail. The flowchart below illustrates the processing steps.
+
+![](/images/encoding/docs/a7c068a-image.png)
+
+## Step 1: Defining Input Using IngestInputStream
+
+To begin, you need to define your input streams using the [IngestInputStream](/encoding/reference/postencodingencodingsinputstreamsingestbyencodingid) class. This class allows you to specify the input source's stream position to extract a desired stream from your input file. By defining the input streams, you can access the video and audio tracks separately, facilitating their manipulation.
+
+Python
+
+`main_video_ingest_input_stream =IngestInputStream(
+    input_id=input.id,
+    input_path=input_path,
+    selection_mode=StreamSelectionMode.POSITION_ABSOLUTE,
+    position=0)
+alt_video_ingest_input_stream = IngestInputStream(
+    input_id=input.id,
+    input_path=input_path,
+    selection_mode=StreamSelectionMode.POSITION_ABSOLUTE,
+    position=0)
+main_audio_ingest_input_stream = IngestInputStream(
+    input_id=input.id,
+    input_path=input_path,
+    selection_mode=StreamSelectionMode.POSITION_ABSOLUTE,
+    position=1)
+
+`
+
+## Step 2: Trimming your input content
+
+Once you have defined your input streams, you can use the [TimeBasedTrimmingInputStream](/encoding/reference/postencodingencodingsinputstreamstrimmingtimebasedbyencodingid) class to extract the desired video section. This method enables you to specify the start `offset` and the `duration` times of the content you want to extract.
+
+In the following example, we provide a definition that replaces the 30-40 second video segment of a 60-second input file with the 0-10 second section of the `alt_video_input_stream`.
+
+As there is no trimming required for the audio section, it is defined in its entirety from start to finish. The parameter duration `null` represents the duration until the end of the stream in the trimming class.
+
+Python
+
+`# For video stream
+part1_video_input_stream=TimeBasedTrimmingInputStream(
+    input_stream_id=main_video_ingest_input_stream.id,
+    offset=0,
+    duration=30
+)
+alt_video_input_stream=TimeBasedTrimmingInputStream(
+    input_stream_id=alt_video_ingest_input_stream.id,
+    offset=0,
+    duration=10
+)
+part2_video_input_stream=TimeBasedTrimmingInputStream(
+    input_stream_id=main_video_ingest_input_stream.id,
+    offset=40,
+    duration=None
+)
+# For audio stream
+audio_input_stream=TimeBasedTrimmingInputStream(
+    input_stream_id=main_audio_ingest_input_stream.id,
+    offset=0,
+    duration=None
+)
+`
+
+## Step 3: Generate video and audio stream with ConcatenationInputStream
+
+After extracting your desired video and audio section, you can replace it with a new video using the [ConcatenationInputStream](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) method. This method allows you to concatenate multiple video sections. You can also specify the position of each video part within the stream to define the order.
+
+As for the audio stream, since it is simply copied from the input, we define the entire input as the source and also define it in the [ConcatenationInputStream](/encoding/reference/postencodingencodingsinputstreamsconcatenationbyencodingid) class.
+
+Python
+
+`# For video stream 
+part1_video_concatenation_input_configuration = ConcatenationInputConfiguration(
+    input_stream_id=part1_video_input_stream.id,
+    position=0,
+    is_main=True)
+alt_video_concatenation_input_configuration = ConcatenationInputConfiguration(
+    input_stream_id=alt_video_input_stream.id,
+    position=1,
+    is_main=None)
+part2_video_concatenation_input_configuration = ConcatenationInputConfiguration(
+    input_stream_id=part2_video_input_stream.id,
+    position=2,
+    is_main=None)
+concatenation_input_stream=ConcatenationInputStream(
+    concatenation=[part1_video_concatenation_input_configuration,
+                   alt_video_concatenation_input_configuration,
+                   part2_video_concatenation_input_configuration]
+)
+# For audio stream 
+audio_concatenation_input_configuration = ConcatenationInputConfiguration(
+    input_stream_id=audio_input_stream.id,
+    position=0,
+    is_main=True)
+`
+
+Finally, you will need to output your edited content. This process enables you to specify the output codec and muxing format of the edited video, as well as the output file destination. By defining the output stream, you can generate a final edited video that meets your requirements. These steps are common in other workflows as well, so we will omit further details in this tutorial.
+
+## Conclusion
+
+As illustrated above, with proper preparation of input files and desired editing points, the Bitmovin API can be utilized to automate the entire process of generating output for online streaming.
+
+Automating your video editing workflow can save time and reduce the need for human intervention. By utilizing the trimming and concatenation features of Bitmovin Encoding API, video or audio segments can be substituted effortlessly, simplifying the video editing process without compromising the requirement for your target audience. By following the steps outlined in this tutorial, you can prepare an organized content and streamline your video editing process.

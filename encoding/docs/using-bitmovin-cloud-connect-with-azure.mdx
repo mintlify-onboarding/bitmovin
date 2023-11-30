@@ -1,0 +1,298 @@
+---
+title: "Using Bitmovin Cloud Connect with Azure"
+---
+
+## Bitmovin Cloud Connect with Azure
+
+This document explains how to set up Bitmovin Encoding on Azure Cloud infrastructure so that the Bitmovin platform can run encoders using the Azure API.
+
+The instructions in this document for the [REST API Services](/encoding/docs/rest-api-services)apply to live encoding and file-based encoding. For a complete list of formats and input types, see the [Bitmovin website](/encoding/docs/supported-input-and-output-formats).
+
+## Prerequisites
+
+_This feature requires a commercial agreement and needs to be specifically activated for a Bitmovin Account. It is not available by default. You will not be able to complete the configuration below without this activation._
+
+* A Bitmovin account, enabled for use of the Cloud Connect feature
+* An [Azure Subscription](https://azure.microsoft.com/en-us/)  
+   * The Resource Provider "Microsoft.Compute" needs to be registered in that subscription
+
+## Azure Configuration
+
+### Request access to the `bitmovin-azure-connect` Application
+
+Please replace `<Your Tenant ID>` in the link below with your Tenant ID and then call that link in your browser:
+
+HTTP
+
+`<https://login.microsoftonline.com/><Your Tenant ID>/oauth2/authorize?client_id=ad59b58a-9910-409a-909e-cf98258bb566&response_type=code&redirect_uri=https%3A%2F%2Fbitmovin.com%2F
+`
+
+#### To determine your Tenant ID:
+
+* Go to `https://portal.azure.com/#blade/Microsoft_AAD_IAM/ActiveDirectoryMenuBlade/Overview`
+* Copy your Tenant ID from the `Tenant information` box
+
+### Create a Resource group in which you intend to run your VMs
+
+* Select your subscription | Resource groups / Add
+* Assign a name to your Resource group
+* Assign a Region, as this is mandatory, but your Resource group can still contain resources from multiple regions.
+* Click `Review + create`
+
+### Give the `bitmovin-azure-connect` Application rights to run virtual machines on your subscription
+
+* Select your subscription
+* Select the recently created Resource group
+* Click `Access control (IAM)`
+* Click `Add`
+* Select `Add role assignment`
+* Role: `Contributor`
+* Select: Enter `bitmovin-azure-connect` (Please note that `bitmovin-azure-connect` only shows up in your selection if you performed the first step `Request access to the bitmovin-azure-connect Application`)
+* Click on `bitmovin-azure-connect` to get it into the Selected members
+* Click `Save`
+
+### Create a Network Security Group in every region that you want to run encodings in
+
+* Select your Resource group
+* Click `Add`
+* Type `Network security group` (+ Enter) in the search window
+* Click `Create`
+* Type in a name, e.g. `myorgname-region-nsg`
+* Select a Region
+* Click `Review + create`
+* Click `Create`
+* Click `Go to resource`
+* Add the following Inbound security rules (Inbound security rules / Add) (Please note that all non-listed values can be left at their default values: Source: Any, Source port ranges: \*, Destination:Any. Action: Allow)
+
+## Basic Inbound security rules that are necessary to run any Encoding
+
+These are the basic Inbound security rules without which starting an encoding will fail.
+
+Please add Inbound security rules with the following settings to each Network Security Group:
+
+| Field                   | Value to set                                                 |
+| ----------------------- | ------------------------------------------------------------ |
+| Protocol                | TCP                                                          |
+| Priority                | 100                                                          |
+| Name                    | AllowEncoderServiceInbound                                   |
+| Destination port ranges | 9999                                                         |
+| Description             | For communication with the service that manages the encoding |
+
+| Field                   | Value to set                                                           |
+| ----------------------- | ---------------------------------------------------------------------- |
+| Protocol                | TCP                                                                    |
+| Priority                | 200                                                                    |
+| Name                    | AllowSessionManagerInbound                                             |
+| Destination port ranges | 9090                                                                   |
+| Description             | For communication with the service that manages the encoding instances |
+
+| Field                   | Value to set                                                        |
+| ----------------------- | ------------------------------------------------------------------- |
+| Protocol                | TCP                                                                 |
+| Priority                | 1000                                                                |
+| Name                    | AllowSSH                                                            |
+| Destination port ranges | 22                                                                  |
+| Description             | For incoming commands (i.e. pulling and starting docker containers) |
+
+### Inbound security rules that are necessary to run RTMP live streams
+
+If you intend to run RTMP live streams, please create an Inbound security rule with the following settings:
+
+| Field                   | Value to set          |
+| ----------------------- | --------------------- |
+| Protocol                | TCP                   |
+| Priority                | 300                   |
+| Name                    | rtmp-listener         |
+| Destination port ranges | 1935                  |
+| Description             | For RTMP live streams |
+
+### Inbound security rules that are necessary to run SRT live streams
+
+If you intend to run SRT live streams, please create Inbound security rules with the following settings:
+
+| Field                   | Value to set         |
+| ----------------------- | -------------------- |
+| Protocol                | TCP                  |
+| Priority                | 400                  |
+| Name                    | srt-listener-tcp     |
+| Destination port ranges | 2088                 |
+| Description             | For SRT live streams |
+
+| Field                   | Value to set          |
+| ----------------------- | --------------------- |
+| Protocol                | UDP                   |
+| Priority                | 500                   |
+| Name                    | srt-listener-udp-2088 |
+| Destination port ranges | 2088                  |
+| Description             | For SRT live streams  |
+
+| Field                   | Value to set          |
+| ----------------------- | --------------------- |
+| Protocol                | UDP                   |
+| Priority                | 700                   |
+| Name                    | srt-listener-udp-2090 |
+| Destination port ranges | 2090                  |
+| Description             | For SRT live streams  |
+
+| Field                   | Value to set          |
+| ----------------------- | --------------------- |
+| Protocol                | UDP                   |
+| Priority                | 800                   |
+| Name                    | srt-listener-udp-2091 |
+| Destination port ranges | 2091                  |
+| Description             | For SRT live streams  |
+
+### Inbound security rules that are necessary to run Zixi live streams
+
+If you intend to run Zixi live streams, please create an Inbound security rule with the following settings:
+
+| Field                   | Value to set          |
+| ----------------------- | --------------------- |
+| Protocol                | TCP                   |
+| Priority                | 900                   |
+| Name                    | zixi-listener         |
+| Destination port ranges | 4444                  |
+| Description             | For Zixi live streams |
+
+### Create a Virtual Network in every region that you want to run encodings in
+
+* Select your Resource group
+* Click `Add`
+* Type `Virtual Network` (+ Enter) in the search window
+* Click `Create`
+* Type in a name
+* Select a Region
+* Click `Next: IP Addresses`
+* The default IPv4 address space gives you a CIDR notation of `/16`, resulting in an address space of 65536 IP addresses, which should be sufficient.
+* Remove the default subnet
+* Click `Add subnet`
+* Type in a Subnet name, e.g. `myorgname-region-subnet`
+* Copy the entire address space from your virtual network
+* Click `Add`
+* Click `Review + create`
+* Click `Create`
+* Click `Go to resource`
+
+### Assign the Network security group that you created for that region to the subnet that you created for that region
+
+* Click `Subnets`
+* Click the subnet that you created
+* Under `Network security group` select the Network security group that you created for that region
+
+## Bitmovin Configuration
+
+Before you continue, make sure you have collected the following information:
+
+From your Azure Subscription:
+
+* `my_subscription_id`
+* `the_resource_group_id_that_i_intend_to_use`
+* `my_tenant_id`
+
+### Create infrastructure
+
+To enable your Bitmovin account to run encodings in your Azure Subscription, you need to create an Infrastructure object.
+
+#### With the Dashboard
+
+1. In the Bitmovin dashboard, go to the [Infrastructure section](https://bitmovin.com/dashboard/encoding/infrastructure)
+2. Click the **Add new Infrastructure** button and select the **Azure** icon.
+3. Fill in the details, with the `my_subscription_id`, `the_resource_group_id_that_i_intend_to_use` and `my_tenant_id` details collected previously.
+4. Select the infrastructure just created with **Show details**
+5. For each Azure region in which you want to run encodings, add new **Region Settings**  
+   * Fill in the details for that region, using the relevant `the-network-name-that-i-have-created` and `the-subnet-name-that-i-have-created`
+
+Please note that the inbound rules are checked when you make an “Add Azure Region Setting” request to Bitmovin API. If there is any permission or configuration issue, the region will not be created and you will be returned to the previous screen showing the details of the infrastructure.
+
+#### With the Bitmovin APIs
+
+Using the [Add Azure Account](/encoding/reference/postencodinginfrastructureazure) endpoint, submit the following JSON and replace the respective `subscriptionId`, `resourceGroupId`, and `projectId` values with the appropriate values collected in the previous steps:
+
+JSON
+
+`{
+  "name": "<my_name> Azure Connect <prod/dev>",
+  "subscriptionId": "<my_subscription_id>",
+  "resourceGroupId": "<the_resource_group_id_that_i_intend_to_use>",
+  "tenantId": "<my_tenant_id>"
+}
+`
+
+Use the [Add Azure Region Setting](/encoding/reference/postencodinginfrastructureazureregionsbyinfrastructureidandregion) endpoint to create region settings, with the following payload:
+
+JSON
+
+`{
+     "networkName": "the-network-name-that-i-have-created",
+     "subnetName": "the-subnet-name-that-i-have-created"
+}
+`
+
+_For example, if you want to run encodings in_ `westeurope`, _you will need to submit the following payload to this endpoint:_
+
+HTTP
+
+`<https://api.bitmovin.com/v1/encoding/infrastructure/azure/><infastructure-id>/regions/EUROPE_WEST
+`
+
+JSON
+
+`{
+     "networkName": "the-network-name-that-i-have-created",
+     "subnetName": "the-subnet-name-that-i-have-created"
+}
+`
+
+#### No need to request access to machine images
+
+As the `bitmovin-azure-connect` Application already has access rights to the Shared Image Gallery where the Images reside that are required to start VMs for Bitmovin Encodings, no action is required to authorize access to VM images.
+
+## Run encoding jobs in Azure
+
+After configuration has been completed, you will be able to run encoding jobs in your own Azure Subscription. To do so, use the Bitmovin API client SDKs to submit encoding jobs, in the same way as you would do for encodings running in the Bitmovin Managed Cloud service. The only difference is that you need to specify the new infrastructure instead of public cloud regions.
+
+Here is a Python snippet demonstrating how to link your encoding to your infrastructure.
+
+Python
+
+`    # ID of the Infrastructure object created in step 5.
+    infra_id = ‘<infrastructure_id>’ 
+    
+    # Azure region of the Azure-connect setup
+    infra_region = CloudRegion.AZURE_EUROPE_WEST
+
+    infrastructure = InfrastructureSettings(infrastructure_id=infra_id, 
+                                    cloud_region=infra_region)
+    encoding = Encoding(name='azure connect encoding',
+                cloud_region=CloudRegion.EXTERNAL,
+                infrastructure=infrastructure,
+                encoder_version='STABLE')
+`
+
+## Resource Quotas
+
+If you want to run several encodings in parallel, then the default quota limits may not be sufficient. In that case, you will have to request limit increases for the following quotas in your Region(s):
+
+| Provider          | Quota Name                     | Limit to request                                                                                             |
+| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Microsoft.Network | Public IP Addresses - Basic    | (max. # of encodings) \* (max # of instances per encoding)                                                   |
+| Microsoft.Compute | Standard DSv3 Family vCPUs     | (max. # of encodings) \* 8                                                                                   |
+| Microsoft.Compute | Standard FSv2 Family vCPUs     | (max. # of encodings) \* 8                                                                                   |
+| Microsoft.Compute | Total Regional Spot vCPUs      | (max. # of _encodings)_(max # of instances per encoding) \* 8                                                |
+| Microsoft.Compute | Virtual Machines               | (max. # of encodings) \* (max # of instances per encoding) - The default value of 25000 should be sufficient |
+| Microsoft.Compute | Virtual Machine Scale Sets     | The default value of 2500 should be sufficient                                                               |
+| Microsoft.Compute | Standard Storage Managed Disks | (max. # of encodings) \* (max # of instances per encoding) - The default value of 50000 should be sufficient |
+| Microsoft.Compute | Premium Storage Managed Disks  | (max. # of encodings) \* (max # of instances per encoding) - The default value of 50000 should be sufficient |
+
+This implies the standard case: 8 core instances. If your use case requires instances with a different number of cores, multiply by that.
+
+The maximum number of instances needed depends on the maximum number of parallel encodings running multiplied by the maximum number of instances needed for one encoding. The number of instances used by one encoding varies depending on the input file size and the number and data rate of the encoder Representations and cannot exceed 120.
+
+Generally, it cannot hurt to multiply the expected limit calculated for your current situation by 2, to have some margin in case you need to ramp up.
+
+### To view/edit your quotas
+
+* Select your Resource group
+* Click `Usage + qotas` (on the left)
+* Filter by Provider and type in a substring (e.g. `IP` or `vCPU`)
+* If you need to request a limit increase, click `Request Increase` on the upper right.

@@ -1,0 +1,73 @@
+---
+title: "How to create PlayReady DRM protected content"
+---
+
+## Overview
+
+Microsoft released PlayReady in 2008 and it’s one of major DRM systems out in the market with broad [device support](https://developer.bitmovin.com/playback/docs/drm-content-protection), sophisticated features and has been used at scale already by many events such as the Olympics in Sochi, Russia. The Bitmovin encoding service supports PlayReady encryption and packaging with MPEG-CENC. The Bitmovin player plays PlayReady encrypted videos on platforms that support the PlayReady DRM natively in HTML5 without plugins.
+
+## PlayReady DRM Requirements
+
+* A multi DRM licensing server provider such as Irdeto, EZDRM, ExpressPlay, Axinom or others.
+
+## About this example
+
+The code snippets shown here are based on the [full example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java) called `CencDrmContentProtection.java`, using our [Bitmovin SDK for Java](/encoding/docs/how-to-create-playready-drm-protected-content#get-started-with-a-bitmovin-sdk).
+
+> **Hint:** If you haven't created any encodings with our Service yet, its recommended to start with our quick start guide called "[Get Started with the Bitmovin API](/encoding/docs/get-started-with-the-bitmovin-api)" first, before you continue :)
+
+## Encoding with DRM Configuration
+
+The key part to create an encoding that encodes and encrypt content with DRM solutions that support MPEG-CENC, is to add a `CencDRM` Configuration to a `Muxing`.
+
+To encrypt your content so it can be used with PlayReady DRM, an `encryption key` (referred to as `key` later on) is required. All other values are optional, however sometimes required by specific DRM vendors, therefore have to be set (`kid`, `pssh`, ...).
+
+**General configuration values:**
+
+* `key`: (required) You need to provide a key that will be used to encrypt the content (16 byte encryption key, represented as 32 hexadecimal characters)
+* `kid`: (optional) also known as Key ID, or ContentID. Its a unique identifer for your content (16 byte initialization vector, represented as 32 hexadecimal characters)
+
+> **HINT:** Some DRM providers provide you with a dedicated service to create and safely store Encryption Keys, so you don't have to create and manage them by yourself. These values are required to generate a proper playback license using DRM solution providers like Irdeto, EZDRM, ExpressPlay, Axinom, etc. to control playback permissions on the client side. [Learn more](https://bitmovin.com/digital-rights-management-everything-to-know/).
+
+**PlayReady DRM** specific configuration options: You can either provide an `pssh` string or an `laUrl` in this configuration.
+
+* `pssh`: (optional)Base64 encoded String, PSSH payload Example: `QWRvYmVhc2Rmc2FkZmFzZg==`
+* `laUrl`: (optional) The License Aquistion URL that shall be used by the player.
+
+**Java SDK Example - createDrmConfig() Method** ([Line in Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L266))
+
+Java
+
+`private static CencDrm createDrmConfig(
+    Encoding encoding, Muxing muxing, Output output, String outputPath) throws BitmovinException {
+  CencDrm cencDrm = new CencDrm();
+  cencDrm.addOutputsItem(buildEncodingOutput(output, outputPath));
+  cencDrm.setKey("cab5b529ae28d5cc5e3e7bc3fd4a544d");
+  cencDrm.setKid("08eecef4b026deec395234d94218273d");
+  
+  ...
+  
+  CencPlayReady playReadyDrm = new CencPlayReady();
+  playReadyDrm.setLaUrl("http://playready.directtaps.net/pr/svc/rightsmanager.asmx");
+  //playReadyDrm.setPssh("QWRvYmVhc2Rmc2FkZmFzZg==");
+  cencDrm.setPlayReady(playReadyDrm);
+  
+  ...
+  
+  return bitmovinApi.encoding.encodings.muxings.fmp4.drm.cenc.create(
+      encoding.getId(), muxing.getId(), cencDrm);
+}
+
+`
+
+## Get Started with a Bitmovin SDK
+
+| Bitmovin API SDK                                                               | Description                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Java](https://github.com/bitmovin/bitmovin-api-sdk-java)                      | Integrate the SDK into your Java Project easily and add it to the config of your dependency manager like Maven or Gradle. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-java#installation) |
+| [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples) | Integrate the SDK into your Javascript/Typescript based project easily by adding it as a dependency via NPM. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-javascript#installation)        |
+| [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples)                | Integrate the SDK into your Python based project easily by adding it as a dependency via pip or Setuptools. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-python#installation)             |
+| [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples)                  | Integrate the SDK into your .NET based project easily by adding it as a dependency via nuget. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-dotnet#installation)                           |
+| [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples)                   | Integrate the SDK into your PHP based project easily by adding it as a dependency via composer. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-php#installation)                            |
+
+Visit our [Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) that provides you with examples for all Bitmovin SDK's available.

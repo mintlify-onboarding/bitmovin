@@ -1,0 +1,308 @@
+---
+title: "Simple Encoding API - Live"
+---
+
+## Overview
+
+Simple Live Encoding Jobs are quick and easy way to transcode your RTMP or SRT Input into a best practise bitrate ladder for efficient and high-quality using DASH/HLS delivery to your audience. All you need is a single API call that provides the input type you want to use, and output destination details where to store the encoded live content.
+
+## Requirements
+
+1. **Encoder Version:** `STABLE`
+2. **SDK Version:** v 1.106.0 or higher
+3. **Input:** `SRT` or `RTMP` (push only)
+
+## Supported Features
+
+* **Input Sources:** RTMP, SRT
+* **Encoding Profile:** INCREASED\_QUALITY or LOWER\_LATENCY
+* **Output Destinations:** AWS S3, Google Cloud Storage (GCS), Azure Blob Storage (ABS), Akamai NetStorage  
+   * **Output Characteristics:**  
+   \_At least one Output Destination  
+   \_Video: H264, segmented fMP4, fixed rendition ladder (240p, 360p, 480p, 720p, 1080p)  
+   \_Audio: AAC, segmented fMP4, one audio rendition only  
+   \_Highest Resolution selectable (`SD` \= up to 480p, `HD` up to 720p, `FULL_HD` up to 1080p)  
+   \* Manifests: DASH/HLS
+* **Auto-shutdown:** When the ingest is disconnected for more the 10 minutes the live encoding will be shut down. The Simple Live Encoding will not be shut down if no stream was ever connected.
+
+---
+
+## Introduction
+
+A Simple Live Encoding Job is defined by an
+
+* An input source
+* An output destination
+* An encoding profile
+* A cloud region.
+
+that’s it! :)
+
+Once a Simple Encoding Job is started, the template is converted into an actual Encoding, adapted to the input and output definition.
+
+### Job lifecycle
+
+After starting the Simple Live Encoding Job, it goes through the following stages:
+
+* `CREATED`: Job has been created is waiting to be started.
+* `EXECUTING`: Job is currently being executed and creating an Live Encoding
+* `FAILURE`: Job could not create an Live Encoding, `errors` [property](/encoding/reference/getsimpleencodinglivejobbyjobid) for more information
+* `RUNNING`: Job created an Live Encoding. At this time, an encoding-ID is available and the Live Encoding itself is either in state `QUEUED` or `RUNNING` and provides the details needed to configure an input source (e.g. OBS Studio, hardware encoders, etc) to push their signal to the Live Encoding.
+* `FINISHED`: The Encoding created by this job finished successfully
+* `ERROR`: The Encoding created by this job failed, `errors` [property](/encoding/reference/getsimpleencodinglivejobbyjobid) for more information
+* `CANCELED`: The Encoding has been started but has been canceled manually by the user.
+
+You can retrieve status information with the Job details endpoint
+
+Note that the Encoding created and managed by the Job has its own statuses, documented [in this FAQ](/encoding/docs/what-do-the-different-encodings-state-mean), and queried [through the Encoding Status endpoint](/encoding/reference/getencodingencodingsstatusbyencodingid).
+
+---
+
+## Create a Simple Live Encoding Job
+
+### REST API Call
+
+The simplest way to create a simple encoding is a plain HTTP POST request sent to the Bitmovin API or try it with this [Postman Collection](https://god.gw.postman.com/run-collection/18670786-99cd0bd7-4579-4d40-89b7-663dff3aa82d?action=collection%2Ffork&collection-url=entityId%3D18670786-99cd0bd7-4579-4d40-89b7-663dff3aa82d%26entityType%3Dcollection%26workspaceId%3D4b3f8ccb-66c0-4379-8cff-e282c9804e03).
+
+Shell
+
+`curl --location --request POST 'https://api.bitmovin.com/v1/encoding/simple/jobs/live' \
+--header 'x-api-key: YOUR_BITMOVIN_API_KEY' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "cloudRegion": "EUROPE",
+    "encodingProfile": "INCREASED_QUALITY",
+    "input": {
+        "inputType": "RTMP"
+    },
+    "outputs": [
+        {
+            "url": "s3://yourbucket/path/to/your/live-folder/{uuid}/",
+            "credentials": {
+                "accessKey": "S3_OUTPUT_ACCESS_KEY",
+                "secretKey": "S3_OUTPUT_SECRET_KEY"
+            },
+            "makePublic": true,
+            "maxResolution": "FULL_HD"
+        }
+    ]
+}'
+`
+
+### Bitmovin OpenAPI SDK
+
+Beyond a plain HTTP POST, you can use any of the Bitmovin SDKs to start your job. The following code sample is the equivalent of the REST API call above, but using the Bitmovin OpenAPI Java SDK.
+
+Java
+
+`var input = new SimpleEncodingLiveJobInput();
+input.setInputType(SimpleEncodingLiveJobInputType.RTMP);
+
+var outputCredentials = new SimpleEncodingLiveJobAccessKeyCredentials();
+outputCredentials.setAccessKey("AccessKey");
+outputCredentials.setSecretKey("SecretKey");
+
+var output = new SimpleEncodingLiveJobUrlOutput();
+output.setUrl("s3://yourbucket/path/to/your/live-folder/{uuid}/");
+output.setCredentials(outputCredentials);
+output.setMakePublic(true);
+output.setMaxResolution(SimpleEncodingLiveMaxResolution.FULL_HD);
+
+SimpleEncodingLiveJobRequest job = new SimpleEncodingLiveJobRequest();
+job.setCloudRegion(SimpleEncodingLiveCloudRegion.EUROPE);
+job.setEncodingProfile(SimpleEncodingLiveProfile.INCREASED_QUALITY);
+job.setInput(input);
+job.addOutputsItem(output);
+
+var jobResponse = api.simple.jobs.live.create(job);
+do {
+  Thread.sleep(5000);
+  jobResponse = api.simple.jobs.live.get(jobResponse.getId());
+} while (jobResponse.getStatus() != SimpleEncodingLiveJobStatus.RUNNING);
+
+//Stop the Live Encoding
+api.encodings.live.stop(jobResponse.getEncodingId());
+`
+
+---
+
+## Cloud Region
+
+A list of all available `cloudRegion` values can be found in our [API-Reference](/encoding/reference/postsimpleencodinglivejob).
+
+---
+
+## Inputs
+
+### RTMP
+
+* Encoder URL: `rtmp://<EXTERNAL_IP>/live/<STREAM_KEY>`
+
+This URL you will have to enter into the configuration of your RTMP Encoder, so it can push your livestream input stream to your Bitmovin Simple Live Encoding. The `<EXTERNAL_IP>` and `<STREAM_KEY>` become available as soon as the Live Encoding is in status `RUNNING`. They can be obtained either
+
+* ... by viewing the details of the Live Encoding in the Bitmovin dashboard, or
+* ... by querying the details of the Simple Live Encoding Job from the [API](/encoding/reference/getsimpleencodingvodjobbyjobid), and extracting its `externalIp` and `streamKey` property.
+
+**Code Sample (Bitmovin OpenAPI Java SDK):**
+
+Java
+
+`var input = new SimpleEncodingLiveJobInput();
+input.setInputType(SimpleEncodingLiveJobInputType.RTMP);
+`
+
+### SRT
+
+* Encoder URL: `srt://<EXTERNAL_IP>:2088`
+
+This URL you will have to enter into the configuration of your SRT Encoder, so it can push your livestream input stream to your Bitmovin Simple Live Encoding. The `<External_IP>` for the Live Encoding Ingest Endpoint becomes available as soon as the Live Encoding is in status `RUNNING`. It can be obtained either
+
+* ... by viewing the details of an Live Encoding in the Bitmovin dashboard, or
+* ... by querying the details of the Simple Live Encoding Job from the [API](/encoding/reference/getsimpleencodingvodjobbyjobid)
+
+**Code Sample (Bitmovin OpenAPI Java SDK):**
+
+Java
+
+`var input = new SimpleEncodingLiveJobInput();
+input.setInputType(SimpleEncodingLiveJobInputType.SRT_LISTENER);
+`
+
+---
+
+## Outputs
+
+In order to ensure that the output path is unique for all your Live Encodings, and avoid files being overridden, we recommend that you add a `{uuid}` placeholder in the path, which will be replaced with a unique identifier at run-time.
+
+### Folder Structure
+
+Simple Encoding Jobs will create the following folder structure at the given destination. The output files can be found in the following locations on every configured output:
+
+`<scheme>://<bucket>/path/to/your/live-folder/{uuid}/`
+
+* `video/{width}x{height}_{bitrate}/` (multiple subfolders containing different output renditions)
+* `audio/` (folder containing audio output files)
+* `index.m3u8` (HLS manifest file)
+* `stream.mpd` (DASH manifest file)
+
+### AWS S3
+
+* `s3://<my-bucket>/path/to/live/{uuid}/`
+
+Credentials for S3 URLs are mandatory and can be provided via AWS access/secret keys or role-based authentication. Generic S3 is currently not supported.
+
+**AWS Access/Secret Keys**
+
+Java
+
+`var keyCredentials = new SimpleEncodingLiveJobAccessKeyCredentials();
+keyCredentials.setAccessKey("ACCESSKEYHERE");
+keyCredentials.setSecretKey("SECRETKEYHERE");
+input.setCredentials(keyCredentials);
+
+var output = new SimpleEncodingLiveJobUrlOutput();
+output.setUrl("s3://my-bucket/{uuid}/path/to/destination/folder/");
+output.setCredentials(keyCredentials);
+`
+
+**Role-based**
+
+Java
+
+`var roleBasedCredentials = new SimpleEncodingLiveJobS3RoleBasedCredentials();
+roleBasedCredentials.setRoleArn("arn:aws:iam::123456789012:role/OurS3AccessRole");
+roleBasedCredentials.setUseExternalId(true);
+
+var output = new SimpleEncodingLiveJobUrlOutput();
+output.setUrl("s3://my-bucket/path/to/destination/folder/");
+output.setCredentials(roleBasedCredentials);
+`
+
+`useExternalId` (default: false) is an optional property and controls if the customer’s `orgId` should be used as `externalId` when assuming the AWS role, or not. Its an additional security measure to prevent unauthorized users assume a role by obtaining the role ARN somehow. For more details, please see [S3 Role-Based Input](/encoding/reference/postencodinginputss3rolebased) for details about the `externalId`, and be aware that the simple encoding API only supports the `externalIdMode` `GLOBAL`.
+
+### Google Cloud Storage (GCS)
+
+* `gcs://<my-bucket>/path/to/live/{uuid}/`
+
+Credentials for GCS URLs are mandatory and can be provided as HMAC keys or a service account.
+
+**HMAC Keys**
+
+Java
+
+`var keyCredentials = new SimpleEncodingLiveJobAccessKeyCredentials();
+keyCredentials.setAccessKey("ACCESS_ID");
+keyCredentials.setSecretKey("SECRET");
+
+var output = new SimpleEncodingLiveJobUrlOutput();
+output.setUrl("gcs://my-bucket/path/to/destination/folder/");
+output.setCredentials(keyCredentials);
+`
+
+**Service-Account**
+
+_Note that the service credentials provided in the following snippet are just for example. You need to obtain your service credentials from your GCP account._
+
+Java
+
+`var serviceAccountCredentials = new SimpleEncodingLiveJobGcsServiceAccountCredentials();
+serviceAccountCredentials.setServiceAccountCredentials("{\n"
+    + "    \"type\": \"service_account\",\n"
+    + "    \"project_id\": \"bitmovin\",\n"
+    + "    \"private_key_id\": \"abcdefghijklmnopqrstuvwxyz\",\n"
+    + "    \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nOwdXyjRT9F4A==\\n-----END PRIVATE KEY-----\\n\",\n"
+    + "    \"client_email\": \"[[email protected]](/cdn-cgi/l/email-protection)\",\n"
+    + "    \"client_id\": \"10440564562784234997\",\n"
+    + "    \"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\",\n"
+    + "    \"token_uri\": \"https://oauth2.googleapis.com/token\",\n"
+    + "    \"auth_provider_x509_cert_url\": \"https://www.googleapis.com/oauth2/v1/certs\",\n"
+    + "    \"client_x509_cert_url\": \"https://www.googleapis.com/robot/v1/metadata/x509/bitmovin%40bitmovin.iam.gserviceaccount.com\"\n"
+    + "}");
+
+var output = new SimpleEncodingLiveJobUrlOutput();
+output.setUrl("gcs://my-bucket/path/to/destination/folder/");
+output.setCredentials(serviceAccountCredentials);
+`
+
+### Azure Blob Storage
+
+* `https://<account>.blob.core.windows.net/<container>/path/to/live/{uuid}/`
+
+Credentials for Azure Blob Storage URLs are mandatory and can be provided via the [storage account accesss key credentials.](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-keys-manage?tabs=azure-portal)
+
+Java
+
+`var azureCredentials = new SimpleEncodingLiveJobAzureCredentials();
+azureCredentials.setKey("STORAGE_KEY");
+
+var output = new SimpleEncodingLiveJobUrlOutput();
+output.setUrl("https://.blob.core.windows.net//path/to/destination/folder/);
+output.setCredentials(azureCredentials);
+`
+
+### Akamai NetStorage
+
+* `https://<host>-nsu.akamaihd.net/<CP-code>/path/to/live/{uuid}/`
+
+Credentials for Akamai NetStorage URLs are mandatory and can be provided via `username` and `password`
+
+Java
+
+`var authenticationCredentials = new SimpleEncodingLiveJobUsernamePasswordCredentials();
+authenticationCredentials.setUsername("USERNAME");
+authenticationCredentials.setPassword("PASSWORD");
+
+var output = new SimpleEncodingLiveJobUrlOutput();
+output.setUrl("akamai-ns://my-akamai-host-nsu.akamaihd.net/path/to/destination/folder/");
+output.setCredentials(authenticationCredentials);
+`
+
+---
+
+## Known Limitations
+
+* DRM Protection is not available.
+* **Audio**  
+   * Only the first audio track is extracted from an input file  
+   * The Output Channel Layout is going to be STEREO (2.0), regardless of what is provided by the input stream.
+* **Webhooks**: Once a Simple Live Encoding Job is successfully started, standard generic Live Encoding webhooks can be used to track the progress of the live encoding.

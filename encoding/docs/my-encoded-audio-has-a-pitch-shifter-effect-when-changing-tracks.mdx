@@ -1,0 +1,5 @@
+---
+title: "My encoded audio has a pitch shifter effect when changing tracks?"
+---
+
+This issue can occur with MSE implementations that do not correctly handle different sample rates for audio. If you manually set the sample rate in your audio codec configuration, ensure, that for every audio track you use the same sample rate. If you do not choose an explicit sample rate in your audio codec configuration, the Bitmovin API will encode the audio in the same sample rate as the input audio stream.

@@ -1,0 +1,10 @@
+---
+title: "Why does my output fail to transfer?"
+---
+
+There are multiple reasons behind why the encoding output might not transfer correctly. Let's go through them one by one:
+
+1. **Wrong credentials**: please make sure you are providing the right credentials in the code.
+2. **Permission issues**: is the use you provided got the right write access?
+3. FTP from Akamai got some **limits** (e.g. 25 parallel connections at max per Akamai user account). The Akamai NetStorage HTTP API can handle higher loads and connections and is more resilient, therefore we recommend to use this one by default, instead of Akamai FTP if possible, you can find more about the setup from here [https://bitmovin.com/docs/encoding/tutorials/how-to-setup-an-akamai-netstorage-output](https://bitmovin.com/docs/encoding/tutorials/how-to-setup-an-akamai-netstorage-output)
+4. Is the cloud region of your storage’s region experiencing an **outage**? Check the relevant status page for any possible issues, for example for Amazon [https://status.aws.amazon.com/](https://status.aws.amazon.com/)

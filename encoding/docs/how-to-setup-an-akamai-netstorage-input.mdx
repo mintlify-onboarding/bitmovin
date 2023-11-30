@@ -1,0 +1,46 @@
+---
+title: "How to setup an Akamai NetStorage Input"
+---
+
+## Overview
+
+The NetStorage service of Akamai provides many ways to interact with it. The best way from our perspective is to use its HTTP API interface. In this tutorial you will learn how it works and what it needs to obtain proper credentials to create an Akamai NetStorage Input/Output in our service.
+
+The biggest advantage is the recilience of HTTP requests and the amount of parallel connections you can leverage compared to FTP transfers, where it is capped to 25 connections for one akamai upload account. The `NetStorage HTTP CMS API` however doesn't has such limits and is therefore well suited to handle many parallel chunked transfers in a fast and reliable manner.
+
+So lets look into it how you can configure an Akamai NetStorage to be used for your encodings in our service.
+
+**IMPORTANT**: This tutorial assumes that you already have access to an Akamai NetStorage and Setup and a dedicated Upload Account for it. If you are missing any of it yet, [please read through this tutorial first](/encoding/docs/how-to-create-an-akamai-netstorage-upload-account) on how to create an Akamai NetStorage and Upload Account before you proceed with this tutorial.
+
+---
+
+## Create a Bitmovin Akamai NetStorage Input
+
+To create a Bitmovin ["Akamai NetStorage" Input configuration](/encoding/reference/postencodinginputsakamainetstorage), that can be used by our encoding service, you need to know the `HTTP API Key` and `Username` of your upload account, as well as its `Host` URL.
+
+### Use the Dashboard UI
+
+1. Select the `Encoding` menu on the left and go to `Inputs`.
+2. Click on `Create` in the upper right corner of the Inputs overview
+3. Select `Akamai` as Input type and
+4. Enter all required fields (please see the image below)
+5. Click on `Create`
+
+![](/images/encoding/docs/b11c9aa-image.png)
+
+### Use an Bitmovin API SDK
+
+Each of our Open API SDK's implements the Bitmovin API, and make it easy to start its integration in your project or use-case. Use them to create reusable input resources to be used for your encodings:
+
+**Bitmovin API SDK for Java - Input example**
+
+Java
+
+`AkamaiNetStorageInput input = new AkamaiNetStorageInput();
+input.setHost(AKAMAI_NETSTORAGE_HTTP_API_HOST); // e.g. xxxxx-nsu.akamaihd.net
+input.setUsername(AKAMAI_NETSTORAGE_USERNAME);
+input.setPassword(AKAMAI_NETSTORAGE_PASSWORD);
+input = bitmovinApi.input.akamaiNetStorage.create(input);
+`
+
+See all available examples for each of our Bitmovin API SDK's in our [GH Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples).

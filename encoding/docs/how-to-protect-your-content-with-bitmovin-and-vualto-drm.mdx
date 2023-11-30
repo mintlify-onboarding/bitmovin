@@ -1,0 +1,661 @@
+---
+title: "How to Protect Your Content with Bitmovin and Vualto DRM"
+---
+
+## Introduction
+
+As an OTT service provider who wants to monetize content, you need to make sure your valuable content can be only played by authorized users conforming to the rights they bought. [Digital Rights Management (DRM)](https://bitmovin.com/drm-content-protection/) is a commonly used means to protect your content and ensure your revenue.
+
+As your users play back your content on a wide range of devices - from Smart TVs to smartphones, running on different platforms - you will need to use multiple DRM systems to cover all devices that are popular with your users.
+
+Managing multiple DRM systems can be difficult, but service providers like [Vualto](https://www.vualto.com/) offer help and facilitate the complex matter.
+
+This tutorial explains how to encode and protect your content using Vualto as your multi-DRM management service.
+
+## DRM Systems
+
+When we talk about multiple DRM systems, in this tutorial we mean to cover the most used DRM systems which are:
+
+* **Widevine**  
+   * This DRM system by Google is used for playback on related platforms such as Chrome(cast), Android (TV), or Google TV.
+* **Playready**  
+   * This DRM system by Microsoft is used for playback on related platforms such as Edge, IE11, XBox, or Windows Phone.
+* **Fairplay**  
+   * This DRM System by Apple is used for playback on related platforms such as Safari, iOS, or Apple TV.
+
+Other platforms that are not directly related to Google, Microsoft or Apple typically support one or more of the above DRM systems.
+
+Please find an elaborate list of platform-DRM compatibility [here](https://developer.bitmovin.com/playback/docs/drm-content-protection).
+
+## Use Cases in this Tutorial
+
+In this tutorial, we will focus on a selected list of combinations of [adaptive streaming formats](https://bitmovin.com/adaptive-streaming/) and DRM systems.
+
+The content, packaged in these streaming formats and encrypted with the associated DRM systems, will be playable on most market relevant devices.
+
+* **DASH with Widevine**, tested with Chrome on the Mac
+* **DASH with Playready**, tested with Edge and IE11 on Windows 10
+* **HLS with Fairplay**, tested with Safari on the Mac and with iOS
+* **Smooth Streaming with Playready**, tested with Edge and IE11 on Windows 10
+
+## Prerequisites
+
+To protect your content with **[Vualto](https://www.vualto.com/products/vudrm-drm/)**, you need to collect some values that are required to configure encoding and playback.
+
+First, **give your content an ID** which must be different for each piece of content that you want to encode. In this tutorial, we use `somecontentid` as the ID of your content.
+
+To get the the remaining required values, you need to have an account with Vualto or at least get the values from your Vualto contact:
+
+**Note:** _Values that are specified for a certain DRM system (**Widevine**, **Playready** or **Fairplay**) are needed for that DRM system only._
+
+* **The Vualto token**, called "VU DRM Token". This is a long string divided in four sections, which are separated by a "|". The first section is the name of the Vualto account owner, the second is a date when the token was created. The token looks like `yourname|2020-07-02T16:03:55Z|kQI7t+b1Kd51CfzfnQ5qzx==|cb556f86d4453a6abf5381966ec543979fcb656f`.
+* **The Fairplay Certificate URL**, looking like `skd://fairplay-license.vudrm.tech/certificate/yourname`
+
+The following values will be given to the Bitmovin encoding process during configuration.
+
+* **DRM\_KEY**: The key which will be used to encrypt your content, looking like `B01F8C032F5564B6C81DCD340F480978`
+* **DRM\_FAIRPLAY\_IV**: The Initialization Vector for Fairplay, looking like `656636323963441663544463864376663`
+* **DRM\_FAIRPLAY\_URI**: The license URL for Fairplay, looking like `skd://fairplay-license.vudrm.tech/v2/license/somecontentid` . Note that this URL includes your content's ID, in this example `somecontentid`.
+* **DRM\_WIDEVINE\_KID**: The Key ID for Widevine, looking like `E920E5426157291C177F8BBD34026696`
+* **DRM\_WIDEVINE\_PSSH**: The PSSH data (not the whole box) for Widevine, looking like `Ig2zb21lZ37udKVudGfhSOPclZsG`
+* **DRM\_PLAYREADY\_PSSH**: The PSSH data (not the whole box) for Playready. This is a very long string looking like `kAMAAAEAAQCGAzwBVwBSAE1ASABAEFFAR...RQCCAEQARQBTAD3A`
+
+## Writing your Encoding Script in PHP
+
+This section will show you how to write a PHP script which uses the Bitmovin API to configure and run a DRM encrypted encoding for your content.
+
+You will find the full script here: TBD
+
+Like every encoding script, we begin with the main workflow, setting up the API, encoding, input and output.
+
+PHP
+
+`$exampleName = 'BitmovinTutorial';
+
+$configProvider = new ConfigProvider();
+
+$bitmovinApi = new BitmovinApi(Configuration::create()
+    ->apiKey($configProvider->getBitmovinApiKey()));
+
+// -- Encoding
+$encoding = createEncoding($exampleName, "Encoding with different DRM systems");
+
+// -- Input
+$input = createHttpsInput($configProvider->getHttpInputHost());
+$inputFilePath = $configProvider->getHttpInputFilePath();
+
+// -- Output
+$output = createS3Output(
+    $configProvider->getS3OutputBucketName(),
+    $configProvider->getS3OutputAccessKey(),
+    $configProvider->getS3OutputSecretKey()
+);
+`
+
+Please note that in this example we use a HTTP input to load your source file from and an S3 output to write the encoded/encrypted data to. You are not bound to these formats, please see [this page for all supported input and output storages](/encoding/docs/supported-input-and-output-storages).
+
+## Encoding
+
+In the upcoming sections, you will learn how to encode your content.
+
+You will also learn how to package the encoded content for HLS and DASH, and optionally for Smooth Streaming.
+
+And you will learn how to encrypt the packaged content with Widevine, PlayReady and Fairplay DRM.
+
+## Setting up Codec Configurations and Streams
+
+Like with every encoding, we first must define what video and audio codecs our content should be encoded into.
+
+For this, we first write two functions to generate a simple H.264 video config and a simple AAC audio config.
+
+PHP
+
+`function createH264Config()
+{
+    global $bitmovinApi;
+  
+    $h264Config = new H264VideoConfiguration();
+    $h264Config->name("H.264 1080p 1.5 Mbit/s");
+    $h264Config->presetConfiguration(PresetConfiguration::VOD_STANDARD());
+    $h264Config->height(1080);
+    $h264Config->bitrate(1500000);
+  
+    return $bitmovinApi->encoding->configurations->video->h264->create($h264Config);
+}
+`
+
+PHP
+
+`function createAacConfig(AacChannelLayout $channelLayout)
+{
+    global $bitmovinApi;
+  
+    $aacConfig = new AacAudioConfiguration();
+    $aacConfig->name("AAC 128 kbit/s");
+    $aacConfig->bitrate(128000);
+    $aacConfig->channelLayout($channelLayout);
+  
+    return $bitmovinApi->encoding->configurations->audio->aac->create($aacConfig);
+}
+`
+
+Then, we write a function to create a **_Stream_**. A Stream in this context is an entity that connects an input track (audio or video from the source file) to a codec. By applying a codec to an input track, you tell the Encoder to encode the track with that codec.
+
+PHP
+
+`function createStream(Encoding $encoding, Input $input, string $inputPath, CodecConfiguration $codecConfiguration)
+{
+    global $bitmovinApi;
+  
+    $streamInput = new StreamInput();
+    $streamInput->inputId($input->id);
+    $streamInput->inputPath($inputPath);
+  
+    $stream = new Stream();
+    $stream->inputStreams([$streamInput]);
+    $stream->codecConfigId($codecConfiguration->id);
+  
+    return $bitmovinApi->encoding->encodings->streams->create($encoding->id, $stream);
+} 
+`
+
+After we have defined these functions, we go back to the main workflow and call them:
+
+PHP
+
+`// -- Streams --
+// Add an H.264 video stream to the encoding
+$h264Config = createH264Config();
+$h264Stream = createStream($encoding, $input, $inputFilePath, $h264Config);
+`
+
+The first line creates the video codec configuration we want to use. The second line connects the video codec configuration with the input file.
+
+We specify only the input file because in the scope of this tutorial we assume the input file has one video track and one audio track. As the codec config `$h264Config` is a video config, the system knows that it should use the video track of the input file.
+
+For audio, the code looks similar.
+
+PHP
+
+`// Add an AAC Stereo audio stream to the encoding
+$aacConfig = createAacConfig(AacChannelLayout::CL_STEREO());
+$aacStream = createStream($encoding, $input, $inputFilePath, $aacConfig);
+`
+
+**Note:** _Of course the Bitmovin encoder can handle input files with multiple video and audio tracks, and also specify which ones to encode, but this is out of scope of this tutorial where we focus on DRM._
+
+We now have two **_Stream_** variables, `$h264Stream` and `$aacStream`, which stand for the encoded - but not yet packaged and encrypted - video and audio tracks.
+
+## Muxing (Packaging) the Streams for HLS and DASH
+
+In order to write down the encoded **_streams_**, we must tell the encoder how to package them.
+
+The packaging of encoded streams is called **_muxing_**, and this is also the term for the result of the packaging process. A **_muxing_** is therefore a packaged set of streams. A muxing can, for example, be an _.mp4_ or _.ts_ file with audio and video in it. A muxing can also be a set of segments to support streaming formats like HLS and DASH. Examples for this are a set of .ts segments to support HLS, or a set of Fragmented MP4 files (.m4s) to support DASH and newer versions of HLS. The set of Fragmented MP4 (.m4s) segments is called an _**fMP4 muxing**_.
+
+In this tutorial, we will package our Streams into fMP4 muxings to support both DASH and HLS.
+
+First, we write a function that creates an fMP4 Muxing from a Stream.
+
+PHP
+
+`function createFmp4Muxing(Encoding $encoding, Output $output, string $outputPath, Stream $stream)
+{
+    global $bitmovinApi;
+  
+    $muxingStream = new MuxingStream();
+    $muxingStream->streamId($stream->id);
+  
+    $muxing = new Fmp4Muxing();
+    $muxing->outputs([buildEncodingOutput($output, $outputPath)]);
+    $muxing->segmentLength(4.0);
+    $muxing->segmentNaming("segment_".$outputPath."_%number%.m4s");
+    $muxing->streams[] = $muxingStream;
+  
+    return $bitmovinApi->encoding->encodings->muxings->fmp4->create($encoding->id, $muxing);
+}
+`
+
+The function connects the **_Stream_** (via an intermediate object called MuxingStream) to the actual **_Muxing_**. The muxing defines the format (fMP4), the segment length in seconds, the segments' file naming template and the output storage and path where the segments will be written.
+
+Back to the main workflow, we call this function twice: once for video and once for audio.
+
+PHP
+
+`$fmp4H264Muxing = createfMp4Muxing($encoding, $output, 'fmp4-h264', $h264Stream);
+$fmp4AacMuxing = createfMp4Muxing($encoding, $output, 'fmp4-aac', $aacStream);
+`
+
+We now have the variables `$fmp4H264Muxing` and `$fmp4AacMuxing` who each represent a set of segments, one with encoded video and one with encoded audio. These segments are not yet encrypted.
+
+**Note:** _We are creating two muxings (one video, one audio) from one audio/video source file. The reason for this is that the fMP4 muxing format can only handle one stream. This is not a disadvantage, because for Adaptive Bitrate Streaming cases it is more efficient to have video and audio muxings separated anyway._
+
+## Encrypting the Muxings for DRM (Widevine, Playready, Fairplay)
+
+Now comes the time to actually encrypt the encoded output streams which are packaged in muxings.
+
+For this, we create a DRM configuration. The DRM configuration will be inserted between the muxing and the output. You can also think of the DRM configuration as an encrypted version of the muxing.
+
+Unencrypted muxings have outputs assigned to the _outputs_ field. Muxings that are to be encrypted don't need to populate the _outputs_ field. Instead, the outputs are assigned to the DRM configuration's _outputs_ field.
+
+The function below takes the unencrypted muxing we created in the previous section, and wraps it into a DRM configuration.
+
+For this, it connects the unencrypted `$muxing` with a locally created `$cencDrm` object which encrypts the muxing. The `$cencDrm` object uses the information given in the [Prerequisites](/encoding/docs/how-to-protect-your-content-with-bitmovin-and-vualto-drm#prerequisites) section of this tutorial.
+
+PHP
+
+`function createDrmCbcConfig(Encoding $encoding, Fmp4Muxing $muxing, Output $output, string $outputPath)
+{
+    global $bitmovinApi, $configProvider;
+  
+    $cencWidevine = new CencWidevine();
+    $cencWidevine->pssh($configProvider->getDrmWidevinePssh());
+  
+    $cencPlayReady = new CencPlayReady();
+    $cencPlayReady->pssh($configProvider->getDrmPlayreadyPssh());
+  
+    $cencFairPlay = new CencFairPlay();
+    $cencFairPlay->iv($configProvider->getDrmFairplayIv());
+    $cencFairPlay->uri($configProvider->getDrmFairplayUri());
+  
+    $cencDrm = new CencDrm();
+    $cencDrm->outputs([buildEncodingOutput($output, $outputPath)]);
+    $cencDrm->key($configProvider->getDrmKey());
+    $cencDrm->kid($configProvider->getDrmWidevineKid());
+    $cencDrm->widevine($cencWidevine);
+    $cencDrm->playReady($cencPlayReady);
+    $cencDrm->fairPlay($cencFairPlay);
+    $cencDrm->encryptionMode(EncryptionMode::CBC());
+  
+    return $bitmovinApi->encoding->encodings->muxings->fmp4->drm->cenc->create($encoding->id, $muxing->id, $cencDrm);
+}
+`
+
+Again, we go back to the main workflow and call this function, once for our video muxing and once for our audio muxing:
+
+PHP
+
+`$cencDrmVideo = createDrmCbcConfig($encoding, $fmp4H264Muxing, $output, 'drm-fmp4-h264');
+$cencDrmAudio = createDrmCbcConfig($encoding, $fmp4AacMuxing, $output, 'drm-fmp4-aac');
+`
+
+`$cencDrmVideo` stands now for an encrypted video muxing. `$cencDrmAudio` is the associated audio muxing. These muxings can be played with Widevine, Playready and Fairplay.
+
+## Smooth Streaming: Muxing and Encrypting with Playready
+
+**Note:** _You can skip this section if you don't plan to use the Smooth Streaming format for your content delivery._
+
+So far, this tutorial has dealt with DASH and HLS delivery methods. In some cases however, Smooth Streaming is still a required delivery option, so we now describe how to do the same for Smooth.
+
+While DASH and HLS can share the same muxing, allowing for cost savings on both storage and CDN, Smooth Streaming requires an extra muxing (packaging) format albeit the same encoded streams are contained.
+
+For this, we create a function that writes the encoded Streams into an _**MP4 Muxing**_ suitable for Smooth Steaming:
+
+PHP
+
+`function createMp4MuxingForSmooth(Encoding $encoding, Output $output, string $outputPath, array $streams, string $filename)
+{
+    global $bitmovinApi;
+  
+    $muxing = new Mp4Muxing();
+    $muxing->filename($filename);
+    $muxing->fragmentDuration(4000);
+    $muxing->fragmentedMP4MuxingManifestType(FragmentedMp4MuxingManifestType::SMOOTH());
+    $muxing->outputs([buildEncodingOutput($output, $outputPath)]);
+  
+    foreach ($streams as $stream) {
+      $muxingStream = new MuxingStream();
+      $muxingStream->streamId($stream->id);
+      $muxing->streams[] = $muxingStream;
+    }
+  
+    return $bitmovinApi->encoding->encodings->muxings->mp4->create($encoding->id, $muxing);
+}
+`
+
+And then, we use Playready to encrypt the Smooth Streaming muxings:
+
+PHP
+
+`function createSmoothPlayreadyConfig(Encoding $encoding, Mp4Muxing $muxing, Output $output, string $outputPath)
+{
+    global $bitmovinApi, $configProvider;
+  
+    $cencPlayReady = new CencPlayReady();
+    $cencPlayReady->pssh($configProvider->getDrmPlayreadyPssh());
+  
+    $cencDrm = new CencDrm();
+    $cencDrm->outputs([buildEncodingOutput($output, $outputPath)]);
+    $cencDrm->key($configProvider->getDrmKey());
+    $cencDrm->kid($configProvider->getDrmWidevineKid());
+    $cencDrm->playReady($cencPlayReady);
+    $cencDrm->encryptionMode(EncryptionMode::CTR());
+    $cencDrm->ivSize(IvSize::IV_8_BYTES());
+  
+    return $bitmovinApi->encoding->encodings->muxings->mp4->drm->cenc->create($encoding->id, $muxing->id, $cencDrm);
+}
+`
+
+**Note:** _As Smooth Streaming is a Microsoft technology, it uses Playready which is also by Microsoft. No other DRM systems are supported for Smooth._
+
+Back to the main workflow, you now call these functions to get the encrypted muxings for Smooth Streaming.
+
+PHP
+
+` // Smooth Streaming mp4 muxings
+ // Video H.264
+ $mp4H264MuxingSmooth = createMp4MuxingForSmooth($encoding, $output, 'smooth', [$h264Stream], 'video.ismv');
+ $smoothDrmVideo = createSmoothPlayreadyConfig($encoding, $mp4H264MuxingSmooth, $output, 'smooth-drm');
+ // Audio AAC
+ $mp4AacMuxingSmooth = createMp4MuxingForSmooth($encoding, $output, 'smooth', [$aacStream], 'audio.isma');
+ $smoothDrmAudio = createSmoothPlayreadyConfig($encoding, $mp4AacMuxingSmooth, $output, 'smooth-drm');
+`
+
+The variables `$smoothDrmVideo` and `$smoothDrmAudio` now stand for the encrypted Smooth Streaming muxings we created.
+
+## Run the Encoding
+
+Now that we have everything configured
+
+* the source file's audio and video tracks connected to the H.264 and AAC configuration as **_Streams_**
+* the streams connected to fMP4 (or MP4) configurations as **_Muxings_**
+* the muxings connected to DRM configurations and output locations as **_encrypted Muxings_**
+
+we can now actually start the encoding, by calling in the main workflow:
+
+PHP
+
+`// -- Run the encoding --
+executeEncoding($encoding);
+`
+
+For details of the `exectueEncoding()` function (which is standard for all kinds of encodings) please see the actual example script.
+
+## Creating Manifest for DASH
+
+After the encoding is finished, the audio and video segments have been created, but for HLS and DASH playback we also need to create manifests. The manifests tell the player where to get the segments and also where to get the DRM key to decrypt them.
+
+In this section we show how to create the DASH manifest. Because this is much code, we pack it into a function:
+
+PHP
+
+`function generateDashDrmManifest(Encoding $encoding, Output $output, string $outputPath, string $streamName,
+                                 Muxing $videoMuxing, Muxing $audioMuxing, CencDrm $cencDrmVideo, CencDrm $cencDrmAudio)
+{
+    global $bitmovinApi;
+  
+    // the manifest itself
+    $dashManifest = new DashManifest();
+    $dashManifest->name($streamName.'.mpd');
+    $dashManifest->description('A DASH manifest');
+    $dashManifest->outputs([buildEncodingOutput($output, $outputPath)]);
+    $dashManifest->profile(DashProfile::LIVE());
+    $dashManifest->manifestName($streamName.'.mpd');
+    $dashManifest = $bitmovinApi->encoding->manifests->dash->create($dashManifest);
+    
+    // the period
+    $period = new Period();
+    $period->start(0);
+    $period = $bitmovinApi->encoding->manifests->dash->periods->create($dashManifest->id, $period);
+    
+    // the video adaptation set
+    $videoAdaptationSet = new VideoAdaptationSet();
+    $videoAdaptationSet->roles([AdaptationSetRole::MAIN()]);
+    $videoAdaptationSet = $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->video->create(
+        $dashManifest->id, $period->id, $videoAdaptationSet);
+    $contentProtectionAdded = false;
+    
+    // representations - one for each quality
+    if (!$contentProtectionAdded) {
+        $contentProtection = new ContentProtection();
+        $contentProtection->drmId($cencDrmVideo->id);
+        $contentProtection->encodingId($encoding->id);
+        $contentProtection->muxingId($videoMuxing->id);
+        $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->contentprotection->create($dashManifest->id, $period->id, $videoAdaptationSet->id, $contentProtection);
+        $contentProtectionAdded = true;
+    }
+    $dashFMp4RepresentationVideo = new DashFmp4Representation();
+    $dashFMp4RepresentationVideo->encodingId($encoding->id);
+    $dashFMp4RepresentationVideo->muxingId($videoMuxing->id);
+    $dashFMp4RepresentationVideo->type(DashRepresentationType::TEMPLATE());
+    $dashFMp4RepresentationVideo->mode(DashRepresentationTypeMode::TEMPLATE_REPRESENTATION());
+    $dashFMp4RepresentationVideo->segmentPath(basename($cencDrmVideo->outputs[0]->outputPath));
+    $dashFMp4RepresentationVideo =
+        $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->representations->fmp4->create(
+            $dashManifest->id,
+            $period->id,
+            $videoAdaptationSet->id,
+            $dashFMp4RepresentationVideo);
+    
+    // audio adaptation set
+    $audioAdaptationSet = new AudioAdaptationSet();
+    $audioAdaptationSet->roles([AdaptationSetRole::MAIN()]);
+    $audioAdaptationSet->lang("en");
+    $audioAdaptationSet = $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->audio->create($dashManifest->id,
+        $period->id, $audioAdaptationSet);
+    $contentProtection = new ContentProtection();
+    $contentProtection->drmId($cencDrmAudio->id);
+    $contentProtection->encodingId($encoding->id);
+    $contentProtection->muxingId($audioMuxing->id);
+    $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->contentprotection->create($dashManifest->id,
+        $period->id, $audioAdaptationSet->id, $contentProtection);
+    
+    // representation
+    $dashFMp4RepresentationAudio = new DashFmp4Representation();
+    $dashFMp4RepresentationAudio->encodingId($encoding->id);
+    $dashFMp4RepresentationAudio->muxingId($audioMuxing->id);
+    $dashFMp4RepresentationAudio->type(DashRepresentationType::TEMPLATE());
+    $dashFMp4RepresentationAudio->mode(DashRepresentationTypeMode::TEMPLATE_REPRESENTATION());
+    $dashFMp4RepresentationAudio->segmentPath(basename($cencDrmAudio->outputs[0]->outputPath));
+    $dashFMp4RepresentationAudio =
+        $bitmovinApi->encoding->manifests->dash->periods->adaptationsets->representations->fmp4->create(
+            $dashManifest->id,
+            $period->id,
+            $audioAdaptationSet->id,
+            $dashFMp4RepresentationAudio);
+    
+    executeDashManifestCreation($dashManifest);
+}
+`
+
+We can see that this function takes a lot of the elements we created so far in the script:
+
+* the audio and video muxings
+* the encrypted muxings for Widevine and Playready
+* the output
+* and a name for the manifest, called `streamName` because this will represent the playback stream to players outside.
+
+**Note:**_The DASH manifest re-unites the audio and video muxings in one manifest. The outside player only needs the URL to this manifest to get to the audio and video segments and play back the whole presentation._
+
+**Note:**_The DASH manifest only contains encrypted muxings for Widevine and PlayReady, not for Fairplay. The reason is that Apple devices using Fairplay also use HLS and not DASH._
+
+In the main workflow, we call this function to create the DASH manifest:
+
+PHP
+
+`generateDashDrmManifest($encoding, $output, "", "streamDrm",
+        $fmp4H264Muxing, $fmp4AacMuxing, $cencDrmVideo, $cencDrmAudio);
+`
+
+## Creating manifests for HLS
+
+The manifest will be created on the output with the given `streamName`.
+
+Like with DASH, the creation of manifests for HLS is packed in a function:
+
+PHP
+
+`function generateHlsFairplayManifest(Encoding $encoding, Output $output, string $outputPath, string $streamName,
+                                     Muxing $videoMuxing, Muxing $audioMuxing,
+                                     CencDrm $cencDrmVideo, CencDrm $cencDrmAudio)
+{
+    global $bitmovinApi;
+    
+    // the manifest itself
+    $hlsManifest = new HlsManifest();
+    $hlsManifest->name($streamName . ".m3u8");
+    $hlsManifest->description('A HLS Fairplay manifest');
+    $hlsManifest->outputs([buildEncodingOutput($output, $outputPath)]);
+    $hlsManifest->manifestName($streamName . ".m3u8");
+    $hlsManifest = $bitmovinApi->encoding->manifests->hls->create($hlsManifest);
+    
+    // audio group
+    $audioGroupId = 'audio';
+    
+    // add audio media
+    $audioMediaInfo = new AudioMediaInfo();
+    $audioMediaInfo->name('DRM en');
+    $audioMediaInfo->encodingId($encoding->id);
+    $audioMediaInfo->groupId($audioGroupId);
+    $audioMediaInfo->streamId($audioMuxing->streams[0]->streamId);
+    $audioMediaInfo->muxingId($audioMuxing->id);
+    $audioMediaInfo->language('en');
+    $audioMediaInfo->drmId($cencDrmAudio->id);
+    $audioMediaInfo->segmentPath(basename($cencDrmAudio->outputs[0]->outputPath));
+    $audioMediaInfo->uri('audio_' . $streamName . '.m3u8');
+    $audioMediaInfo = $bitmovinApi->encoding->manifests->hls->media->audio->create($hlsManifest->id, $audioMediaInfo);
+    
+    // add video variant
+    $streamInfo = new StreamInfo();
+    $streamInfo->encodingId($encoding->id);
+    $streamInfo->streamId($videoMuxing->streams[0]->streamId);
+    $streamInfo->muxingId($videoMuxing->id);
+    $streamInfo->audio($audioGroupId);
+    $streamInfo->segmentPath(basename($cencDrmVideo->outputs[0]->outputPath));
+    $streamInfo->uri('video_' . $streamName . '.m3u8');
+    $streamInfo->drmId($cencDrmVideo->id);
+    $streamInfo = $bitmovinApi->encoding->manifests->hls->streams->create($hlsManifest->id, $streamInfo);
+    
+    executeHlsManifestCreation($hlsManifest);
+}
+`
+
+We can see that this function takes a lot of the elements we created so far in the script:
+
+* the audio and video muxings
+* the encrypted muxings
+* the output
+* and a name for the manifest, called `streamName` because this will represent the playback stream to players outside.
+
+**Note** _The HLS manifest only uses the Fairplay DRM system, because Apple devices use both in conjunction (HLS and Fairplay are Apple standards). Non-Apple devices will use DASH and non-Fairplay DRM systems._
+
+In the main workflow, we call this function to create the HLS manifests (aka master playlist, audio and video playlists):
+
+PHP
+
+`generateHlsFairplayManifest($encoding, $output, "", "streamFmp4Drm",
+ $fmp4H264Muxing, $fmp4AacMuxing, $cencDrmVideo, $cencDrmAudio);
+`
+
+## Creating Manifests for Smooth
+
+If we use Smooth Streaming, we need to create manifests for it as well. First we write the function to create the manifests:
+
+PHP
+
+`function generateSmoothStreamingDrmManifest(Encoding $encoding, Output $output, string $outputPath,
+                                            Mp4muxing $mp4H264Muxing, Mp4Muxing $mp4AacMuxing,
+                                            CencDrm $smoothDrmVideo, CencDrm $smoothDrmAudio)
+{
+    global $bitmovinApi;
+    
+    $smoothStreamingManifest = new SmoothStreamingManifest();
+    $smoothStreamingManifest->name('Smooth Streaming Manifest with DRM');
+    $smoothStreamingManifest->serverManifestName('stream.ism');
+    $smoothStreamingManifest->clientManifestName('stream.ismc');
+    $smoothStreamingManifest->outputs([buildEncodingOutput($output, $outputPath)]);
+    $smoothStreamingManifest
+        = $bitmovinApi->encoding->manifests->smooth->create($smoothStreamingManifest);
+    
+    // add video representation
+    $cencDrm = $smoothDrmVideo;
+    $contentProtectionVideo = new SmoothManifestContentProtection();
+    $contentProtectionVideo->drmId($cencDrm->id);
+    $contentProtectionVideo->muxingId($mp4H264Muxing->id);
+    $contentProtectionVideo->encodingId($encoding->id);
+    $contentProtectionVideo = $bitmovinApi->encoding->manifests->smooth->contentprotection->create(
+        $smoothStreamingManifest->id,
+        $contentProtectionVideo);
+    
+    $mp4RepresentationVideo = new SmoothStreamingRepresentation();
+    $mp4RepresentationVideo->encodingId($encoding->id);
+    $mp4RepresentationVideo->muxingId($mp4H264Muxing->id);
+    $mp4RepresentationVideo->mediaFile('video.ismv');
+    $mp4RepresentationVideo->trackName('video');
+    $mp4RepresentationVideo->priority(30);
+    $mp4RepresentationVideo
+        = $bitmovinApi->encoding->manifests->smooth->representations->mp4->create($smoothStreamingManifest->id, $mp4RepresentationVideo);
+    
+    // add audio representation
+    $cencDrm = $smoothDrmAudio;
+    $contentProtection = new SmoothManifestContentProtection();
+    $contentProtection->drmId($cencDrm->id);
+    $contentProtection->muxingId($mp4AacMuxing->id);
+    $contentProtection->encodingId($encoding->id);
+    $contentProtection = $bitmovinApi->encoding->manifests->smooth->contentprotection->create(
+        $smoothStreamingManifest->id,
+        $contentProtection);
+    
+    $mp4RepresentationAudio = new SmoothStreamingRepresentation();
+    $mp4RepresentationAudio->encodingId($encoding->id);
+    $mp4RepresentationAudio->muxingId($mp4AacMuxing->id);
+    $mp4RepresentationAudio->mediaFile('audio.isma');
+    $mp4RepresentationAudio->language('en');
+    $mp4RepresentationAudio->trackName('audio');
+    $mp4RepresentationAudio->priority(20);
+    $mp4RepresentationAudio
+        = $bitmovinApi->encoding->manifests->smooth->representations->mp4->create($smoothStreamingManifest->id, $mp4RepresentationAudio);
+    
+    executeSmoothManifestCreation($smoothStreamingManifest);
+}
+`
+
+and then, back to the main workflow, we call the function:
+
+`generateSmoothStreamingDrmManifest($encoding, $output, "smooth-drm",
+        $mp4H264MuxingSmooth, $mp4AacMuxingSmooth, $smoothDrmVideo, $smoothDrmAudio);
+`
+
+## The Output Files
+
+After running this script, all generated files will be on the S3 bucket named in the `examples.properties` file in the parameter `S3_OUTPUT_BUCKET_NAME`.
+
+The files are in the main output directory, which is
+
+* the path written in the `S3_OUTPUT_BASE_PATH` parameter in `examples.properties`, plus
+* the `$exampleName` variable as subdirectory.
+
+The files are:
+
+* `drm-fmp4-h264/` \- contains encoded and encrypted video segments for DASH and HLS
+* `drm-fmp4-aac/` \- contains encoded and encrypted audio segments for DASH and HLS
+* `audio_streamFmp4Fairplay.m3u8` \- HLS audio playlist
+* `video_streamFmp4Fairplay.m3u8` \- HLS video playlist
+* `streamFmp4Fairplay.m3u8` \- HLS master playlist (manifest), works with Fairplay
+* `streamDRM.mpd` \- DASH manifest, works with Widevine and Playready
+
+If you encoded your content also for Smooth Streaming, you will additionally see:
+
+* `smooth-drm/` \- contains content and manifest files for Smooth Streaming.
+
+## Preparing the Output Files for Playback
+
+In order to playback the files created by the Bitmovin encoder, you need to place them on a web server. In case of **DASH** and **HLS**, this can be any web server. The simplest way is to stream them directly from the S3 bucket. For this, just enable public HTTPS access to the files on the S3 bucket.
+
+The URLs to the manifests will look like:
+
+`https://server.com/path/to/manifest/streamDrm.mpd
+https://server.com/path/to/manifest/streamFmp4Fairplay.m3u8
+`
+
+The **Smooth Streaming** files cannot be served from an arbitrary web server, they have to be placed on a Microsoft IIS server (Please consult your Microsoft documentation for using a Microsoft IIS server for Smooth Streaming). When the Bitmovin encoded files are stored there, the URL will look like:
+
+`http://microsoft_iis_server.com/path/to/manifest/smooth.ism/Manifest
+`
+
+## Playback with Bitmovin Player
+
+After you have encoded and encrypted the content, you want your users to play it back according to the licenses they bought.
+
+Vualto has prepared a page describing how to play back protected content with the Bitmovin player:
+
+[https://docs.vualto.com/projects/vudrm/en/latest/DeveloperDocumentation/integrations/players/bitmovin.html](https://docs.vualto.com/projects/vudrm/en/latest/DeveloperDocumentation/integrations/players/bitmovin.html)

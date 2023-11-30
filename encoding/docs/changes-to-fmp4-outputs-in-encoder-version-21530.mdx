@@ -1,0 +1,172 @@
+---
+title: "Changes to fMP4 outputs in Encoder version 2.153.0"
+---
+
+## Overview
+
+This article describes the changes to fMP4 outputs starting from version 2.153.0 of the Bitmovin Encoder. Starting with this version, fMP4 outputs with codecs H.264, AAC, HE-AAC and HE-AACv2 will use an overhauled implementation that aims to improve stability and correctness of ISO-BMFF files. AV1 has already been using the overhauled fMP4 implementation.
+
+In this article, we're going to explicitly show the differences in MP4 outputs, by comparing excerpts from [mp4dump](https://www.bento4.com/documentation/mp4dump/) outputs of fMP4 encodings up to version 2.152.0 versus encodings starting from 2.153.0 for the same configuration.
+
+Finally, we'll list the devices/platforms used for testing playback.
+
+## Changes to ISO-BMFF boxes
+
+### ftyp boxes
+
+Up to version 2.152.0, the ftyp box for an H.264 initialization segment looks like
+
+`[ftyp] size=8+20
+  major_brand = mp42
+  minor_version = 1
+  compatible_brand = isom
+  compatible_brand = mp42
+  compatible_brand = mp41
+`
+
+With version 2.153.0, the ftyp box of an H.264 initialization segment looks like
+
+`[ftyp] size=8+32
+  major_brand = mp41
+  minor_version = 0
+  compatible_brand = iso8
+  compatible_brand = isom
+  compatible_brand = mp41
+  compatible_brand = dash
+  compatible_brand = avc1
+  compatible_brand = cmfc
+`
+
+Audio initialization segments should look the same, except for the `avc1` compatible brand, which is not present.
+
+This should not have any practical side effect for demuxers, so we don't expect and have not found any issues with the change.
+
+### Timescale in mvhd and tkhd boxes
+
+Up to version 2.152.0, the timescale in Movie Header (mvhd) box had value of 1000, and the timescale in Track Header (tkhd) box depended on:
+
+* frame rate for video
+* sampling rate for audio.
+
+From version 2.153.0, the mvhd timescale is the same as the tkhd timescale.
+
+#### Video timescale
+
+The video timescale is the video framerate rounded to nearest integer multiplied by 1000\. Some examples:
+
+* 24 FPS: Timescale 24000
+* 23.976 FPS: Timescale 24000
+
+#### Audio timescale
+
+The audio timescale equals the sampling rate. This applies to all audio codecs, including HE-AAC and HE-AACv2 codecs, which up to version 2.152.0 had a timescale of half the sampling rate.
+
+### max\_bitrate and avg\_bitrate in DecoderConfig for audio
+
+We noticed that our audio initialization segments, up to version 2.152.0, always reported 96 kbps as max\_bitrate and avg\_bitrate under the DecoderConfig box for audio, regardless of the configured bitrate. This was a problem only in muxing. The audio was encoded at the correct bitrate.
+
+`[esds] size=12+27
+  [ESDescriptor] size=2+25
+    es_id = 0
+    stream_priority = 0
+    [DecoderConfig] size=2+17
+    stream_type = 5
+    object_type = 64
+    up_stream = 0
+    buffer_size = 6144
+    max_bitrate = 96000
+    avg_bitrate = 96000
+    DecoderSpecificInfo = 12 10
+    [Descriptor:06] size=2+1
+`
+
+Starting from version 2.153.0, this issue is fixed and the values are correctly signaled depending on the specified bitrate from the codec configuration.
+
+### Sample flags in trun entries
+
+In video segments up to version 2.152.0, the sample flags were always optimized using `default sample flags` from the tfhd box and `first sample flags` from the trun box, as shown below:
+
+`[traf] size=8+832
+    [tfhd] size=12+8, flags=20020
+      track ID = 1
+      default sample flags = 0x1010000
+    [tfdt] size=12+8, version=1
+      base media decode time = 0
+    [trun] size=12+780, flags=a05
+      sample count = 96
+      data offset = 872
+      first sample flags = 0x2000000
+      entries:
+        (       0) sample_size = 429, sample_composition_time_offset = 2002
+        (       1) sample_size = 72, sample_composition_time_offset = 5005
+        (       2) sample_size = 70, sample_composition_time_offset = 2002
+`
+
+While this optimization is good for reducing muxing overhead, our muxer was optimizing the flags even in situations when it shouldn't, e.g. when there are more key frames than the first frame. This resulted in warnings on the Media inspector tab on Chrome:
+
+`ISO-BMFF container metadata for video frame indicates that the frame is not a keyframe, but the video frame contents indicate the opposite.
+`
+
+Starting from version 2.153.0, sample flags in the trun boxes in a given segment are only optimized if it is possible. Otherwise, the flags are written per sample, like below:
+
+`[traf] size=8+1212
+    [tfhd] size=12+12, flags=2000a
+      track ID = 1
+      sample description index = 1
+      default sample duration = 1001
+    [tfdt] size=12+4
+      base media decode time = 0
+    [trun] size=12+1160, flags=e01
+      sample count = 96
+      data offset = 1252
+      entries:
+        (       0) sample_size = 473, sample_flags = 0, sample_composition_time_offset = 2002
+        (       1) sample_size = 78,  sample_flags = 0x1000, sample_composition_time_offset = 5005
+        (       2) sample_size = 76, sample_flags = 0, sample_composition_time_offset = 2002
+        (       3) sample_size = 75, sample_flags = 0x1000, sample_composition_time_offset = 0
+`
+
+While this may increase the muxing overhead with 4 extra bytes for sample when the optimization can not be applied, it provides the most correct outputs, which may also fix playback in older players. Our muxer will still optimize the flags when it is possible.
+
+Furthermore, the value set in sample\_flags at version 2.153.0 (0 and 0x10000) differ slightly from the ones set in 2.152.0 (0x2000000 and 0x1010000) because we don't make use of the `sample_depends_on` bits anymore (ISO/IEC 14496-12:2012 8.6.4.3).
+
+### Edit Lists with the edts box
+
+We noticed that up to version 2.152.0, an edit list could be missing for H.264 streams that make use of B-frames. This edit list is required due to a delay between decoding and presenting frames (signaled in trun entries via `sample_composition_time_offset`), and due to this, the first segment of some streams could have a non-zero reported start time, for example when checking it with ffprobe:
+
+`Duration: 00:00:04.00, start: 0.083417, bitrate: 4396 kb/s
+`
+
+From version 2.153.0, the edit list is placed in the initialization segment when needed:
+
+`[edts] size=8+28
+  [elst] size=12+16
+    entry_count = 1
+    entry/segment duration = 0
+    entry/media time = 2002
+    entry/media rate = 1
+`
+
+With this, the first segment correctly starts at 0 now:
+
+`Duration: 00:00:04.00, start: 0.000000, bitrate: 4398 kb/s
+`
+
+For avoiding the use of edit lists, it is also possible to use of the ALIGN\_ZERO\_NEGATIVE\_CTO in the "ptsAlignMode" configuration of fMP4 muxings, which makes use of trun v1 boxes that allow for negative `sample_composition_time_offset`.
+
+## Playback testing
+
+Before releasing this change, Bitmovin has conducted extensive device testing to make sure that the new outputs won't have playback regressions. The following devices/platforms were tested with non-DRM and DRM outputs, using the Bitmovin player:
+
+* Chrome and Edge (stable, beta and dev) on MacOS, Linux and Windows
+* Firefox on MacOS, Linux and Windows
+* Safari on iPad Air 2 (iOS 13), iPad Mini 6 (iOS 15), iPhone 11 (iOS 14), iPhone 8+ (iOS 12)
+* Samsung Tizen TVs, from 2016 to 2022 models
+* LG WebOS TVs, from 2016 to 2022 models
+* Panasonic TV 2018
+* Xbox One and Xbox Series S
+* Playstation 5
+* Chromecast and Chromecast Ultra
+* Android Pixel2 with browsers Chrome, Firefox and Samsung Internet
+* Fire TV Stick 4K and Fire TV Stick 4K Max
+* Roku Streaming Stick, Roku Streaming Stick 4K

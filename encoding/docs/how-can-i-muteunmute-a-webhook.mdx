@@ -1,0 +1,87 @@
+---
+title: "How can I mute/unmute a Webhook?"
+---
+
+Webhook notifications are a great way to handle your encoding workflows in an event-based manner instead of polling the status of its processes all the time.
+
+**Why would I have to unmute a webhook notification?** It can happen though that the URL of an webhook notification becomes unreachable (e.g. no longers responds with `200 OK`), therefore the Bitmovin API can't deliver its message. A Webhook notification delivery counts as failed if:
+
+* It takes longer than 30s to establish a connection (connection timeout)
+* It takes longer than 10s to complete the request (read timeout)
+
+If the notification delivery fails 10 times a row, this webhook notification will be `auto-muted`. This means that the API will no longer attempt to deliver any events to that webhook until the user
+
+* ensured the availability of the URL for their backend again
+* unmutes the notification in the Bitmovin API
+
+## How can I mute/unmute notifications?
+
+### List all notifications
+
+API Reference: [GET /notifications](/encoding/reference/getnotificationsbynotificationid) This step is needed to obtain the ID of the notification you want to mute or unmute.
+
+Shell
+
+`curl --location --request GET 'https://api.bitmovin.com/v1/notifications' \
+--header 'x-api-key: API-KEY-HERE' \
+--header 'x-tenant-org-id: ORGANISATION-ID-HERE'
+`
+
+Bitmovin Open API SDK for Java Example:
+
+Java
+
+`bitmovinApi =
+        BitmovinApi.builder()
+            .withApiKey("API-KEY-HERE")
+            .withTenantOrgId("ORGANISATION-ID-HERE");
+  
+//Returns the ID of the first notification found in the API response
+bitmovinApi.notifications.list().getItems().get(0).getId();
+`
+
+### Mute a Notification
+
+API Reference: [POST /notifications/{NOTIFICATION-ID-HERE}/mute](/encoding/reference/postnotificationsmutebynotificationid)
+
+Shell
+
+`curl --location --request POST 'https://api.bitmovin.com/v1/notifications/NOTIFICATION-ID-HERE/mute' \
+--header 'x-api-key: API-KEY-HERE' \
+--header 'x-tenant-org-id: ORGANISATION-ID-HERE'
+`
+
+Bitmovin Open API SDK for Java Example:
+
+Java
+
+`bitmovinApi =
+        BitmovinApi.builder()
+            .withApiKey("API-KEY-HERE")
+            .withTenantOrgId("ORGANISATION-ID-HERE");
+
+bitmovinApi.notifications.mute("NOTIFICATION-ID-HERE");
+`
+
+### Unmute Notification
+
+API Reference: [POST /notifications/{NOTIFICATION-ID-HERE}/unmute](/encoding/reference/postnotificationsunmutebynotificationid)
+
+Shell
+
+`curl --location --request POST 'https://api.bitmovin.com/v1/notifications/NOTIFICATION-ID-HERE/unmute' \
+--header 'x-api-key: API-KEY-HERE' \
+--header 'x-tenant-org-id: ORGANISATION-ID-HERE'
+`
+
+Bitmovin Open API SDK for Java Example:
+
+Java
+
+`bitmovinApi =
+        BitmovinApi.builder()
+            .withApiKey("API-KEY-HERE")
+            .withTenantOrgId("ORGANISATION-ID-HERE");
+
+bitmovinApi.notifications.unmute("NOTIFICATION-ID-HERE");
+`

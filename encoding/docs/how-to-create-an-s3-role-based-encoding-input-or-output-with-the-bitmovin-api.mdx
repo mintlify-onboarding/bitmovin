@@ -1,0 +1,208 @@
+---
+title: "How to create an S3 Role-Based Encoding Input or Output with the Bitmovin API"
+---
+
+## Overview
+
+`S3 role-based Inputs` resp. `S3 role-based Outputs` are an alternative way for our services to access your AWS (Amazon Web Services) S3 bucket to be used as an Encoding Input and/or Output, or an Output for Analytics Exports.
+
+Instead of you providing your AWS Access/Secret key pair to our Encoding or Analytics service, we provide you with an AWS IAM (Identity and Access Management) user name, which you can grant specific access rights in your account so it can access your desired S3 bucket.
+
+In this tutorial, we will
+
+1. create an **S3 bucket in your AWS account** which will serve as the input or output storage for your encodings.
+2. create an **S3 role based input or output in your Bitmovin account** using the Bitmovin API. This step will give you the `externalId` which is used to communicate safely with your IAM role which you create in step 3
+3. create an **IAM role in your AWS account**, and attach an IAM policy to it. This policy states which of your buckets can be accessed by our user, and which permissions are granted to it.
+
+> **NOTE**: This tutorial needs to be repeated for EACH account/sub-organization you want a S3-Role-Based access for.
+
+## Requirements
+
+* a **Bitmovin account**. Please make sure that you run this tutorial on the same Bitmovin account (and sub-organization, if applicable) that you want to use for production. If you don't have or know your production account yet, please be aware to repeat this tutorial later on your production account.
+* an **AWS account** to create the input and/or output bucket and the Role that allows the Bitmovin system to access that bucket.
+* S3 role-based buckets can be used for segmented outputs with **encoder version** [2.29.0](/encoding/docs/encoder-200-2490#2290) or higher.
+
+## Create an AWS S3 Bucket
+
+In the AWS Management Console, open the [S3 section](https://s3.console.aws.amazon.com/s3/home).
+
+1. Click on the **Create Bucket** button which starts the bucket creation wizard
+2. In the "Name and Region" panel, choose a bucket name (for example _my-bitmovin-bucket_) and a Region (for example _(EU) Ireland)_), then press **Next**
+3. Configure the **Object Ownership** depending on your needs a. **ACLs enabled**, this is **required** if PUBLIC\_ACCESS is configured for Encoding outputs. Encodings that are started in our [Bitmovin Dashboard](https://bitmovin.com/dashboard/) set the PUBLIC\_ACCESS to enable preview playback.  
+b. ACLs disabled. If this policy is used Encoding outputs need to be set to have the PRIVATE ACL.
+4. Configure **Block Public Access settings for this bucket** a. The default settings will **Block** _**all**_ **public access** b. To **enable playback** for manifests and files from the bucket, **uncheck** 🔳 **Block** _**all**_ **public access.**
+5. Finish going through the wizard and click **Create Bucket**
+6. To allow players to request content for streaming from your S3 bucket, you will also need to allow origin access with a CORS configuration. See [How can I configure an AWS S3 Bucket to test playback of my content?](/encoding/docs/how-can-i-configure-an-aws-s3-bucket-to-test-playback-of-my-content) on how to configure this for your bucket.
+
+Your bucket is now ready to be used.
+
+## Create a Bitmovin S3 role-based Input/Output
+
+Before you actually create the Role in your AWS account, you need to create an S3 Role based Output (resp. Input) with the Bitmovin API.
+
+The minimal required information to create a Role based S3 input or output are the following :
+
+1. the name of your S3 bucket that you created in the previous step
+2. Your AWS account number
+3. The name you intend to give the Role in your AWS account (e.g. _bitmovinCustomerS3Access_).
+
+Now, you have the following variables:
+
+* `bucketName`: the name of your bucket as in 1 above
+* `roleArn`: from 2 and 3 above, create the Amazon Resource Name of the Role in the format of `arn:aws:iam::YOUR-AWS-ACCOUNT-NUMBER:role/YOUR-INTENDED-ROLE-NAME`
+
+**External ID**
+
+For more control over who can assume your AWS IAM Role, an `externalId` (shared secret) should be used. You will create the `externalId` with the Bitmovin API and then configure the AWS Role with it.
+
+The `externalId` is returned by the Bitmovin API after creating an S3-role-based Output. Enable it by selecting one of the following `externalIdMode`:
+
+* `externalIdMode`:  
+   * `GLOBAL` \- A consistent and unique ID is used, which is used for every S3 role-based output that you create in one Bitmovin account.  
+   * `GENERATED` \- A unique but random UUID is returned.  
+   * _`CUSTOM` (**deprecated**) Define a custom external ID that you can use in your AWS IAM role definition._
+* _`externalId` (**deprecated**): required when using `CUSTOM` as `externalIdMode`._
+
+**Warning:** `CUSTOM` is now deprecated and must not be used.
+
+**Note:** If you use `externalIdMode.GLOBAL` , each new S3 Role-based input or output you create within the same account will return the same `externalId`. As you will configure your AWS Role with this `externalId` , please be aware that if you run the same code on a different Bitmovin account or even a different Bitmovin sub-organization, the Bitmovin API will return a different `externalId`. This will lead AWS to deny access to the Role.
+
+Therefore, please create the Role-based input or output on the same Bitmovin account and sub-organization that you will use later in production.
+
+**Note:** If you use `externalIdMode.GENERATED` , each new S3 Role-based input or output you create will generate a new `externalId`. Thus, you can only assume your AWS Role by re-using the S3 Role-based input or output whose `externalId` you used to configure the AWS Role.
+
+**Creating the S3 Role Based Input or Output**
+
+Now, using `bucketName`, `roleArn` and `externalIdMode` from above, create an S3 Role based output (resp. input) with the Bitmovin API. _See the Java and cURL examples below._
+
+In the response, you will receive the `externalId` to be used in the next section when you create the Role.
+
+---
+
+## Create an AWS IAM Role
+
+In order to continue, you will have to create a `Role` in your AWS account.
+
+1. Login to your AWS account.
+2. Click on "Services" near the top left.
+3. Look for "Security, Identity & Compliance" and click on "IAM". You are now in the _Identity and Access Management (IAM)_ page of your account.
+4. On the left pane, click on "Access Management" -> "Roles".
+5. Click on "Create Role". The _Create Role_ page appears.
+6. The page shows you four boxes of which you can select one for a type of trusted entity. Click on the "Another AWS account" box.
+7. In the field "Account ID", enter `630681592166`.
+8. Next to "Option", check the "Require external ID" checkbox. A box opens asking you to enter an external ID.
+9. Enter the `externalId` that you got in the previous section.
+10. Click on "Next: Permissions"
+11. Assign a policy to the role by selecting it in the policy list.  
+_(Note: The pre-defined `AmazonS3FullAccess` policy is known to be suitable but since it provides unrestricted access to your bucket, you might need to create a custom policy with fine-tuned access rights. Please review details of the permissions required for [buckets for Encoding Input and Output](/encoding/docs/what-permissions-do-i-need-to-set-on-my-s3-buckets-for-encoding-input-and-output) or [buckets for Analytics Exports](https://developer.bitmovin.com/playback/docs/s3-role-based-output-for-analytics-exports) buckets_)
+12. Click on "Next: Tags". The _Add Tags_ page appears, on which you optionally can assign tags to the role.
+13. Click "Next: Review". The _Review_ page appears. Give the new role a name. **Role name MUST match the YOUR-INTENDED-ROLE-NAME specified in Create an S3 role-based Input/Output > in `roleArn`**
+14. Click "Create Role". You are now back in the _Identity and Access Management(IAM)-Roles_ page, and the system tells you "The role Bitmovin has been created". You also see the new role in the list of roles in your account.
+
+If you want to learn more about Roles in AWS, please see their [documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id%5Froles.html).
+
+### JSON Payload
+
+If you prefer using the AWS CLI tools, you can create this role with the following JSON payload.
+
+JSON
+
+`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::630681592166:user/bitmovinCustomerS3Access"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "StringEquals": {
+          "sts:ExternalId": "<EXTERNAL_ID_RETURNED_BY_BITMOVIN_API>"
+        }
+      }
+    }
+  ]
+}
+
+`
+
+---
+
+## (Java) S3 Role-Based Output Example
+
+This example uses our latest [Open API client for Java](https://github.com/bitmovin/bitmovin-api-sdk-java), which is available on Github. This example shows how to create an Output.
+
+### Create a new S3 Role-Based Output
+
+Java
+
+`bitmovinApi = BitmovinApi.builder().withApiKey("YOUR_BITMOVIN_API_KEY").build();
+
+AclEntry aclEntry = new AclEntry();
+aclEntry.setPermission(AclPermission.PRIVATE);
+
+List<AclEntry> acl = new ArrayList<>();
+acl.add(aclEntry);
+
+S3RoleBasedOutput s3RoleBasedOutput = new S3RoleBasedOutput();
+s3RoleBasedOutput.setBucketName("<BUCKET_NAME>");
+s3RoleBasedOutput.setRoleArn("<AWS_ARN_ROLE>");
+s3RoleBasedOutput.setExternalIdMode(ExternalIdMode.GLOBAL);
+s3RoleBasedOutput.setAcl(acl);
+
+s3RoleBasedOutput = bitmovinApi.encoding.outputs.s3RoleBased.create(s3RoleBasedOutput);
+`
+
+_Hint: In case you chose to enable `Block public access` on your S3 bucket (recommended), you would have to make sure that the ACL is set to `PRIVATE` on the output (as shown above) as well as on your Muxing configurations._
+
+_To create an Input is fairly similar, but you just use the `S3RoleBasedInput` resource and the `bitmovinApi.encoding.inputs.s3RoleBased` endpoint_
+
+### Use an existing S3 Role-Based Output
+
+Java
+
+`bitmovinApi = BitmovinApi.builder().withApiKey("YOUR_BITMOVIN_API_KEY").build();
+S3RoleBasedOutput s3RoleBasedOutput = bitmovinApi.encoding.outputs.s3RoleBased.get("YOUR_S3_ROLE_BASED_OUTPUT_ID");
+`
+
+---
+
+## (CURL) S3 Role-Based Output Example
+
+### Create a new S3 Role-Based Output
+
+API reference: [create a Role-Based S3 Output](/encoding/reference/postencodingoutputss3rolebased):
+
+Shell
+
+`curl -X POST \
+  https://api.bitmovin.com/v1/encoding/outputs/s3-role-based \
+  -H 'Content-Type: application/json' \
+  -H 'x-api-key: YOUR_BITMOVIN_API_KEY' \
+  -d '{
+    "bucketName": "<BUCKET_NAME>",
+    "roleArn": "<AWS_ARN_ROLE>",
+    "externalIdMode": "<GLOBAL|GENERATED>",
+    "acl": [
+        {
+            "permission": "PRIVATE"
+        }
+    ]
+}'
+`
+
+### Get an existing S3 Role-Based Output
+
+API reference: [get an S3 Role-Based Output](/encoding/reference/getencodingoutputss3rolebased)
+
+Shell
+
+`curl  https://api.bitmovin.com/v1/encoding/outputs/s3-role-based/YOUR_S3_ROLE_BASED_OUTPUT_ID \
+  -H 'Content-Type: application/json' \
+  -H 'x-api-key: YOUR_BITMOVIN_API_KEY'
+`
+
+## What's Next?
+
+Now that you have created S3 Role-Based Inputs and/or Outputs, you can use them in your encoding in much the same way as you would any other Input or Output.

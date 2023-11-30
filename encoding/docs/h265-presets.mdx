@@ -1,0 +1,333 @@
+---
+title: "H265 Presets"
+---
+
+## VoD Quality Preset Configurations
+
+| VoD Quality Presets                    | VOD\_STANDARD                       | VOD\_HIGH\_QUALITY          |
+| -------------------------------------- | ----------------------------------- | --------------------------- |
+| adaptiveQuantizationMode               | AUTO\_VARIANCE                      | VARIANCE                    |
+| adaptiveQuantizationMotion             | FALSE                               | FALSE                       |
+| adaptiveQuantizationStrength           | 1                                   | 1                           |
+| allowedRADLBeforeIDR                   | 0                                   | 0                           |
+| analyzeSourceFramePixels               | FALSE                               | FALSE                       |
+| asymetricMotionPartitionsAnalysis      | FALSE                               | FALSE                       |
+| bAdapt                                 | FULL                                | FULL                        |
+| bframeBias                             | 0                                   | 0                           |
+| bframes                                | 4                                   | 4                           |
+| blurComplexity                         | 20                                  | 20                          |
+| blurQuants                             | 0.5                                 | 0.5                         |
+| codingUnitLossless                     | FALSE                               | FALSE                       |
+| constrainedIntraPrediction             | FALSE                               | FALSE                       |
+| copyPicture                            | TRUE                                | TRUE                        |
+| cutree                                 | TRUE                                | TRUE                        |
+| dynamicRateDistortionStrength          | 0                                   | 0                           |
+| earlySkip                              | FALSE                               | TRUE                        |
+| encodingMode                           | TWO\_PASS                           | THREE\_PASS                 |
+| evaluationOfIntraModesInBSlices        | FALSE                               | FALSE                       |
+| fastSearchForAngularIntraPredictions   | FALSE                               | FALSE                       |
+| forceFlush                             | DISABLED                            | DISABLED                    |
+| gopLookahead                           | 0                                   | 0                           |
+| grainOptimizedRateControl              | FALSE                               | FALSE                       |
+| ipRatio                                | 1.4                                 | 1.4                         |
+| levelHighTier                          | TRUE                                | TRUE                        |
+| limitModes                             | FALSE                               | TRUE                        |
+| limitReferences                        | DEPTH\_AND\_CU                      | DEPTH\_AND\_CU              |
+| limitSao                               | FALSE                               | FALSE                       |
+| limitTransferUnitDepthRecursion        | DISABLED                            | LEVEL\_4                    |
+| limitTransformUnitDepthRecursion       | DISABLED                            | LEVEL\_4                    |
+| lookaheadSlices                        | 8                                   | 0                           |
+| lowpassDct                             | FALSE                               | FALSE                       |
+| maxCTUSize                             | 64                                  | 64                          |
+| maxMerge                               | 2                                   | 4                           |
+| maximumTransferUnitSize                | \-                                  | MTU\_32x32                  |
+| maximumTransformUnitSize               | MTU\_32x32                          | MTU\_32x32                  |
+| minCodingUnitSize                      | MCU\_8x8                            | MCU\_8x8                    |
+| motionSearch                           | HEX                                 | HEX                         |
+| motionSearchRange                      | 57                                  | 57                          |
+| noiseReductionInter                    | 0                                   | 0                           |
+| pbRatio                                | 1.3                                 | 1.3                         |
+| pixelFormat                            | YUV420P                             | YUV420P                     |
+| profile                                | main                                | main                        |
+| psyRateDistortionOptimization          | 2                                   | 2                           |
+| psyRateDistortionOptimizedQuantization | 0                                   | 1                           |
+| qpOffsetChromaCb                       | 0                                   | 0                           |
+| qpOffsetChromaCr                       | 0                                   | 0                           |
+| qpStep                                 | 4                                   | 4                           |
+| quantizationGroupSize                  | maxCTUSize(QGS\_64x64) / QGS\_32x32 | QGS\_32x32                  |
+| quantizerCurveCompressionFactor        | 0.6                                 | 0.6                         |
+| rateDistortionLevelForModeDecision     | 3                                   | 4                           |
+| rateDistortionLevelForQuantization     | DISABLED                            | LEVELS\_AND\_CODING\_GROUPS |
+| rateDistortionPenalty                  | DISABLED                            | DISABLED                    |
+| rcLookahead                            | 20                                  | 25                          |
+| rectangularMotionPartitionsAnalysis    | FALSE                               | FALSE                       |
+| recursionSkip                          | TRUE                                | TRUE                        |
+| refFrames                              | 3                                   | 5                           |
+| refineRateDistortionCost               | FALSE                               | FALSE                       |
+| sao                                    | TRUE                                | TRUE                        |
+| saoNonDeblock                          | FALSE                               | FALSE                       |
+| sceneCutThreshold                      | 40                                  | 40                          |
+| scenecutBias                           | 5                                   | 5                           |
+| signHide                               | TRUE                                | TRUE                        |
+| skipSplitRateDistortionAnalysis        | FALSE                               | FALSE                       |
+| slices                                 | 1                                   | 1                           |
+| ssimRateDistortionOptimization         | FALSE                               | FALSE                       |
+| strongIntraSmoothing                   | TRUE                                | TRUE                        |
+| subMe                                  | 2                                   | 4                           |
+| temporalMotionVectorPredictors         | TRUE                                | TRUE                        |
+| transformSkip                          | NONE                                | NONE                        |
+| tuInterDepth                           | 1                                   | 1                           |
+| tuIntraDepth                           | 1                                   | 1                           |
+| wavefrontParallelProcessing            | TRUE                                | TRUE                        |
+| weightPredictionOnBSlice               | FALSE                               | FALSE                       |
+| weightPredictionOnPSlice               | TRUE                                | TRUE                        |
+
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideoh265) for the respective value.
+
+---
+
+## VoD Speed Preset Configurations
+
+| VoD Speed Presets                      | VOD\_SPEED                          | VOD\_HIGH\_SPEED                    | VOD\_VERYHIGH\_SPEED                | VOD\_EXTRAHIGH\_SPEED               | VOD\_SUPERHIGH\_SPEED               | VOD\_ULTRAHIGH\_SPEED               |
+| -------------------------------------- | ----------------------------------- | ----------------------------------- | ----------------------------------- | ----------------------------------- | ----------------------------------- | ----------------------------------- |
+| adaptiveQuantizationMode               | AUTO\_VARIANCE                      | AUTO\_VARIANCE                      | AUTO\_VARIANCE                      | AUTO\_VARIANCE                      | DISABLED                            | DISABLED                            |
+| adaptiveQuantizationMotion             | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| adaptiveQuantizationStrength           | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   |
+| allowedRADLBeforeIDR                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| analyzeSourceFramePixels               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| asymetricMotionPartitionsAnalysis      | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| bAdapt                                 | FULL                                | NONE                                | NONE                                | NONE                                | NONE                                | NONE                                |
+| bframeBias                             | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| bframes                                | 4                                   | 4                                   | 4                                   | 4                                   | 3                                   | 3                                   |
+| blurComplexity                         | 20                                  | 20                                  | 20                                  | 20                                  | 20                                  | 20                                  |
+| blurQuants                             | 0.5                                 | 0.5                                 | 0.5                                 | 0.5                                 | 0.5                                 | 0.5                                 |
+| codingUnitLossless                     | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| constrainedIntraPrediction             | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| copyPicture                            | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| cutree                                 | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| dynamicRateDistortionStrength          | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| earlySkip                              | FALSE                               | FALSE                               | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| encodingMode                           | SINGLE\_PASS                        | SINGLE\_PASS                        | SINGLE\_PASS                        | SINGLE\_PASS                        | SINGLE\_PASS                        | SINGLE\_PASS                        |
+| evaluationOfIntraModesInBSlices        | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| fastSearchForAngularIntraPredictions   | FALSE                               | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| forceFlush                             | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            |
+| gopLookahead                           | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| grainOptimizedRateControl              | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| ipRatio                                | 1.4                                 | 1.4                                 | 1.4                                 | 1.4                                 | 1.4                                 | 1.4                                 |
+| levelHighTier                          | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| limitModes                             | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| limitReferences                        | DEPTH\_AND\_CU                      | DEPTH\_AND\_CU                      | DEPTH\_AND\_CU                      | DEPTH\_AND\_CU                      | DISABLED                            | DISABLED                            |
+| limitSao                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| limitTransferUnitDepthRecursion        | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            |
+| limitTransformUnitDepthRecursion       | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            |
+| lookaheadSlices                        | 8                                   | 8                                   | 8                                   | 8                                   | 8                                   | 8                                   |
+| lowpassDct                             | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| maxCTUSize                             | 64                                  | 64                                  | 64                                  | 64                                  | 32                                  | 32                                  |
+| maxMerge                               | 2                                   | 2                                   | 2                                   | 2                                   | 2                                   | 2                                   |
+| maximumTransferUnitSize                | \-                                  | \-                                  | \-                                  | \-                                  | \-                                  | \-                                  |
+| maximumTransformUnitSize               | MTU\_32x32                          | MTU\_32x32                          | MTU\_32x32                          | MTU\_32x32                          | MTU\_32x32                          | MTU\_32x32                          |
+| minCodingUnitSize                      | MCU\_8x8                            | MCU\_8x8                            | MCU\_8x8                            | MCU\_8x8                            | MCU\_8x8                            | MCU\_16x16                          |
+| motionSearch                           | HEX                                 | HEX                                 | HEX                                 | HEX                                 | HEX                                 | DIA                                 |
+| motionSearchRange                      | 57                                  | 57                                  | 57                                  | 57                                  | 57                                  | 57                                  |
+| noiseReductionInter                    | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| pbRatio                                | 1.3                                 | 1.3                                 | 1.3                                 | 1.3                                 | 1.3                                 | 1.3                                 |
+| pixelFormat                            | YUV420P                             | YUV420P                             | YUV420P                             | YUV420P                             | YUV420P                             | YUV420P                             |
+| profile                                | main                                | main                                | main                                | main                                | main                                | main                                |
+| psyRateDistortionOptimization          | 2                                   | 2                                   | 2                                   | 2                                   | 2                                   | 2                                   |
+| psyRateDistortionOptimizedQuantization | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| qpOffsetChromaCb                       | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| qpOffsetChromaCr                       | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   | 0                                   |
+| qpStep                                 | 4                                   | 4                                   | 4                                   | 4                                   | 4                                   | 4                                   |
+| quantizationGroupSize                  | maxCTUSize(QGS\_64x64) / QGS\_32x32 | maxCTUSize(QGS\_64x64) / QGS\_32x32 | maxCTUSize(QGS\_64x64) / QGS\_32x32 | maxCTUSize(QGS\_64x64) / QGS\_32x32 | maxCTUSize(QGS\_64x64) / QGS\_32x32 | maxCTUSize(QGS\_64x64) / QGS\_32x32 |
+| quantizerCurveCompressionFactor        | 0.6                                 | 0.6                                 | 0.6                                 | 0.6                                 | 0.6                                 | 0.6                                 |
+| rateDistortionLevelForModeDecision     | 3                                   | 2                                   | 2                                   | 2                                   | 2                                   | 2                                   |
+| rateDistortionLevelForQuantization     | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            |
+| rateDistortionPenalty                  | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            | DISABLED                            |
+| rcLookahead                            | 20                                  | 15                                  | 15                                  | 15                                  | 10                                  | 5                                   |
+| rectangularMotionPartitionsAnalysis    | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| recursionSkip                          | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| refFrames                              | 3                                   | 3                                   | 2                                   | 2                                   | 1                                   | 1                                   |
+| refineRateDistortionCost               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| sao                                    | TRUE                                | TRUE                                | TRUE                                | TRUE                                | FALSE                               | FALSE                               |
+| saoNonDeblock                          | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| sceneCutThreshold                      | 40                                  | 40                                  | 40                                  | 40                                  | 40                                  | 0                                   |
+| scenecutBias                           | 5                                   | 5                                   | 5                                   | 5                                   | 5                                   | 5                                   |
+| signHide                               | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | FALSE                               |
+| skipSplitRateDistortionAnalysis        | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| slices                                 | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   |
+| ssimRateDistortionOptimization         | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| strongIntraSmoothing                   | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| subMe                                  | 2                                   | 2                                   | 1                                   | 2                                   | 1                                   | 0                                   |
+| temporalMotionVectorPredictors         | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| transformSkip                          | NONE                                | NONE                                | NONE                                | NONE                                | NONE                                | NONE                                |
+| tuInterDepth                           | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   |
+| tuIntraDepth                           | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   | 1                                   |
+| wavefrontParallelProcessing            | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                | TRUE                                |
+| weightPredictionOnBSlice               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               | FALSE                               |
+| weightPredictionOnPSlice               | TRUE                                | TRUE                                | TRUE                                | TRUE                                | FALSE                               | FALSE                               |
+
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideoh265) for the respective value.
+
+---
+
+## Live Quality Preset Configurations
+
+| Live Quality Presets                   | LIVE\_STANDARD              | LIVE\_HIGH\_QUALITY         |
+| -------------------------------------- | --------------------------- | --------------------------- |
+| adaptiveQuantizationMode               | VARIANCE                    | VARIANCE                    |
+| adaptiveQuantizationMotion             | FALSE                       | FALSE                       |
+| adaptiveQuantizationStrength           | 1                           | 1                           |
+| allowedRADLBeforeIDR                   | 0                           | 0                           |
+| analyzeSourceFramePixels               | FALSE                       | FALSE                       |
+| asymetricMotionPartitionsAnalysis      | FALSE                       | FALSE                       |
+| bAdapt                                 | FULL                        | FULL                        |
+| bframeBias                             | 0                           | 0                           |
+| bframes                                | 4                           | 4                           |
+| blurComplexity                         | 20                          | 20                          |
+| blurQuants                             | 0.5                         | 0.5                         |
+| codingUnitLossless                     | FALSE                       | FALSE                       |
+| constrainedIntraPrediction             | FALSE                       | FALSE                       |
+| copyPicture                            | TRUE                        | TRUE                        |
+| cutree                                 | TRUE                        | TRUE                        |
+| dynamicRateDistortionStrength          | 0                           | 0                           |
+| earlySkip                              | TRUE                        | TRUE                        |
+| encodingMode                           | SINGLE\_PASS                | TWO\_PASS                   |
+| evaluationOfIntraModesInBSlices        | FALSE                       | FALSE                       |
+| fastSearchForAngularIntraPredictions   | FALSE                       | FALSE                       |
+| forceFlush                             | DISABLED                    | DISABLED                    |
+| gopLookahead                           | 0                           | 0                           |
+| grainOptimizedRateControl              | FALSE                       | FALSE                       |
+| ipRatio                                | 1.4                         | 1.4                         |
+| levelHighTier                          | TRUE                        | TRUE                        |
+| limitModes                             | TRUE                        | TRUE                        |
+| limitReferences                        | DEPTH\_AND\_CU              | DEPTH\_AND\_CU              |
+| limitSao                               | FALSE                       | FALSE                       |
+| limitTransferUnitDepthRecursion        | LEVEL\_4                    | LEVEL\_4                    |
+| limitTransformUnitDepthRecursion       | LEVEL\_4                    | LEVEL\_4                    |
+| lookaheadSlices                        | 8                           | 8                           |
+| lowpassDct                             | FALSE                       | FALSE                       |
+| maxCTUSize                             | 64                          | 64                          |
+| maximumTransferUnitSize                | \-                          | \-                          |
+| maximumTransformUnitSize               | MTU\_32x32                  | MTU\_32x32                  |
+| maxMerge                               | 2                           | 2                           |
+| minCodingUnitSize                      | MCU\_8x8                    | MCU\_8x8                    |
+| motionSearch                           | HEX                         | HEX                         |
+| motionSearchRange                      | 57                          | 57                          |
+| noiseReductionInter                    | 0                           | 0                           |
+| pbRatio                                | 1.3                         | 1.3                         |
+| pixelFormat                            | YUV420P                     | YUV420P                     |
+| profile                                | main                        | main                        |
+| psyRateDistortionOptimization          | 2                           | 2                           |
+| psyRateDistortionOptimizedQuantization | 0                           | 0                           |
+| qpOffsetChromaCb                       | 0                           | 0                           |
+| qpOffsetChromaCr                       | 0                           | 0                           |
+| qpStep                                 | 4                           | 4                           |
+| quantizationGroupSize                  | QGS\_32x32                  | QGS\_32x32                  |
+| quantizerCurveCompressionFactor        | 0.6                         | 0.6                         |
+| rateDistortionLevelForModeDecision     | 3                           | 3                           |
+| rateDistortionLevelForQuantization     | LEVELS\_AND\_CODING\_GROUPS | LEVELS\_AND\_CODING\_GROUPS |
+| rateDistortionPenalty                  | DISABLED                    | DISABLED                    |
+| rcLookahead                            | 20                          | 20                          |
+| rectangularMotionPartitionsAnalysis    | FALSE                       | FALSE                       |
+| recursionSkip                          | TRUE                        | TRUE                        |
+| refFrames                              | 3                           | 3                           |
+| refineRateDistortionCost               | FALSE                       | FALSE                       |
+| sao                                    | TRUE                        | TRUE                        |
+| saoNonDeblock                          | FALSE                       | FALSE                       |
+| scenecutBias                           | 5                           | 5                           |
+| sceneCutThreshold                      | 40                          | 40                          |
+| signHide                               | TRUE                        | TRUE                        |
+| skipSplitRateDistortionAnalysis        | FALSE                       | FALSE                       |
+| slices                                 | 1                           | 1                           |
+| ssimRateDistortionOptimization         | FALSE                       | FALSE                       |
+| strongIntraSmoothing                   | TRUE                        | TRUE                        |
+| subMe                                  | 2                           | 2                           |
+| temporalMotionVectorPredictors         | TRUE                        | TRUE                        |
+| transformSkip                          | NONE                        | NONE                        |
+| tuInterDepth                           | 1                           | 1                           |
+| tuIntraDepth                           | 1                           | 1                           |
+| wavefrontParallelProcessing            | TRUE                        | TRUE                        |
+| weightPredictionOnBSlice               | FALSE                       | FALSE                       |
+| weightPredictionOnPSlice               | TRUE                        | TRUE                        |
+
+## Live Low Latency Preset Configurations
+
+| Live Low Latency Presets               | LIVE\_LOW\_LATENCY |
+| -------------------------------------- | ------------------ |
+| adaptiveQuantizationMode               | VARIANCE           |
+| adaptiveQuantizationMotion             | FALSE              |
+| adaptiveQuantizationStrength           | 1                  |
+| allowedRADLBeforeIDR                   | 0                  |
+| analyzeSourceFramePixels               | FALSE              |
+| asymetricMotionPartitionsAnalysis      | FALSE              |
+| bAdapt                                 | FAST               |
+| bframeBias                             | 0                  |
+| bframes                                | 3                  |
+| blurComplexity                         | 20                 |
+| blurQuants                             | 0.5                |
+| codingUnitLossless                     | FALSE              |
+| constrainedIntraPrediction             | FALSE              |
+| copyPicture                            | TRUE               |
+| cutree                                 | TRUE               |
+| dynamicRateDistortionStrength          | 0                  |
+| earlySkip                              | TRUE               |
+| encodingMode                           | SINGLE\_PASS       |
+| evaluationOfIntraModesInBSlices        | FALSE              |
+| fastSearchForAngularIntraPredictions   | TRUE               |
+| forceFlush                             | DISABLED           |
+| gopLookahead                           | 0                  |
+| grainOptimizedRateControl              | FALSE              |
+| ipRatio                                | 1.4                |
+| levelHighTier                          | TRUE               |
+| limitModes                             | FALSE              |
+| limitReferences                        | DEPTH\_AND\_CU     |
+| limitSao                               | FALSE              |
+| limitTransferUnitDepthRecursion        | DISABLED           |
+| limitTransformUnitDepthRecursion       | DISABLED           |
+| lookaheadSlices                        | 8                  |
+| lowpassDct                             | FALSE              |
+| maxCTUSize                             | 64                 |
+| maxMerge                               | 2                  |
+| maximumTransferUnitSize                | \-                 |
+| maximumTransformUnitSize               | MTU\_32x32         |
+| minCodingUnitSize                      | MCU\_8x8           |
+| motionSearch                           | HEX                |
+| motionSearchRange                      | 57                 |
+| noiseReductionInter                    | 0                  |
+| pbRatio                                | 1.3                |
+| pixelFormat                            | YUV420P            |
+| profile                                | main               |
+| psyRateDistortionOptimization          | 2                  |
+| psyRateDistortionOptimizedQuantization | 0                  |
+| qpOffsetChromaCb                       | 0                  |
+| qpOffsetChromaCr                       | 0                  |
+| qpStep                                 | 4                  |
+| quantizationGroupSize                  | QGS\_32x32         |
+| quantizerCurveCompressionFactor        | 0.6                |
+| rateDistortionLevelForModeDecision     | 2                  |
+| rateDistortionLevelForQuantization     | DISABLED           |
+| rateDistortionPenalty                  | DISABLED           |
+| rcLookahead                            | 10                 |
+| rectangularMotionPartitionsAnalysis    | FALSE              |
+| recursionSkip                          | TRUE               |
+| refFrames                              | 2                  |
+| refineRateDistortionCost               | FALSE              |
+| sao                                    | TRUE               |
+| saoNonDeblock                          | FALSE              |
+| sceneCutThreshold                      | 40                 |
+| scenecutBias                           | 5                  |
+| signHide                               | TRUE               |
+| skipSplitRateDistortionAnalysis        | FALSE              |
+| slices                                 | 1                  |
+| ssimRateDistortionOptimization         | FALSE              |
+| strongIntraSmoothing                   | TRUE               |
+| subMe                                  | 2                  |
+| temporalMotionVectorPredictors         | TRUE               |
+| transformSkip                          | NONE               |
+| tuInterDepth                           | 1                  |
+| tuIntraDepth                           | 1                  |
+| wavefrontParallelProcessing            | TRUE               |
+| weightPredictionOnBSlice               | FALSE              |
+| weightPredictionOnPSlice               | TRUE               |
+
+`-` means that the default value of the codec configuration is used. Please see the [API reference](/encoding/reference/postencodingconfigurationsvideoh265) for the respective value.

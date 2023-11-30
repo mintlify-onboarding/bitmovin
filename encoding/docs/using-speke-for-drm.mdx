@@ -1,0 +1,254 @@
+---
+title: "Using SPEKE for DRM"
+---
+
+## Overview
+
+In most of our tutorials about DRM, you will have noticed that you are expected to call specific DRM API endpoints and provide to them appropriate information in order for Bitmovin to be able to encrypt your content in the right way. For example, to generate a [TS muxing with FairPlay](/encoding/reference/postencodingencodingsmuxingsfmp4drmfairplaybyencodingidandmuxingid), you need to supply a key and an initialisation vector (`iv`), or for a [CENC-encrypted fMP4 muxing supporting Widevine and PlayReady](/encoding/reference/postencodingencodingsmuxingsfmp4drmcencbyencodingidandmuxingid) you need to provide a `kid`, `key` and a couple of `pssh` parameters.
+
+In your encoding workflow, you are therefore in charge of obtaining this information from your DRM provider, usually through their own APIs, and then pass that information into your encoding configuration.
+
+This not only increases the complexity of your workflow, in particularly if you want to support multiple DRM systems (for example both PlayReady and Widevine), but also introduces security risks as you will probably need to store this sensitive information, if only temporarily.
+
+The industry has therefore come up with a number of initiatives to try and improve this type of workflow. One of those is the Secure Packager and Encoder Key Exchange (shortened to SPEKE) standard.
+
+With SPEKE, the responsibility for obtaining DRM information, in particular encryption keys, is delegated to the encoder. The encoder, based on your configuration, will make a secure request to the SPEKE server, for one or multiple DRM systems, and use the information in the response to configure and encrypt your muxings.
+
+> ℹ️
+> 
+> SPEKE is an extension of another standard named Content Protection Information Exchange (CPIX), with additional functionality for some use cases not covered by CPIX. Bitmovin does not currently support CPIX directly, but depending on your DRM provider, you may find that our SPEKE implementation can work with their CPIX endpoints out of the box.
+
+## Requirements
+
+* Encoder Version: v2.40.0 or above
+* SDK Version: v1.58.0 or above
+* You also need to have access to a SPEKE v1 server. Most DRM vendors support that protocol
+
+> ⚠️
+> 
+> This tutorial only covers SPEKE v1\. Bitmovin does not currently support SPEKE v2\. Depending on your DRM provider, you may however find that our SPEKE integration can work with a SPEKE v2 server, although some limitations may apply.
+> 
+> 📝 Always check with your DRM vendor to which extent their SPEKE implementation varies from the functionality described in this document.
+
+## Authentication
+
+The SPEKE protocol enables multiple ways for the encoder to authenticate with the SPEKE server. The Bitmovin encoder supports the following:
+
+### With credentials
+
+Your DRM vendor will provide a username and password that you will provide in your encoding configuration.
+
+_Note: They may have additionally required to do some IP whitelisting. If that is the case, contact your Bitmovin Technical Account Manager to ask for the necessary information to pass to your DRM provider._
+
+### With AWS Identity and Access Management
+
+If your DRM vendor have deployed their SPEKE server in AWS, they may also support a more secure and therefore recommended role-based authentication. This will allow the Bitmovin encoding platform to request access to the SPEKE server on your behalf
+
+For this, an initial setup is necessary:
+
+First, you create a role in your own AWS account, allowing the Bitmovin’s user (defined by ARN `arn:aws:iam::630681592166:user/bitmovinCustomerSpekeAccess`) to assume that role:
+
+JSON
+
+`{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::630681592166:user/bitmovinCustomerSpekeAccess"
+  },
+  "Action": "sts:AssumeRole",
+  "Condition": {
+    "StringEquals": {
+      "sts:ExternalId": "{{externalId}}"
+    }
+  }
+}
+`
+
+The `sts:ExternalId` is optional, but recommended. See the next section to determine what to set it to.
+
+Then, attach the following policy to the role, to allow it to invoke the AWS API Gateway:
+
+JSON
+
+`{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "execute-api:Invoke"
+      ],
+      "Resource": [
+        "arn:aws:execute-api:{{region}}:*:*/*/POST/*"
+      ]
+    }
+  ]
+}
+`
+
+in which you replace `{{region}}` with the region of the API gateway (for example `us-west-2`) in which the SPEKE server is deployed, or set it to `*` to give the role access to all regions.
+
+Finally, provide the ARN of the role generated in this way to your DRM vendor to allow them to enable users using this role to get access to the SPEKE server.
+
+At runtime, the Bitmovin user `arn:aws:iam::630681592166:user/bitmovinCustomerSpekeAccess` will assume the role and call the SPEKE server’s API Gateway endpoint to request DRM information.
+
+## Encoding Configuration
+
+When it comes to configuring your encoding to make use of the SPEKE protocol, you will start in much the same way as any encoding, by defining your input(s), your audio and video codec configurations, one or multiple output streams, and muxings to containerize them.
+
+Then, instead of applying a system-specific DRM resource on top of the (clear) muxing, you will use the endpoint specific to SPEKE resources.
+
+In general, the following parameters will need to be specified in the payload sent to that endpoint:
+
+* `provider` contains access details for your DRM vendor’s SPEKE server: -a `url` to the server’s endpoint  
+   * if you use credentials-based authentication, the `username` and `password` provided by your SPEKE provider  
+   * or, for role-based authentication,  
+         * `roleArn` which contains the ARN of the role created earlier  
+         * `externalId` (and/or `externalIdMode`, see below)  
+         * a `gatewayRegion` corresponding to the region of the AWS API Gateway used to access the SPEKE server.
+* A list of `systemIds`, which identify the content protection scheme(s) you are requesting to apply to this muxing. See the Annexes below for a list of common identifiers. Note that not all `systemIds` are supported for all muxing types.
+* `contentId`, a unique identifier for your content. If you do not provide one, a random identifier will be generated.
+* `kid`, an optional key identifier, which will be generated if not set. A SPEKE DRM server will usually return the same keys each time it is called with the same pair of `contentId` and `kid`
+* `iv`, a 16 byte initialisation vector, represented by a 32-character text string (eg. `08eecef4b026deec395234d94218273d`). This property is mandatory for some protection systems, in particular AES-128 and FairPlay, but check with your DRM vendor what is specific to their solution.
+
+### External ID
+
+The External ID set in the AWS IAM role and the SPEKE configuration helps in making your role-based solution more secure, as explained in the [AWS documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/id%5Froles%5Fcreate%5Ffor-user%5Fexternalid.html). You have different choices here, and the externalIdMode parameter in the SPEKE endpoint payloads is used to specify the method that applies:
+
+Set `externalIdMode` to `GLOBAL` and the `externalId` we use when assuming the role will be set to the Organisation ID of the account that you perform your encodings in (which you can find [in the Bitmovin Dashboard](/encoding/docs/multi-tenant-invite-other-users-to-your-bitmovin-account)). You will therefore have to set it in your AWS role accordingly first.
+
+Set `externalIdMode` to `CUSTOM` if you want to use your own string, but make sure that it is fairly unique.
+
+Set `externalIdMode` to `GENERATED` to have the Bitmovin platform generate a random string when you create the SpekeDrm resource by calling the relevant endpoint. This will only be practical for simple workflows where you reuse the same DRM object for all your muxings, if only because it will require you to modify your AWS role each time you create a new resource, after retrieving that value through the Bitmovin API.
+
+### Examples
+
+In the code snippets below, we skip the aspects of the configuration that are not specific to DRM. You can consult any of our other tutorials if you need a full example; a good one for comparison and contrast with the next part of this tutorial is the one on [creating Widevine DRM-protected content](/encoding/docs/how-to-create-widevine-drm-protected-content).
+
+### Single Protection System, with credentials
+
+Let’s start with a simple example, in which we encode our source file into a H264 single representation, using fragmented MP4, and encrypt it with CENC for Widevine. We access the SPEKE server with simple credentials.
+
+Java
+
+`SpekeDrmProvider spekeDrmProvider = new SpekeDrmProvider();
+spekeDrmProvider.setUrl("https://url-to-my-drm-vendor-speke-server");
+spekeDrmProvider.setUsername("my-speke-username");
+spekeDrmProvider.setPassword("this-is-my-secure-password");
+
+H264VideoConfiguration h264Config = createH264VideoConfig();
+Stream videoStream = createStream(encoding, input, inputFilePath, h264Config);
+
+// Like with any DRM configuration, we create a base (clear) muxing with no output
+Fmp4Muxing videoMuxing = createBaseFmp4MuxingWithoutOutput(encoding, videoStream);
+
+// SPEKE config for Widevine
+SpekeDrm spekeDrm = new SpekeDrm();
+spekeDrm.setProvider(spekeDrmProvider);
+spekeDrm.setContentId("my-unique-content-id");
+spekeDrm.setSystemIds(Arrays.asList("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed"));
+
+// We define where to output the protected muxing
+EncodingOutput encodingOutput = new EncodingOutput();
+encodingOutput.setOutputId(output.getId());
+encodingOutput.setOutputPath("path-to-my-output-folder");
+spekeDrm.setOutputs(Arrays.asList(encodingOutput));
+
+bitmovinApi.encoding.encodings.muxings.fmp4.drm.speke.create(
+   encoding.getId(), fmp4Muxing.getId(), spekeDrm);
+`
+
+When it comes to configuring your manifest, it works in much the same way as with any other DRM endpoint, and you provide the identifier of the DRM you created (spekeDrm in this example) to the endpoints to create the DashFmp4DrmRepresentation and ContentProtection elements you want added to your manifest.
+
+For this simple example, you can also simply use our Default Manifest functionality to have our encoder build it all for you, as demonstrated in the tutorial on [creating Widevine DRM-protected content](/encoding/docs/how-to-create-widevine-drm-protected-content).
+
+### Multiple Protection System, with AWS IAM Authentication
+
+Most of the times, you will probably want to encrypt your content for support on many players and platforms, which requires different DRM systems.
+
+When the protection systems are compatible (as is the case generally with Widevine and PlayReady for CENC encoding - in CTR mode), you simply need to supply all relevant system IDs in a single array:
+
+Java
+
+`// Widevine and PlayReady
+spekeDrm.setSystemIds(
+   Arrays.asList("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed", "9a04f079-9840-4286-ab92-e65be0885f95")
+);
+`
+
+If you need to encrypt your content with incompatible encryption mechanisms, such as Widevine/PlayReady (in CTR mode) on the one hand and FairPlay (in CBC mode) on the other, you will need to create distinct outputs, each with its own DRM configuration. This is not specific to SPEKE, but also needs to be done when SPEKE is involved.
+
+Let’s take the opportunity to also use role-based authentication to access the SPEKE server:
+
+Java
+
+`SpekeDrmProvider spekeDrmProvider = new SpekeDrmProvider();
+spekeDrmProvider.setUrl("https://url-to-my-drm-vendor-speke-server");
+spekeDrmProvider.setRoleArn("arn:aws:iam::1234567890:role/my-speke-role");
+spekeDrmProvider.setGatewayRegion("eu-west-1");
+
+H264VideoConfiguration h264Config = createH264VideoConfig();
+Stream videoStream = createStream(encoding, input, inputFilePath, h264Config);
+
+// A single base (clear) muxing with no output is used for both DRM outputs
+Fmp4Muxing videoMuxing = createBaseFmp4MuxingWithoutOutput(encoding, videoStream);
+
+// one SPEKE config for Widevine and PlayReady
+SpekeDrm spekeDrmCenc = new SpekeDrm();
+spekeDrmCenc.setProvider(spekeDrmProvider);
+spekeDrmCenc.setContentId("my-unique-content-id");
+spekeDrmCenc.setSystemIds(
+   Arrays.asList("edef8ba9-79d6-4ace-a3c8-27dcd51d21ed", "9a04f079-9840-4286-ab92-e65be0885f95"));
+
+// another SPEKE config for FairPlay
+SpekeDrm spekeDrmFairplay = new SpekeDrm();
+spekeDrmFairplay.setProvider(spekeDrmProvider);
+spekeDrmFairplay.setContentId("my-unique-content-id");
+spekeDrmFairplay.setSystemIds(
+   Arrays.asList("94ce86fb-07ff-4f43-adb8-93d2fa968ca2"));
+
+// each DRM is output in a distinct folder
+EncodingOutput encodingOutput1 = new EncodingOutput();
+encodingOutput1.setOutputId(output.getId());
+encodingOutput1.setOutputPath("path-to-my-output-folder/cenc");
+spekeDrmCenc.setOutputs(Arrays.asList(encodingOutput1));
+
+EncodingOutput encodingOutput2 = new EncodingOutput();
+encodingOutput2.setOutputId(output.getId());
+encodingOutput2.setOutputPath("path-to-my-output-folder/fairplay");
+spekeDrmFairplay.setOutputs(Arrays.asList(encodingOutput2));
+
+// Apply both DRMs to the base muxing
+bitmovinApi.encoding.encodings.muxings.fmp4.drm.speke.create(
+   encoding.getId(), fmp4Muxing.getId(), spekeDrmCenc);
+bitmovinApi.encoding.encodings.muxings.fmp4.drm.speke.create(
+   encoding.getId(), fmp4Muxing.getId(), spekeDrmFairplay);
+`
+
+You will find a full example of such a configuration at [GitHub - bitmovin/bitmovin-api-sdk-examples: Set of encoding workflow examples highlighting the use of the Bitmovin API SDKs](https://github.com/bitmovin/bitmovin-api-sdk-examples#cenc-drm-content-protection-with-speke), in which we create separate manifests for DASH (with CENC) and HLS (with FairPlay).
+
+## Known Limitations
+
+* The SPEKE v1 protocol is meant to be used only in cases where all tracks (video and audio) use a single encryption key. Support for multiple key is part of the SPEKE v2 / CPIX v2.3 protocols, but is not currently supported by the Bitmovin encoder. However, given how the configuration of DRM is done on a per-muxing basis with Bitmovin, you may be able to provide different key IDs (kid) for different muxings (or sets of muxings) to get the same result. Check with your SPEKE provider to see if they would support such a workflow.
+* Authentication through JWT tokens is not currently supported.
+* SPEKE can be used for Live encodings, but key rotation is not supported
+
+## Annexes
+
+### Supported System IDs
+
+The mapping of system IDs to protection system technologies is defined as an industry-wide standard, partly managed by DASH-IF (for CPIX)
+
+| System ID                            | Protection System    |
+| ------------------------------------ | -------------------- |
+| edef8ba9-79d6-4ace-a3c8-27dcd51d21ed | Widevine             |
+| 81376844-f976-481e-a84e-cc25d39b0b33 | AES-128              |
+| 1077efec-c0b2-4d02-ace3-3c1e52e2fb4b | ClearKey (with CENC) |
+| 94ce86fb-07ff-4f43-adb8-93d2fa968ca2 | FairPlay             |
+| 9a04f079-9840-4286-ab92-e65be0885f95 | PlayReady            |
+
+For more information, check the DASH-IF reference at [https://dashif.org/identifiers/content\_protection/](https://dashif.org/identifiers/content%5Fprotection/). Note that any system ID not listed in the table above may not be supported by our encoder.
+
+Check also with your DRM vendor whether their SPEKE server supports all these system IDs or additional ones.
+
+Finally, note that the protection system you can apply will depend on the muxing type. This is not a constraint specific to SPEKE however, but the standard general consideration when applying DRM to muxings.

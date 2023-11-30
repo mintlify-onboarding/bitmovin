@@ -1,0 +1,255 @@
+---
+title: "How to create Dolby Digital (Plus) Encodings"
+---
+
+## Overview
+
+Bitmovin and its Encoding Service is officially and fully certified by Dolby to create Dolby Digital (Plus) audio content! This is great news as it enables you to easily deliver certified High Quality Audio content to your end users and their dolby digital compatible end devices! In this tutorial we will walk through the specific features of this new `Audio Codec Configuration` object for Dolby Digital (Plus) and when/how to use them.
+
+If you want to check out all the details in the API reference right away, please see the API description for [Dolby Digital](/encoding/reference/postencodingconfigurationsaudiodd) and [Dolby Digital Plus](/encoding/reference/postencodingconfigurationsaudioddplus).
+
+## Requirements
+
+* Encoder version 2.83.0 or higher
+* API SDK version 1.78.0 or higher
+
+## Known Limitations
+
+* **Support Workflows:** VoD only
+* **DRM:** not supported yet
+* **Audio Sample rate:** 48kHz only
+* **Supported Muxings:** fMP4, MP4, MOV(DD only), TS (incl. BroadcastTS, ProgressiveTS)
+* **Supported Streaming Formats:** MPEG-DASH, HLS
+* **Supported Bitrates:** Depends on Audio Coding Mode for DD/DD+ (Please see [Audio Coding Modes](/encoding/docs/how-to-create-dolby-digital-plus-encodings#audio-coding-modes))
+* **Supported Channel Layouts:** up to 5.1 (Loudness control is required to be enabled at all times, which supports up to 6 channels).
+* **Supported Channel Layouts for Downmixing:** 5.1 or lower
+
+---
+
+## Dolby Audio Codec Configuration Details
+
+As for every Audio Codec Configuration, a `Dolby Digital` or `Dolby Digital Plus` Audio Codec Configuration requires at least: `name`, `bitrate`
+
+The latter and its value depends on the Channel layout you're using for your encoded content. Therefore, please make sure to select the appropriate, supported value within the given range from the table below.
+
+## Audio Coding Modes
+
+### Dolby Digital - Bitrates
+
+| Bitmovin Channel Layout             | Audio Coding Mode | Min kbps | Max kbps | Default kbps |
+| ----------------------------------- | ----------------- | -------- | -------- | ------------ |
+| MONO                                | 1/0               | 56       | 640      | 96           |
+| STEREO                              | 2/0               | 96       | 640      | 192          |
+| BACK\_SURROUND, BACK\_SURROUND\_LFE | 2/1               | 160      | 640      | 256          |
+| SURROUND, 3.1                       | 3/0               | 160      | 640      | 256          |
+| 4.0, 4.1                            | 3/1               | 192      | 640      | 320          |
+| QUAD, QUAD\_LFE                     | 2/2               | 192      | 640      | 320          |
+| 5.0, 5.1                            | 3/2               | 224      | 640      | 384          |
+
+Individual supported bitrates: 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640
+
+### Dolby Digital Plus - Bitrates
+
+| Bitmovin Channel Layout             | Audio Coding Mode | Min kbps | Max kbps | Default kbps |
+| ----------------------------------- | ----------------- | -------- | -------- | ------------ |
+| MONO                                | 1/0               | 32       | 1024     | 64           |
+| STEREO                              | 2/0               | 96       | 1024     | 128          |
+| BACK\_SURROUND, BACK\_SURROUND\_LFE | 2/1               | 128      | 1024     | 160          |
+| SURROUND, 3.1                       | 3/0               | 128      | 1024     | 160          |
+| 4.0, 4.1                            | 3/1               | 160      | 1024     | 192          |
+| QUAD, QUAD\_LFE                     | 2/2               | 160      | 1024     | 192          |
+| 5.0, 5.1                            | 3/2               | 192      | 1024     | 192          |
+| \~Not available yet\~               | \~3/3\~           | \~256\~  | \~1024\~ | \~384\~      |
+| \~Not available yet\~               | \~3/4\~           | \~384\~  | \~1024\~ | \~384\~      |
+
+Individual supported bitrate values: 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 144, 160, 175, 192, 200, 208, 216, 224, 232, 240, 248, 256, 272, 288, 304, 320, 336, 352, 368, 384, 400, 448, 512, 576, 640, 704, 768, 832, 896, 960, 1008, 1024
+
+---
+
+## Dolby Digital Audio Codec Features
+
+`Dolby Digital` and `Dolby Digital Plus` do support certain features like `loudness control`, `pre-processing` and `downmixing`.
+
+## Loudness Control
+
+It allows you to either manually adjust the eventual loudness of the encoded audio content on your own, or to apply defined loudness correction methods like `EBU R128`, `ATSC A85 FIXED`, or `ATSC A85 AGILE` to align the loudness levels of your contents and therefore to enhance the experience for your viewers.
+
+_The Loudness Control feature is always enabled_ and therefore a required property. If not explicitely configured, the `mode` is set to `CORRECTION` and `regulationType` to `ATSC_A85_FIXED` by default. You can choose between the modes `PASSTHROUGH` or `CORRECTION` to configure how it is applied to your content. Please see the following table which `mode` and loudness control features are compatible
+
+| Mode        | regulationType                                | peakLimit     | dialogueIntelligence | dialnorm      |
+| ----------- | --------------------------------------------- | ------------- | -------------------- | ------------- |
+| PASSTHROUGH | not supported                                 | ✅             | ✅                    | ✅             |
+| CORRECTION  | MANUAL                                        | ✅             | ✅                    | ✅             |
+| CORRECTION  | EBU\_R128, ATSC\_A85\_FIXED, ATSC\_A85\_AGILE | not supported | not supported        | not supported |
+
+---
+
+## Pre-Processing
+
+Pre-Processing allows to prepare for characteristics of your input file. Please mind the table below as not every feature supports every channel layout/audio coding mode.
+
+`LFE Low Pass Filter` is disabled by default. If enabled, it filters frequencies above 120Hz on the LFE channel, when enabled.
+
+`90° Phase Shift` is enabled by default. Its applied to the surround channels during encoding to decorrelate front and back channels. This is done to ensure dolby surround compatible output if the encoded multi-channel content gets downmixed, so these front and back channels don't cancel each other out.
+
+`3dB Attenuation` is disabled by default. Enable it, if your input file is master file and comes from a film room, or wasn't yet converted to a home theater format. Cinema surround channels are mixed 3 dB higher to account for amplifier gains in cinemas, which can be corrected with this option.
+
+| Property               | Supported Bitmovin Channel Layout                                       | Supported Audio Coding Modes |
+| ---------------------- | ----------------------------------------------------------------------- | ---------------------------- |
+| lfeLowPassFilter       | BACK\_SURROUND, BACK\_SURROUND\_LFE, QUAD, QUAD\_LFE,4.0, 4.1, 5.0, 5.1 | 2/1, 2/2, 3/2, 3/1           |
+| ninetyDegreePhaseShift | BACK\_SURROUND, BACK\_SURROUND\_LFE, QUAD, QUAD\_LFE,4.0, 4.1, 5.0, 5.1 | 2/1, 2/2, 3/1, 3/2           |
+| threeDbAttenuation     | BACK\_SURROUND, BACK\_SURROUND\_LFE, QUAD, QUAD\_LFE,4.0, 4.1, 5.0, 5.1 | 2/1, 2/2, 3/1, 3/2           |
+
+---
+
+## Downmixing
+
+This feature allows to either remove certain channels to achieve a different Channel layout, or to adjust the loudness level of certain channels by a fixed amount (depends on the channel you want to adjust).
+
+Please see table below to check which option is available for which channel layout.
+
+| Property             | Bitmovin Channel Layout                                                                     | Supported Audio Coding Modes |
+| -------------------- | ------------------------------------------------------------------------------------------- | ---------------------------- |
+| loRoCenterMixLevel   | CL\_SURROUND, 3.1, 4.0, 4.1, 5.0, 5.1                                                       | 3/0, 3/1, 3/2                |
+| ltRtCenterMixLevel   | CL\_SURROUND, 3.1, 4.0, 4.1, 5.0, 5.1                                                       | 3/0, 3/1, 3/2                |
+| loRoSurroundMixLevel | BACK\_SURROUND, BACK\_SURROUND\_LFE, QUAD, QUAD\_LFE,4.0, 4.1, 5.0, 5.1                     | 2/1, 2/2, 3/1, 3/2           |
+| ltRtSurroundMixLevel | BACK\_SURROUND, BACK\_SURROUND\_LFE, QUAD, QUAD\_LFE,4.0, 4.1, 5.0, 5.1                     | 2/1, 2/2, 3/1, 3/2           |
+| preferredMode        | BACK\_SURROUND, BACK\_SURROUND\_LFE, QUAD, QUAD\_LFE, CL\_SURROUND, 3.1, 4.0, 4.1, 5.0, 5.1 | 3/0, 2/1, 2/2, 3/1, 3/2      |
+
+---
+
+## Create an Encoding
+
+This tutorial is based on the already existing [Multi-Codec Encoding](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/java/src/main/java/MultiCodecEncoding.java) example, which was using AC3 codec configurations before, but due to its replacement by Dolby Digital Audio Codec Configuration, is using Dolby Digital Audio Codec Configurations by now.
+
+As with every encoding, we will need an `Encoding` Object, that holds all related `stream` objects and their `configuration`, as well as an `Input` and `Output` Object.
+
+### Create or Reuse an Input
+
+HTTP is just used for simplicity in this example, as there is no limitation in where the input file can be downloaded from for that use-case. Of course, you can also reuse existing Input objects available in your Bitmovin Account.
+
+Java
+
+`HttpInput input = createHttpInput(configProvider.getHttpInputHost());
+`
+
+### Create or Reuse an Output
+
+AWS S3 is just used for simplicity in this example, as there is no limitation in where the content can be written to. Of course, you can also reuse existing Output objects available in your Bitmovin Account.
+
+Java
+
+`Output output =
+        createS3Output(
+            configProvider.getS3OutputBucketName(),
+            configProvider.getS3OutputAccessKey(),
+            configProvider.getS3OutputSecretKey());
+`
+
+### Create an Encoding Object
+
+Java
+
+`Encoding encoding = createEncoding("H.265 Encoding", "H.265 -> fMP4 muxing, Dolby Digital -> fMP4 muxing");
+`
+
+### Create an Video Stream using an H265 Video Codec Configuration
+
+A `Stream` Object effectively maps a stream of the input file to a given `CodecConfiguration` which will be used to encode it.
+
+Java
+
+`H265VideoConfiguration videoConfiguration =
+          createH265VideoConfig(rendition.height, rendition.bitrate);
+      Stream videoStream = createStream(encoding, input, inputFilePath, videoConfiguration);
+`
+
+### Create an fMP4 Muxing using the Video Stream
+
+Java
+
+`Fmp4Muxing fmp4Muxing =
+          createFmp4Muxing(
+              encoding,
+              output,
+              String.format(
+                  H265AndDolbyDigitalEncodingTracking.H265_FMP4_SEGMENTS_PATH_FORMAT,
+                  rendition.height,
+                  rendition.bitrate),
+              videoStream);
+`
+
+### Create an Audio Stream using an Dolby Digital Audio Codec Configuration
+
+A `Stream` Object effectively maps a stream of the input file to a given `CodecConfiguration` which will be used to encode it.
+
+Please
+
+Java
+
+`DolbyDigitalAudioConfiguration dolbyDigitalConfig = createDolbyDigitalAudioConfig();
+encodingTracking.dolbyDigitalAudioStream = createStream(encoding, input, inputFilePath, dolbyDigitalConfig);
+`
+
+`createDolbyDigitalAudioConfig()` create a new Audio Codec Config in your account as usual, and utilizes its default configurations by default.
+
+Java
+
+`private static DolbyDigitalAudioConfiguration createDolbyDigitalAudioConfig() {
+    DolbyDigitalAudioConfiguration config = new DolbyDigitalAudioConfiguration();
+    config.setName("DolbyDigital Channel Layout 5.1");
+    config.setBitrate(256_000L);
+    config.setChannelLayout(DolbyDigitalChannelLayout.CL_5_1);
+    return bitmovinApi.encoding.configurations.audio.dolbyDigital.create(config);
+}
+`
+
+### Create an fMP4 Muxing using the Audio Stream
+
+The creation of a muxing is no different than before (If supported, please see [known limitations](/encoding/docs/how-to-create-dolby-digital-plus-encodings#known-limitations) for details about supported muxing types). You only have to provide it with the stream that is configured to use the Dolby Digital (Plus) Audio Codec Configuration.
+
+Java
+
+`dolbyDigitalFmp4Muxing =
+        createFmp4Muxing(
+            encoding,
+            output,
+            H265AndDolbyDigitalEncodingTracking.DOLBY_DIGITAL_FMP4_SEGMENTS_PATH,
+            encodingTracking.dolbyDigitalAudioStream);
+`
+
+### Start the Encoding
+
+The Multi-Codec Example, as per best practise, launches three separate encodings, one per Video Codec. So the example we use here launches three threads and monitors each encoding for its completion.
+
+Java
+
+`List<Callable<Encoding>> encodingTasks =
+        Arrays.asList(
+            () -> executeEncoding(h264AndAacEncodingTracking.encoding),
+            () -> executeEncoding(h265AndDolbyDigitalEncodingTracking.encoding),
+            () -> executeEncoding(vp9AndVorbisEncodingTracking.encoding));
+executor.invokeAll(encodingTasks);
+executor.shutdown();
+
+`
+
+## Other Examples
+
+The example used in this tutorial is available for all available Bitmovin API SDK's in our Github Repository. Check out the `MultiCodecEncoding` example for the SDK of your choice!
+
+[Java](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/java/src/main/java/MultiCodecEncoding.java) | [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/javascript/src/MultiCodecEncoding.ts) | [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/python/src/multi%5Fcodec%5Fencoding.py) | [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/dotnet/Bitmovin.Api.Sdk.Examples/MultiCodecEncoding.cs) | [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/main/php/src/MultiCodecEncoding.php)
+
+---
+
+## Get Started with a Bitmovin SDK
+
+| Bitmovin API SDK                                                               | Description                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Java](https://github.com/bitmovin/bitmovin-api-sdk-java)                      | Integrate the SDK into your Java Project easily and add it to the config of your dependency manager like Maven or Gradle. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-java#installation) |
+| [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples) | Integrate the SDK into your Javascript/Typescript based project easily by adding it as a dependency via NPM. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-javascript#installation)        |
+| [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples)                | Integrate the SDK into your Python based project easily by adding it as a dependency via pip or Setuptools. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-python#installation)             |
+| [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples)                  | Integrate the SDK into your .NET based project easily by adding it as a dependency via nuget. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-dotnet#installation)                           |
+| [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples)                   | Integrate the SDK into your PHP based project easily by adding it as a dependency via composer. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-php#installation)                            |
+
+Visit our [Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) that provides you with examples for all Bitmovin SDK's available.

@@ -1,0 +1,555 @@
+---
+title: "Simple Encoding API - VoD"
+---
+
+## Overview
+
+Simple Encoding jobs provide a quick and easy way to convert your input files into streamable content that gets automatically optimized for efficient and quality-optimized DASH/HLS delivery using Bitmovin’s Per-Title Technology. All you need is a single API call that provides the input and output location details.
+
+## Requirements
+
+* **SDK Version:** 1.98.0 or higher for H264, v1.104.0 or higher for AV1
+* **Content Type:** VoD (for livestreaming please see the [Simple LIVE encoding API](/encoding/docs/simple-encoding-api-live))
+
+## Supported Features
+
+**Input Sources:**
+
+* HTTP(S), (S)FTP, S3, GCS, Azure Blob Storage (ABS), Akamai NetStorage
+
+**Output Destinations:**
+
+* S3, GCS, Azure Blob Storage (ABS), Akamai NetStorage, Bitmovin CDN Output (Beta)
+
+**Input Characteristics:**
+
+* Video: single input (required)
+* Audio: optional, including multiple inputs (eg. for multiple languages)
+* Subtitles: optional, with external SRT, TTML or WebVTT files
+
+**Output Characteristics:**
+
+* **Video:** H264 or AV1, segmented fMP4, renditions determined by our Per-Title algorithm
+* **Audio:** AAC only, segmented fMP4, one rendition per audio input
+* **Manifests:** DASH / HLS
+* **Subtitles:** WebVTT
+* **Thumbnails:** (every 5s)  
+   * low-res  
+   * high-res
+* **Sprites** (Trick Play) (every 5s)
+
+---
+
+## Introduction
+
+A Simple Encoding Job is defined by
+
+* An input source,
+* An output destination
+* A pre-defined encoding template
+
+… that’s it :)
+
+Once a Simple Encoding Job is started, the template is converted into an actual Encoding, adapted to the input and output definition. The template is a pre-defined set of configurations the Encoding will be executed with. There are currently 2 templates available:
+
+* `H264`: generates a Per-Title optimised ladder with the H264 video codec
+* `AV1`: generates a Per-Title optimised ladder with the AV1 video codec. If you don’t specify one explicitly in your configuration, H264 is used by default.
+
+### Job lifecycle
+
+After starting the Simple Encoding Job, it goes through the following stages:
+
+* `CREATED`: the Job has been created is waiting to be started.
+* `EXECUTING`: the Job is currently being executed and an Encoding is being created from it.
+* `FAILURE`: the Job could not create an Encoding, check the `errors` [property](/encoding/reference/getsimpleencodingvodjobbyjobid) for more information.
+* `RUNNING`: the Job created an encoding. At this time, an Encoding ID is available and the Encoding itself is either in state QUEUED or RUNNING.
+* `FINISHED`: the Encoding created by this job finished successfully.
+* `ERROR`: the Encoding created by this job failed, check the `errors` [property](/encoding/reference/getsimpleencodingvodjobbyjobid) for more information.
+* `CANCELED`: the Encoding has been started but subsequently canceled manually by the user.
+
+You can retrieve status information with the [Job details endpoint](/encoding/reference/getsimpleencodinglivejobbyjobid)
+
+Note that the Encoding created and managed by the Job has its own statuses, documented in this FAQ, and queried through the [Encoding Status endpoint.](/encoding/reference/getencodingencodingsstatusbyencodingid)
+
+---
+
+## Create a Simple Encoding Job
+
+The following examples are using an S3 bucket as Input Source, and another S3 bucket as Output Destination. An overview over all supported storage types can be found in the [“Inputs & Outputs“](/encoding/docs/simple-encoding-api-vod#inputs--outputs) section below.
+
+### REST API Call
+
+The simplest way to create a simple encoding is a plain HTTP POST request sent to the Bitmovin API or try it with this [Postman Collection](https://www.postman.com/bitmovin-simple-encoding/workspace/4b3f8ccb-66c0-4379-8cff-e282c9804e03/request/18670786-98741a2a-dc35-4532-964e-8802942bb315?ctx=documentation).
+
+Shell
+
+`curl --location --request POST 'https://api.bitmovin.com/v1/encoding/simple/jobs/vod' \
+  --header 'x-api-key: YOUR_BITMOVIN_API_KEY' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{
+    "name": "simple_encoding_name",
+    "encodingTemplate": "H264",
+    "inputs": [
+        {
+            "url": "s3://my-bucket/path/file.mp4",
+            "credentials": {
+                "accessKey": "S3_INPUT_ACCESS_KEY",
+                "secretKey": "S3_INPUT_SECRET_KEY"
+            }
+        }
+    ],
+    "outputs": [
+        {
+            "url": "s3://my-bucket/path/to/destination/folder/{uuid}/",
+            "credentials": {
+                "accessKey": "S3_OUTPUT_ACCESS_KEY",
+                "secretKey": "S3_OUTPUT_SECRET_KEY"
+            }
+        }
+    ]
+  }'
+`
+
+### Bitmovin OpenAPI SDK
+
+Beyond a plain HTTP POST, you can use any of the Bitmovin SDKs to start your job. The following code sample is the equivalent of the REST API call above, but using the Bitmovin OpenAPI Java SDK.
+
+Java
+
+`// define input
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("s3://my-bucket/path/file.mp4");
+
+// input credentials
+var inputCredentials = new SimpleEncodingVodJobAccessKeyCredentials();
+inputCredentials.setAccessKey(S3_INPUT_ACCESS_KEY);
+inputCredentials.setSecretKey(S3_INPUT_SECRET_KEY);
+input.setCredentials(inputCredentials);
+
+// define output
+var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("s3://my-bucket/path/to/destination/folder/{uuid}/");
+
+// output credentials
+var outputCredentials = new SimpleEncodingVodJobAccessKeyCredentials();
+outputCredentials.setAccessKey(S3_OUTPUT_ACCESS_KEY);
+outputCredentials.setSecretKey(S3_OUTPUT_SECRET_KEY);
+output.setCredentials(outputCredentials);
+
+// put it all together
+SimpleEncodingVodJobRequest simpleEncodingJob = new SimpleEncodingVodJobRequest();
+simpleEncodingJob.setEncodingTemplate(EncodingTemplate.H264)
+simpleEncodingJob.addInputsItem(input);
+simpleEncodingJob.addOutputsItem(output);
+
+// call the API
+api.encoding.simple.jobs.vod.(simpleEncodingJob);
+`
+
+---
+
+## Input Types
+
+### Video & Audio
+
+As inputs you can provide one or multiple files:
+
+* an input containing a single video and audio track, or
+* a single input containing a single video only track, together with one or multiple inputs containing a single audio only track each, and
+* one or more subtitle files. You differentiate between them by using the `inputType` property on each input in the `inputs` array.
+
+**Single Input:**
+
+Java
+
+`var input = new SimpleEncodingVodJobUrlInput();
+input.setCredentials(inputCredentials);
+input.setUrl("s3://my-bucket/path/file-with-video-and-audio.mp4");
+input.setLanguage("en");
+`
+
+**Multiple Inputs:**
+
+If you want to process more than one input (e.g. multiple audio tracks in addition to the video track), you must specify which input type each file provides, by stating `VIDEO` or `AUDIO`. Any audio tracks present in `VIDEO` inputs will be ignored, as will any video track in `AUDIO` inputs.
+
+From each `AUDIO` input, only the first audio track will be processed. To add different audio tracks (e.g. different language versions), they need to be provided in separate input files:
+
+Java
+
+`var videoInput = new SimpleEncodingVodJobUrlInput();
+videoInput.setUrl("https://ftp.halifax.rwth-aachen.de/blender/demo/movies/ToS/ToS-4k-1920.mov");
+videoInput.setInputType(SimpleEncodingVodJobInputType.VIDEO);
+
+// define audio input
+var audioInput1 = new SimpleEncodingVodJobUrlInput();
+audioInput1.setUrl("s3://my-bucket/path/audio-en.mp4");
+audioInput1.setInputType(SimpleEncodingVodJobInputType.AUDIO);
+audioInput1.setLanguage("en");
+
+// define audio input
+var audioInput2 = new SimpleEncodingVodJobUrlInput();
+audioInput2.setUrl("s3://my-bucket/path/audio-de.mp4");
+audioInput2.setInputType(SimpleEncodingVodJobInputType.AUDIO);
+audioInput2.setLanguage("de");
+`
+
+> ⚠️
+> 
+> **At least one input is required that provides a video track.** This needs to be done either by providing a single input without `inputType` specified (in which case it is assumed to contain the video track and one audio track) or with an input explicitly set to `inputType=VIDEO` (alongside one or multiple audio inputs).The Simple Encoding API cannot be used for audio-only encodings. On the other hand, video-only jobs are possible by having an input file that contains no audio track, or specifying an `inputType=VIDEO` with it if it does.
+> 
+> ℹ **Audio language (optional):** Even though it is not mandatory, we recommend always setting a language on audio inputs (and inputs without an `inputType` specified) to provide an indication of the available languages that players can choose from, which will exposed through the relevant mechanisms and labels in the DASH and HLS manifests. The language code must be compliant with [BCP 47](https://datatracker.ietf.org/doc/html/rfc5646). If you do not explicitly set a language, the label `und` (undefined) will be used instead.Any language tag defined in the source stream itself will not be retrieved and propagated.
+
+---
+
+### Subtitles & Closed Captions
+
+`SUBTITLE` and `CLOSED_CAPTION` are also supported input types. Both work in a very similar way but there is a distinction in their usage, intent and goal for the viewer.
+
+* **Subtitles** are mostly used to translate spoken audio as text on the screen (usually into a different language),
+* **Closed Captions** are specifically used to support and improve the accessibility for the deaf and hard-of-hearing audience and are using the same language as spoken in the audio track. Furthermore, they usually include additional indications of sound effects and other noises - for example “_car honks_” - or speaker changes (_“person A speaks followed by person B answering”_), thus supporting deaf and hard-of-hearing people in following the content.
+
+Both input types have to be valid `SRT`, `TTML`, or `WebVTT` files, indicated by their file extensions `.srt`, `.ttml`, or `.vtt`. It is required to specify their `inputType` as well as a `language` for each. The language code must be compliant with [BCP 47](https://datatracker.ietf.org/doc/html/rfc5646). The Simple Encoding Job will convert all provided subtitles/closed captions to WebVTT and add them to the DASH and HLS manifests using the language as label.
+
+Java
+
+`// define closed captions
+var closedCaptionsInputEn = new SimpleEncodingVodJobUrlInput();
+closedCaptionsInputEn.setUrl("https://download.blender.org/demo/movies/ToS/subtitles/TOS-en.srt");
+closedCaptionsInputEn.setLanguage("en");
+closedCaptionsInputEn.setInputType(SimpleEncodingVodJobInputType.CLOSED_CAPTION);
+
+// define subtitles
+var subtitleInputEn = new SimpleEncodingVodJobUrlInput();
+subtitleInputEn.setUrl("https://download.blender.org/demo/movies/ToS/subtitles/TOS-en.srt");
+subtitleInputEn.setLanguage("en");
+subtitleInputEn.setInputType(SimpleEncodingVodJobInputType.SUBTITLE);
+`
+
+## Inputs & Outputs
+
+The structure of both input and output is very similar, consisting of a property url depending on the storage type defined by the `scheme`, and an optional set of credentials to access the storage solution:
+
+JSON
+
+`{
+  "url": "scheme://path",
+  "credentials": {...}
+}
+`
+
+While the URL for an input definition has to point to a specific file, the URL for the output definition has to point to a folder or path, in which all the generated output files will be stored.
+
+When defining an output URL, you can use a couple of placeholders that will be replaced at run-time:
+
+* `{uuid}` will be replaced with a unique identifier. We recommend using this placeholder to ensure that every job has a unique output path, in so doing avoiding files being overwritten by subsequent jobs
+* `{asset}` is replaced by the basename of the first video source file provided
+
+---
+
+### HTTP/HTTPS (Input only)
+
+* `http://<host>[:<port>]/path/file.mp4`
+* `https://<host>[:<port>]/path/file.mp4`
+
+The port defaults to 80 if it is not provided. It is possible to either provide no credentials (for unauthenticated access) or `username` and `password` for basic authentication.
+
+**Unauthenticated:**
+
+Java
+
+`var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("https://<host>[:<port>]/path/file.mp4");
+`
+
+**BasicAuth:**
+
+Java
+
+`var inputCredentials = new SimpleEncodingVodJobUsernamePasswordCredentials();
+inputCredentials.setUsername("USERNAME");
+inputCredentials.setPassword("PASSWORD");
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("https://<host>[:<port>]/path/file.mp4");
+input.setCredentials(inputCredentials);
+`
+
+---
+
+### (S)FTP (Input only)
+
+* `ftp://<host>[:<port>]/path/file.mp4`
+* `sftp://<host>[:<port>]/path/file.mp4`
+
+The port defaults to 21 (ftp) or 22 (sftp) if it is not provided. It is possible to either provide no credentials (for unauthenticated access) or with a `username` and `password` combination.
+
+**Unauthenticated:**
+
+Java
+
+`var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("ftp://<host>[:<port>]/path/file.mp4");
+`
+
+**BasicAuth:**
+
+Java
+
+`var inputCredentials = new SimpleEncodingVodJobUsernamePasswordCredentials();
+inputCredentials.setUsername("USERNAME");
+inputCredentials.setPassword("PASSWORD");
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("ftp://<host>[:<port>]/path/file.mp4");
+input.setCredentials(inputCredentials);
+`
+
+---
+
+### AWS S3
+
+* Input `s3://<my-bucket>/path/file.mp4`
+* Output `s3://<my-bucket>/path/to/destination/folder/{uuid}/`
+
+Credentials for S3 URLs are mandatory and can be provided via AWS access/secret keys or role-based authentication. Generic S3 is currently not supported.
+
+**Access/Secret Key:**
+
+Java
+
+`var inputKeyCredentials = new SimpleEncodingVodJobAccessKeyCredentials();
+inputKeyCredentials.setAccessKey("ACCESSKEYHERE");
+inputKeyCredentials.setSecretKey("SECRETKEYHERE");
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("s3://my-bucket/path/file.mp4");
+input.setCredentials(inputKeyCredentials);
+
+var outputKeyCredentials = new SimpleEncodingVodJobAccessKeyCredentials();
+outputKeyCredentials.setAccessKey("ACCESSKEYHERE");
+outputKeyCredentials.setSecretKey("SECRETKEYHERE");
+
+var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("s3://my-bucket/path/to/destination/folder/{uuid}/");
+output.setCredentials(outputKeyCredentials);
+`
+
+**Role-based:**
+
+Java
+
+`var roleBasedCredentials = new SimpleEncodingVodJobS3RoleBasedCredentials();
+roleBasedCredentials.setRoleArn("arn:aws:iam::123456789012:role/OurS3AccessRole");
+roleBasedCredentials.setUseExternalId(true);
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("s3://my-bucket/path/file.mp4");
+input.setCredentials(roleBasedCredentials);
+
+var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("s3://my-bucket/path/to/destination/folder/");
+output.setCredentials(roleBasedCredentials);
+`
+
+`useExternalId` (default: false) is an optional property and controls if the customer’s `orgId` should be used as `externalId` when assuming the AWS role, or not. Its an additional security measure to prevent unauthorized users assume a role by obtaining the role ARN somehow. For more details, please see [S3 Role-Based Input](/encoding/reference/postencodinginputss3rolebased) for details about the externalId, and be aware that the simple encoding API only supports the `externalIdMode` `GLOBAL`.
+
+---
+
+### Google Cloud Storage (GCS)
+
+* Input `gcs://<my-bucket>/path/file.mp4`
+* Output `gcs://<my-bucket>/path/to/destination/folder/{uuid}/`
+
+Credentials for GCS URLs are mandatory and can be provided as HMAC keys or a service account.
+
+**HMAC Keys**
+
+Java
+
+`var inputKeyCredentials = new SimpleEncodingVodJobAccessKeyCredentials();
+inputKeyCredentials.setAccessKey("ACCESS_ID");
+inputKeyCredentials.setSecretKey("SECRET");
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("gcs://my-bucket/path/file.mp4");
+input.setCredentials(inputKeyCredentials);
+
+var outputKeyCredentials = new SimpleEncodingVodJobAccessKeyCredentials();
+outputKeyCredentials.setAccessKey("ACCESS_ID");
+outputKeyCredentials.setSecretKey("SECRET");
+
+var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("gcs://my-bucket/path/to/destination/folder/{uuid}/");
+output.setCredentials(outputKeyCredentials);
+`
+
+**Service-Account** _Note that the service credentials provided in the following snippet are just for example. You need to obtain your service credentials from your GCP account._
+
+Java
+
+`var serviceAccountCredentials = new SimpleEncodingVodJobGcsServiceAccountCredentials();
+serviceAccountCredentials.setServiceAccountCredentials("{\n"
+    + "    \"type\": \"service_account\",\n"
+    + "    \"project_id\": \"bitmovin\",\n"
+    + "    \"private_key_id\": \"abcdefghijklmnopqrstuvwxyz\",\n"
+    + "    \"private_key\": \"-----BEGIN PRIVATE KEY-----\\nOwdXyjRT9F4A==\\n-----END PRIVATE KEY-----\\n\",\n"
+    + "    \"client_email\": \"[[email protected]](/cdn-cgi/l/email-protection)\",\n"
+    + "    \"client_id\": \"10440564562784234997\",\n"
+    + "    \"auth_uri\": \"https://accounts.google.com/o/oauth2/auth\",\n"
+    + "    \"token_uri\": \"https://oauth2.googleapis.com/token\",\n"
+    + "    \"auth_provider_x509_cert_url\": \"https://www.googleapis.com/oauth2/v1/certs\",\n"
+    + "    \"client_x509_cert_url\": \"https://www.googleapis.com/robot/v1/metadata/x509/bitmovin%40bitmovin.iam.gserviceaccount.com\"\n"
+    + "}");
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("gcs://my-bucket/path/file.mp4");
+input.setCredentials(serviceAccountCredentials);
+
+var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("gcs://my-bucket/path/to/destination/folder/{uuid}/");
+output.setCredentials(serviceAccountCredentials);
+`
+
+---
+
+### Azure Blob Storage
+
+* Input `https://<account>.blob.core.windows.net/<container>/path/file.mp4`
+* Output `https://<account>.blob.core.windows.net/<container>/path/to/destination/folder/{uuid}/`
+
+Credentials for Azure Blob Storage URLs are mandatory and can be provided via the [storage account accesss key credentials](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-keys-manage?tabs=azure-portal).
+
+Java
+
+`var azureInputCredentials = new SimpleEncodingVodJobAzureCredentials();
+azureInputCredentials.setKey("STORAGE_KEY");
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("https://<account>.blob.core.windows.net/<container>/path/file.mp4");
+input.setCredentials(azureInputCredentials);
+
+var azureOutputCredentials = new SimpleEncodingVodJobAzureCredentials();
+azureOutputCredentials.setKey("STORAGE_KEY");
+
+var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("https://<account>.blob.core.windows.net/<container>/path/to/destination/folder/);
+output.setCredentials(azureOutputCredentials);
+`
+
+---
+
+### Akamai NetStorage
+
+* Input `https://<host>-nsu.akamaihd.net/<CP-code>/path/file.mp4`
+* Output `https://<host>-nsu.akamaihd.net/<CP-code>/path/to/destination/folder/{uuid}/`
+
+Credentials for Akamai NetStorage URLs are mandatory and can be provided via `username` and `password`
+
+Java
+
+`var authenticationCredentials = new SimpleEncodingVodJobUsernamePasswordCredentials();
+authenticationCredentials.setUsername("USERNAME");
+authenticationCredentials.setPassword("PASSWORD");
+
+var input = new SimpleEncodingVodJobUrlInput();
+input.setUrl("akamai-ns://my-akamai-host-nsu.akamaihd.net/123456/path/file.mp4");
+input.setCredentials(authenticationCredentials);
+
+var outputAuthenticationCredentials = new SimpleEncodingVodJobUsernamePasswordCredentials();
+outputAuthenticationCredentials.setUsername("USERNAME");
+outputAuthenticationCredentials.setPassword("PASSWORD");
+
+var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("akamai-ns://my-akamai-host-nsu.akamaihd.net/path/to/destination/folder/");
+output.setCredentials(outputAuthenticationCredentials);
+`
+
+---
+
+### Bitmovin CDN Output (Beta)
+
+(requires SDK v1.111.0 or higher) In case you have no way to host your encoded content by yourself, you can use the Bitmovin Content Delivery Network instead. It stores your encoded content in a dedicated storage, and ensures an efficient delivery of your content to your users. Therefore, no further configuration is required.
+
+Java
+
+`var output = new SimpleEncodingVodJobCdnOutput();
+`
+
+> ⚠️
+> 
+> If you use this output type for the first time, it will also trigger its initial provisioning of your Bitmovin CDN resources. Therefore, it can take a couple minutes until you are able to access the files after your encoding has finished.
+> 
+> ℹ️ Only one Bitmovin CDN Output is allowed per Simple Encoding Job.
+> 
+> ℹ️ Contents written to this Output are using the `PRIVATE` ACL permission. So, your encoded content can be accessed through your CDN endpoint only.
+
+---
+
+## Additional Options
+
+### Public Outputs
+
+By default, and in accordance with best practices, the output files will be set to be private, meaning that they cannot be streamed directly from storage output. If you want public outputs, simply set `makePublic` to `true` in your output configuration.
+
+Java
+
+`var output = new SimpleEncodingVodJobUrlOutput();
+output.setUrl("s3://my-bucket/path/to/destination/folder/{uuid}/");
+output.setCredentials(outputCredentials);
+output.setMakePublic(true);
+`
+
+### Additional Single-file MP4
+
+You can request to have single-file fragmented MP4 outputs generated for each rendition that the Per-Title algorithm creates, for example if you want to provide customers with an offline or download option. Each such MP4 file will contain all video and audio streams configured, but no subtitles.
+
+Java
+
+`SimpleEncodingVodJobRequest simpleEncodingJob = new SimpleEncodingVodJobRequest();
+simpleEncodingJob.setEncodingTemplate(EncodingTemplate.H264)
+simpleEncodingJob.addInputsItem(input);
+simpleEncodingJob.addOutputsItem(output);
+
+SimpleEncodingVodJobOptions options = new SimpleEncodingVodJobOptions();
+options.setSingleFileOutput(true);
+simpleEncodingJob.setOptions(options);
+`
+
+---
+
+## Output Folder Structure
+
+Simple Encoding Jobs will create the following folder structure at the given destination:
+
+The output files can be found in the following locations on every configured output:
+
+* `/video`  
+   * `/{codec}/{width}x{height}_{bitrate}/` (multiple subfolders containing different output renditions, {codec} is set based on the template that is used: H264 or AV1)
+* `/audio`  
+   * `/aac/{language}/` \- if language is unique (subfolder containing audio output files)  
+   * `/aac/{language}_{index}/` \- if language is not unique (subfolder containing audio output files)
+* `/subtitles` (subfolder containing subtitles files)
+* `/captions` (subfolder containing captions files)
+* `/sprites` (subfolder containing generated sprites)
+* `/thumbnails` (subfolder containing generated thumbnails)
+* `/index.m3u8` (HLS manifest file)
+* `/stream.mpd` (DASH manifest file)
+
+![](/images/encoding/docs/11310f7-image.png)
+
+## Known Limitations
+
+* DRM Protection is not available.
+* **Encoding Templates:** templates are only provided for H264 or AV1 codec outputs
+* **Unsupported Input Types:** Anamorphic inputs (where DAR/SAR requires configuration), 3D/VR content, HDR content
+* **Audio**  
+   * Only AAC output is currently supported.  
+   * Only the first audio track is extracted from each relevant individual input file.  
+   * The input channel layout will be downmixed to STEREO (2.0) by default:  
+         * If the source is a stereo track, it is used for output  
+         * If the source contains a single mono track, it will be duplicated into a stereo output  
+         * If the source contains multiple mono tracks, the first two tracks will be mapped into a stereo output  
+         * For all other cases, the output is undetermined. The encoder will attempt to downmix the audio, but the result may not be as expected, or the job or encoding may fail.
+* **Video**  
+   * Filters/Transformations are not supported nor automatically applied (e.g. interlaced content remains interlaced)
+* **Webhooks:** Once a Simple Encoding Job was successfully started, standard generic [encoding webhook](https://dashboard.bitmovin.com/encoding/configurations/notifications) can be used to track the progress of the encoding.

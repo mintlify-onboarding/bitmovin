@@ -1,0 +1,155 @@
+---
+title: "Stream Conditions"
+---
+
+## Introduction
+
+Stream conditions allow you to add conditional logic in your encoding configuration. They ensure that your workflow can automatically adapt to different types of input files and streams.
+
+This page lists the attributes and values available when attaching stream conditions to [Stream resources](/encoding/reference/postencodingencodingsstreamsbyencodingid) through its `conditions` parameter.
+
+Use the [tutorial](/encoding/docs/how-to-adapt-automatically-to-different-source-files-with-stream-conditions) for more information on how to use stream conditions.
+
+## Condition object
+
+A `Condition` has four parameters:
+
+**`type`** 
+
+`"CONDITION"
+"AND"
+"OR"
+`
+
+Set it to "CONDITION" to describe a single condition you want to provide. If you need more than one condition, please see the "Conjuction Object" section.
+
+**`attribute`**
+
+Indicates what aspect of the input is being checked
+
+**`operator`**
+
+Indicates the logical operation to perform between source value and expected value. Possible operators are
+
+`- "=="
+- "!="
+- "<="
+- "<"
+- ">"
+- ">="
+`
+
+Note that if you use our SDKs, the operators are exposed through a ConditionOperator enumeration:
+
+`- "EQUAL" for "=="
+- "NOT_EQUAL" for "!="
+- "LESS_THAN_OR_EQUAL" for "<="
+- "LESS_THAN" for "<"
+- "GREATER_THAN" for ">"
+- "GREATER_THAN_OR_EQUAL" for ">="
+`
+
+**`value`**
+
+Allows you to state what value to compare against the value extracted from the input file or stream.
+
+All values (including numbers and booleans) should be provided as strings and will be cast automatically into the appropriate type when the encoder performs the condition check. 
+
+### Example
+
+This condition checks if the total count of audio streams within an input file is greater than or equal to 2.
+
+JSON
+
+`{
+  type: "CONDITION",
+  attribute: "AUDIOSTREAMCOUNT",
+  operator: ">=",
+  value: "2"
+}
+`
+
+## Conjunction Object
+
+A `Conjunction` consists of two parameters:
+
+**`type`**
+
+`"AND"
+"OR"
+`
+
+**`conditions`**
+
+Expect an array of condition objects that will be logically chained together based on conjunction object type.
+
+### Example
+
+JSON
+
+`{
+  type: "AND",
+  conditions: [
+  	{
+      type: "CONDITION",
+      attribute: "AUDIOSTREAMCOUNT",
+      operator: ">=",
+      value: "2"
+    },
+    {
+      type: "CONDITION",
+      attribute: "DURATION",
+      operator: ">=",
+      value: "30.56"
+    }
+  ]
+}
+`
+
+## Extracted values
+
+At times, you may find that the condition you configure does not seem to work. It may be that the file you are using does not conform to your expectations.
+
+To troubleshoot this, you can verify the result of the analysis stage, by looking at the `analysisDetails` property of the `Stream` (or `inputStreams.analysisDetails` depending on your input configuration), which will be populated during the encoding.
+
+We state below, for each attribute, which property in the `analysisDetails` object will reflect the value extracted from the source during analysis.
+
+_Note that the `analysisDetails` property is only available when you call the REST API directly, and is not currently exposed through the SDKs. You can for example use the REST client embedded in our API reference._
+
+## Input file
+
+The following attributes are used to check the input file:
+
+| Attribute        | Description                                                                                                                                                                                                                                 | Extracted Value                                                        | Works for VoD | Works for LIVE |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ------------- | -------------- |
+| INPUTSTREAM      | checks whether there is a stream to be found in the input file, at the position defined by the selectionMode parameter of the StreamInput resource attached to the Stream. You must use the EQUAL condition operator to test this condition | true or false                                                          | ✅             | ✅              |
+| STREAMCOUNT      | checks the number of streams (or tracks) present in the input file                                                                                                                                                                          | analysisDetails.numberOfStreams                                        | ✅             | ✅              |
+| VIDEOSTREAMCOUNT | checks specifically the number of video streams available in the input file                                                                                                                                                                 | size of analysisDetails.videoStreams array                             | ✅             | ✅              |
+| AUDIOSTREAMCOUNT | checks specifically the number of audio streams available in the input file                                                                                                                                                                 | size of analysisDetails.audioStreams array                             | ✅             | ✅              |
+| DURATION         | checks the duration of the input stream, and is expressed as a decimal representation in seconds                                                                                                                                            | analysisDetails.videoStreams\[0\].duration or analysisDetails.duration | ✅             | ✖️             |
+
+---
+
+## Video Stream
+
+In addition to the above, the following attributes are only available when evaluating conditions against video streams. Extracted values are compared against the property of the appropriate item in the `analysisDetails.videoStreams` array
+
+| Attribute   | Description                                                                                                                                               | Extracted Value                     | Works for VoD | Works for LIVE |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- | ------------- | -------------- |
+| HEIGHT      | in pixels                                                                                                                                                 | height                              | ✅             | ✅              |
+| WIDTH       | in pixels                                                                                                                                                 | width                               | ✅             | ✅              |
+| BITRATE     | expressed as an integer in bits per second (bps)                                                                                                          | bitrate                             | ✅             | ✖️             |
+| FPS         | frame rate expressed as a number of frames per second and parsed to a decimal representation (ie. you can also express it as fraction such as "3000/1001" | fps                                 | ✅             | ✅              |
+| ASPECTRATIO | as a decimal value. Therefore a value larger than 1 is therefore landscape, and lower than 1 portrait                                                     | calculated as width / height \* par | ✅             | ✅              |
+| ROTATION    | in degrees                                                                                                                                                | rotation                            | ✅             | ✅              |
+
+## Audio Stream
+
+The following attributes apply to audio input streams only. Extracted values are compared against the property of the appropriate item in the `analysisDetails.audioStreams` array
+
+| Attribute     | Description                                                                                                                                                                     | Extracted Value | Works for VoD | Works for LIVE |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ------------- | -------------- |
+| BITRATE       | expressed as an integer in bits per second (bps)                                                                                                                                | bitrate         | ✅             | ✖️             |
+| LANGUAGE      | audio language. If none is set in the input stream, the value will be "und"                                                                                                     | language        | ✅             | ✅              |
+| CHANNELFORMAT | used to check on the number of channels in the audio stream. For example, a stereo input track would have a value of 2, a input track with dolby digital would have 6           | channelFormat   | ✅             | ✅              |
+| CHANNELLAYOUT | A tag describing the channel layout. See [https://ffmpeg.org/ffprobe-all.html#Channel-Layout](https://ffmpeg.org/ffprobe-all.html#Channel-Layout) for a list of possible values | channelLayout   | ✅             | ✅              |

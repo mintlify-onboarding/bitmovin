@@ -1,0 +1,321 @@
+---
+title: "Using Bitmovin Cloud Connect with AWS"
+---
+
+## Bitmovin Cloud Connect with AWS - Tutorial
+
+This document explains how to set up Bitmovin Encoding on AWS infrastructure so that the Bitmovin platform can run encoders using the AWS EC2 API.
+
+The instructions in this document for the [REST API Services](/encoding/docs/rest-api-services) apply to live encoding and file-based encoding. For a complete list of formats and input types, see the [Bitmovin website](/encoding/docs/supported-input-and-output-formats).
+
+## Prerequisites
+
+_This feature requires a commercial agreement and needs to be specifically activated for a Bitmovin Account. It is not available by default. You will not be able to complete the configuration below without this activation._
+
+* A Bitmovin account, enabled for use of the Cloud Connect feature  
+   * If the Bitmovin account has a sub organisation you want to use with Cloud Connect, this sub organisation must be enabled for use of the Cloud Connect feature.
+* An [AWS Account](https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/)
+
+## AWS Configuration
+
+### Create an IAM User
+
+This user is used by the Bitmovin platform to get access to your AWS account and create compute resources to run parts of the the encoding service within it, including starting and stopping EC2 instances.
+
+1. [Add a User](https://console.aws.amazon.com/iam/home?region=us-east-1#/users$new?step=details), and enable programmatic access to AWS
+2. Grant it the necessary permissions. You can either use the managed `AmazonEC2FullAccess` policy or create a custom one with the details in the Appendix below.
+3. Collect the credentials (Access Key and Secret Key) that AWS has generated for that user, for example by downloading the CSV file
+4. Please make sure not to use any IAM policies on this account that require the user to have a virtual multi-factor authentication (MFA) device set up.
+
+### Set up a VPC
+
+We recommend that you use the [default VPC](https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html) for the respective region. The Default VPC is the only VPC in which you can avoid specifying a subnet, which gives you the advantage that if one availability zone has reached its capacity, your instance will automatically be launched in another (free) zone. If you select a specific Subnet on instance launch (which you are required to do if a non-Default VPC is used), the instance can only be launched in the Availability Zone of the selected Subnet, and if there are no more resources available in that zone, then no instance can be launched.
+
+_Note: The subnet must have `Auto-assign public IPv4 address` enabled._
+
+Your AWS account should automatically come with a default VPC and default Subnet provisioned.
+
+_Note: If you have deleted the default VPC in your AWS account, you can [re-create it easily](https://aws.amazon.com/about-aws/whats-new/2017/07/create-a-new-default-vpc-using-aws-console-or-cli/)._
+
+If you prefer, you can [create a custom VPC](https://docs.aws.amazon.com/vpc/latest/userguide/working-with-vpcs.html), with at least one subnet.
+
+_Note: The ability to use custom VPC is supported from Encoder version 2.51.0 and above._
+
+### Create a Security Group
+
+The security group defines firewall rules that enable network access into your VPC, and on the EC2 instances in particular.
+
+1. [Create a security group](https://console.aws.amazon.com/ec2/v2/home?#CreateSecurityGroup:) and associate it with the appropriate VPC.
+2. For each of the tables below, add inbound rules that allow specific traffic:
+
+| Type        | All traffic                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| Description | For communication between the session manager VM instance and its instance manager VM instances |
+| Port range  | All                                                                                             |
+| Protocol    | All                                                                                             |
+| Source      | (select the security group id of the security group just created)                               |
+
+| Type        | Custom TCP Rule                                              |
+| ----------- | ------------------------------------------------------------ |
+| Description | For communication with the service that manages the encoding |
+| Port range  | 9999                                                         |
+| Protocol    | TCP                                                          |
+| Source      | 104.199.97.13/3235.205.157.162/32                            |
+
+| Type        | SSH                                                                                                                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Description | For incoming commands (i.e. pulling and starting docker containers)                                                                   |
+| Port range  | 22                                                                                                                                    |
+| Protocol    | TCP                                                                                                                                   |
+| Source      | 104.199.97.13/3235.205.157.162/32                                                                                                     |
+| Note        | _You can configure a different SSH port, but will need to remember to set the Bitmovin Infrastructure object accordingly (see below)_ |
+
+_Note: Firewall rules are checked to be limited to the correct source ip addresses, and therefore allowing all ip addresses in source would fail the configuration when adding region settings._
+
+Additional inbound rules are required if you are encoding live streams transported over SRT, Zixi or RTMP.
+
+#### Firewall rules necessary for RTMP live streams
+
+| Type                | Custom TCP                                                                    |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Description         | or RTMP live streams                                                          |
+| Protocols and Ports | tcp:1935                                                                      |
+| Source              | Anywhere (or the specific set of addresses where streams will originate from) |
+
+#### Firewall rules necessary for SRT live streams
+
+| Type                | Custom TCP and Custom UDP (multiple)                                          |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Description         | For Zixi live streams                                                         |
+| Protocols and Ports | tcp:2088udp:2088udp:2089udp:2090udp:2091                                      |
+| Source              | Anywhere (or the specific set of addresses where streams will originate from) |
+
+#### Firewall rules necessary for Zixi live streams
+
+| Type                | Custom TCP                                                                    |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Description         | For Zixi live streams                                                         |
+| Protocols and Ports | tcp:4444                                                                      |
+| Source              | Anywhere (or the specific set of addresses where streams will originate from) |
+
+## Bitmovin Configuration
+
+Before you continue, make sure you have collected the following information:
+
+From your AWS account:
+
+* `account_number`
+
+From the CSV file with the AWS credentials:
+
+* `access_key`
+* `secret_key`
+
+From Security Groups:
+
+* `security_group_id`
+
+In case you use a custom VPC:
+
+* `subnet_id`
+
+### Create Infrastructure
+
+To enable your Bitmovin account to run encodings in your AWS account, you need to create an Infrastructure object.
+
+### With the Dashboard
+
+1. In the Bitmovin dashboard, go to the [Infrastructure section](https://bitmovin.com/dashboard/encoding/infrastructure).
+2. Click the **Add new Infrastructure** button and select the **AWS** icon
+3. Fill in the details, with the `account_number`, `access_key` and `secret_key` details collected previously.
+4. Select the infrastructure just created with **Show details**
+5. For each AWS region in which you want to run encodings, **add new Region Settings**  
+   * Fill in the details for that region, using the relevant `security_group_id`  
+   * If not using the default VPC, also set the “Subnet” to the relevant `subnet_id`  
+   * it is recommended to start with a low number of “Max parallel Encodings”  
+   * and to leave the “Allowed Machine Types” empty
+
+Please note that the inbound rules are checked when you make an “Add AWS Region Setting” request to Bitmovin API. If there is any permission or configuration issue, the region will not be created and you will be returned to the previous screen showing the details of the infrastructure.
+
+### With the Bitmovin APIs
+
+Using the [Add AWS Account](/encoding/reference/postencodinginfrastructureaws) endpoint, submit the following JSON and replace the respective `accessKey`, `secretKey`, and `accountNumber` values with the appropriate values collected in the previous steps:
+
+JSON
+
+`    {
+      "name": "AWS Connect - <aws_account_number>",
+      "description": "<Something meaningful for the dashboard>",
+      "accessKey": "<user_access_key>",
+      "secretKey": "<user_secret_key>",
+      "accountNumber": "<aws_account_number>"
+    }
+`
+
+For each region in which you want to run encodings, you also need to create AWS Account Region Settings. Use the [Add AWS Region Setting](/encoding/reference/postencodinginfrastructureawsregionsbyinfrastructureidandregion) endpoint to do so, with the following payload:
+
+`    {
+      "securityGroupId": "<aws_security_group_id>",
+      "subnetId": "<aws_subnet_id>"
+    }
+`
+
+If you are using the default VPC in your AWS account, you still need to supply the subnetId property, but it should be set to an empty string.
+
+You can also set the `sshPort` in this payload if you are not using the default value of 22 in your security group inbound rules.
+
+_For example, if your Security Group has ID “sg-12345” and applies to the default VPC and you want to allow any subnet, and you want to run encodings in eu-west11, you will need to submit the following payload to this endpoint:_
+
+`<https://api.bitmovin.com/v1/encoding/infrastructure/gce/><infastructure-id>/regions/EU_WEST_1
+`
+
+JSON
+
+`    {
+       "securityGroupId": "sg-12345",
+       "subnetId": ""
+    }
+`
+
+### Request access to AMIs
+
+The Bitmovin platform uses Amazon Machine Images (AMIs) from which to create encoder instances in AWS.
+
+After you have created all infrastructure objects in the account (or accounts) that you need, ask your Bitmovin technical contact to whitelist access to the AMIs for your specific AWS service account.
+
+You will need to provide us with your AWS `account_number` to do so.
+
+## Run encoding jobs in AWS
+
+After configuration has been completed, you will be able to run encoding jobs in your own AWS account. To do so, use the Bitmovin API client SDKs to submit encoding jobs, in the same way as you would do for encodings running in the Bitmovin Managed Cloud service. The only difference is that you need to specify the new infrastructure instead of public cloud regions.
+
+Here is a Python snippet demonstrating how to link your encoding to your infrastructure.
+
+Python
+
+`    # ID of the Infrastructure object created in step 5.
+    infra_id = ‘<infrastructure_id>’ 
+    
+    # AWS region of the AWS-connect setup
+    infra_region = CloudRegion.AWS_EU_WEST_1
+    infrastructure = InfrastructureSettings(infrastructure_id=infra_id, 
+                            cloud_region=infra_region)
+    
+    encoding = Encoding(name='aws connect encoding',
+        cloud_region=CloudRegion.EXTERNAL,
+        infrastructure=infrastructure,
+        encoder_version='STABLE')
+`
+
+### Sub Organisations
+
+If you have set up your infrastructure in a sub organisation, you must tell the Bitmovin API that you want to run the encoding in that sub organisation. Thus, in addition to the code snippet above, make sure to set the `tenant_org_id` alongside the `api_key` in the `bitmovin_api` object:
+
+Python
+
+`    # ID of the sub organisation you added the infrastructure to
+    organisation_id = '<sub_organisation_id>'
+
+    bitmovin_api = BitmovinApi(api_key=config_provider.get_bitmovin_api_key(), 
+                       tenant_org_id=organisation_id,
+                       logger=BitmovinApiLogger())
+`
+
+## Resource Quotas
+
+If you want to run several encodings in parallel, the default limits may not be sufficient. In that case, you will have to request limit increases for the following resource in your Region(s), through the [Service Quotas page](https://console.aws.amazon.com/servicequotas/home):
+
+For the limits to request we will be using these variables:
+
+| Variable name                              | Explanation                                                                                                                                                                                                                                                                                                               |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (maximum number of encodings)              | The maximum number of parallel encodings the infrastructure must be able to run. Typically this is the number of encoding slots assigned to the Bitmovin account or sub-org associated with the infrastructure.                                                                                                           |
+| (maximum number of instances per encoding) | The number of instances used by one encoding. This number varies depending on the input file size and the number and data rate of the encoder representations. However, we recommend to use 60 as the maximum number of instances per encoding when getting started and to increase this limit if it proves insufficient. |
+
+Using the variables above, please request the following limits: 
+
+| Quota name                                                           | Limit to request                                                                            |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Running On-Demand All Standard (A, C, D, H, I, M, R, T, Z) instances | (maximum number of encodings) \* 8 vCPUs                                                    |
+| Provisioned IOPS SSD (io1 & io2) volume storage (TiB)                | (maximum number of encodings) \* 0.5                                                        |
+| Provisioned IOPS SSD (io1 & io2) I/O operations (IOPS)               | (maximum number of encodings) \* 2000                                                       |
+| All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests      | (maximum number of encodings) \* (maximum number of instances per encoding) \* 8 vCPUs \* 3 |
+| Network interfaces                                                   | (maximum number of encodings) \* (maximum number of instances per encoding)                 |
+| General Purpose SSD (gp2 & gp3) volume storage (TiB)                 | (maximum number of encodings) \* (maximum number of instances per encoding) \* 0.05         |
+
+The values above assume 8-core instances. If you believe that your use case requires instances with a different number of cores, this number may need to be increased after discussion with your Bitmovin team.
+
+We recommend requesting a limit increase for spot instance requests of at least 20,000-30,000 to ensure error-free and fast encodings.
+
+Generally, it is a good idea to multiply the expected limit calculated for your current situation by 2, to have some margin in case you need to ramp up.
+
+> 📘
+> 
+> New Resource Quota requests for encoder versions >= 2.179.0
+> 
+> Starting with the Bitmovin Encoder Version 2.179.0, we use the new more performant IO2 SSD storage type for our encodings starting with certain cloud regions. We are going to rollout this change to further regions.
+> 
+> When you're using an encoder version greater or equal to 2.179.0 or `BETA` as your configured encoder version in your encoding workflow in combination with Bitmovin Cloud Connect AWS, you need to ensure to request new quota requests for the IO2 storage type in order to ensure a smooth encoding process:
+> 
+> * IOPS for Provisioned IOPS SSD (io2) volumes
+> * Storage for Provisioned IOPS SSD (io2) volumes, in TiB
+> 
+> In addition to this change, we've also doubled the amount of IOPS used per disk to increase encoding performance. In order to keep your workflow running smoothly with the abovementioned newer encoder versions, you need to request quota increases for double the amount of IO1 (and IO2) than you had configured beforehand. We've already adjusted the values in the table above accordingly.
+
+_Note: there is no form for Spot Instance Request Limit increases, so you have to request this in the Use Case description of the Instance Limit increase form._
+
+## Appendix
+
+### AWS IAM User policy.
+
+The following JSON snippet contain the set of permissions required to perform encoding on EC2 instance. You can assign it to the IAM User, if you prefer not to use the `AmazonEC2FullAccess` policy.
+
+JSON
+
+`       {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:TerminateInstances",
+                    "ec2:StartInstances",
+                    "ec2:CreateTags",
+                    "ec2:RunInstances",
+                    "ec2:StopInstances"
+                ],
+                "Resource": [
+                    "arn:aws:ec2:*:*:subnet/*",
+                    "arn:aws:ec2:*:*:instance/*",
+                    "arn:aws:ec2:*:*:volume/*",
+                    "arn:aws:ec2:*:*:security-group/*",
+                    "arn:aws:ec2:*:*:network-interface/*",
+                    "arn:aws:ec2:*::image/*"
+                ]
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "ec2:DescribeInstances",
+                    "ec2:RequestSpotInstances",
+                    "ec2:DescribeTags",
+                    "ec2:DescribeVpnConnections",
+                    "ec2:DescribeVolumesModifications",
+                    "ec2:DescribeSpotInstanceRequests",
+                    "ec2:DescribeSecurityGroups",
+                    "ec2:GetConsoleOutput",
+                    "ec2:DescribeSpotPriceHistory",
+                    "ec2:CancelSpotInstanceRequests",
+                    "ec2:GetPasswordData",
+                    "ec2:GetLaunchTemplateData",
+                    "ec2:DescribeScheduledInstances",
+                    "ec2:DescribeVpcs",
+                    "ec2:DescribeScheduledInstanceAvailability",
+                    "ec2:DescribeElasticGpus",
+                    "ec2:DescribeInstanceStatus"
+                ],
+                "Resource": "*"
+            }
+        ]
+    }
+`

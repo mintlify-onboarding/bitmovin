@@ -1,0 +1,134 @@
+---
+title: "Optimizations: reducing turnaround time for VOD encodings"
+---
+
+## Overview
+
+There are cases for which it is most important to achieve fast turnaround of your encodings, when the speed of the encoding comes before any other concern. This page provides you with a number of pointers and makes recommendations, whilst also highlighting the compromises you may have to make.
+
+We will assume that your baseline is a “standard” encoding, as you would have executed by using one of our SDK examples. The type of configuration tuning highlighted in the rest of this document requires you to use the full API, and will not be accessible if you are using our other encoding mechanisms (such as dashboard or Simple Encoding API).
+
+The techniques presented below can all be combined (unless indicated otherwise). The increase in speed you will get from any combination of them is difficult to quantify, as it depend (among others) on the duration and complexity of the asset.
+
+You will need to perform some experimentation with your own content to determine what works best for your use case…
+
+## Inputs
+
+You may not be able to control the specification of the source files you will encode, but if you do, the following recommendations apply:
+
+* Avoid unnecessarily high bitrates. High bitrates files take a long time to download, analyse and decode.
+* Avoid complex codecs (such as JPEG2000). They take a significant amount of time to decode.
+
+## Encoding Configuration
+
+### A fast codec
+
+First, to ensure that the encoding is quick, choose a “simpler” codec. H264 is going to be by far the fastest to encode with.
+
+_What compromise you may have to make_
+
+More advanced codecs such as H265, VP9 or AV1 will be much better at achieving higher quality for given bitrates. Therefore selecting H264 instead may compromise the quality, or force you to use higher bitrates.
+
+### A speed-focused preset
+
+All our codec configurations allow you to use a preset. Some of those presets are focused on achieving speed.
+
+* H264: [VoD Speed Preset Configurations](/encoding/docs/h264-presets#vod-speed-preset-configurations)
+* H265: [ VoD Speed Preset Configurations](/encoding/docs/h265-presets#vod-speed-preset-configurations)
+* VP9: [VoD Speed Preset Configurations](/encoding/docs/vp9-presets#vod-speed-preset-configurations)
+* AV1: available presets are stated in the [API reference](/encoding/reference/postencodingconfigurationsvideoav1)
+
+It’s a simple question of choosing the correct one (maybe the fastest one?) and setting it in your codec configuration:
+
+Java
+
+`H264VideoConfiguration config = new H264VideoConfiguration();
+...
+config.setPresetConfiguration(PresetConfiguration.VOD_ULTRAHIGH_SPEED);
+...
+return bitmovinApi.encoding.configurations.video.h264.create(config);
+`
+
+_What compromise you may have to make_
+
+The more a preset is targetted towards achieving speed, the worse it will be at getting good quality for a given bitrate, compared to a quality-focused preset. You will therefore have to compromise on quality or bitrate.
+
+### A fast encoding mode
+
+The Encoding Mode determines how the encoder will perform its rate control. Multiple passes (Bitmovin offers 2 or 3) will naturally make the encoding slower. You could therefore choose to use a single pass instead, which is again simply done in the codec configuration.
+
+Java
+
+`H264VideoConfiguration config = new H264VideoConfiguration();
+...
+config.setEncodingMode(EncodingMode.SINGLE_PASS);
+...
+return bitmovinApi.encoding.configurations.video.h264.create(config);
+`
+
+_What compromise you may have to make_
+
+With single-pass, the encoder only has a very crude mechanism for rate control, and you will therefore be more likely to have suboptimal quality in some scenes, and possibly an output bitrate that deviates significantly from your target bitrate.
+
+### Segmented Muxing
+
+Due to the distributed nature of our encoder, it pays to avoid having to “stitch” separately encoded chunks into a single file again (if your requirements downstream allow you to do so). You should therefore use our segmented muxings instead of our “progressive” (single-file) ones. Which means:
+
+* Prefer the Fmp4Muxing over an Mp4Muxing
+* Prefer the TsMuxing over a ProgressiveTsMuxing
+* Prefer the WebmMuxing over a ProgressiveWebmMuxing
+
+## Infrastructure
+
+### The correct storage and region
+
+You will want to ensure first that no unnecessary delay is caused by transfer of input and output files. Our encoder will run in your selected cloud provider (AWS, GCP or Azure), and you should therefore first and foremost ensure that your source files are stored in the corresponding storage solution (respectively S3, GCS and Blob Storage) and that your outputs are sent to the same type of storage.
+
+Your Input and Output storage should also be in the same cloud region, and you should configure your encoding to run in that same cloud region.
+
+Java
+
+`Encoding encoding = new Encoding();
+...
+encoding.setCloudRegion(CloudRegion.AWS_AP_SOUTH_1);
+...
+encoding = bitmovinApi.encoding.encodings.create(encoding);
+`
+
+### Pre-Warming
+
+When you start an encoding, it will first be queued whilst an encoder instance is spun up and configured, as described in [What do the different encodings state mean?](/encoding/docs/what-do-the-different-encodings-state-mean)
+
+The queue time can be a significant portion of the turnaround time, in particular for short source files. In most circumstances, you will be able to reduce that time with the use of pre-warmed pools (described in detail at [How to use Pre-warmed Encoder Pools](/encoding/docs/how-to-use-pre-warmed-encoder-pools))
+
+_What compromise you may have to make_
+
+Pre-warmed pools may increase your encoding costs, in particular if they’re not used with care. Only configure the pools with as many instances as you may reasonably require, and don’t forget to shut them down when not needed to avoid incurring costs.
+
+### Encoding Slots
+
+Your account is configured to let you perform a number of encodings concurrently (typically 25, but this may depend on your own commercial agreement). If you start more than this number of encodings in a short time span, the additional encodings above that threshold will be added to a queue, waiting for a slot to be available.
+
+If you have a need to be able to run a large number of encodings in a short amount of time, we may be able to increase your encoding slots temporarily. Reach to your account manager or to our support team to make that request.
+
+## Workflow
+
+The final set of recommendations relates to your whole workflow.
+
+If your desired output is a complex ladder, with mutiple renditions (with a range of different resolutions and bitrates), you may want to consider splitting it in a 2-stage process:
+
+1. Configure and start an encoding with a single rendition (or a small set of renditions) at a relatively low resolution and bitrate (just enough not to be of terrible visual quality)
+2. In parallel to it, configure and start the encoding with the full ladder.
+
+The first encoding will finish first and therefore the output will be available sooner. When the second encoding finishes, viewers can be re-directed to it for the full ABR experience.
+
+How you go about doing this will mainly depend on the upstream and downstream components in your workflow. Some considerations:
+
+* are the renditions of the first encoding also added to the second encoding, or is the full set requiring outputs of both encodings (with a multi-encoding manifest generation)?
+* will both encodings use the same or different output folders (and will files get overwritten in the process)?
+
+_What compromise you may have to make_
+
+The workflow will become significantly more complex, and the orchestration layer will need to be able to track the status of multiple encodings.
+
+Encoding costs may be raised as well (albeit in a minor way) if the same renditions are produced by multiple encodings.

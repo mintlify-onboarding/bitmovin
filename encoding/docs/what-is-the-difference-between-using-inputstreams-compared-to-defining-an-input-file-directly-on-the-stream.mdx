@@ -1,0 +1,69 @@
+---
+title: "What is the difference between using InputStreams, compared to defining an input file directly on the Stream?"
+---
+
+When configuring an encoding, and specifying how to access the input file, there are 2 mechanisms available to you:
+
+* Supplying the information directly in the [Stream payload](/encoding/reference/postencodingencodingsstreamsbyencodingid).
+* Or creating an [IngestInputStream](/encoding/reference/postencodingencodingsinputstreamsingestbyencodingid) and providing its identifier in the `Stream`
+
+The 2 mechanisms are functionally equivalent, and require the same type of information:
+
+* `inputId`, the identifier of the `Input` storage
+* `inputPath`, with the full path to the input file on that storage
+* `selectionMode` and `position`, to define what stream to use in the input file.
+
+The difference between the 2 mechanisms is historical. Specifying the information directly on the `Stream` was sufficient for most use cases, until we added support for more complex workflows where more than one input file is involved, such as [trimming and concatenation](/encoding/docs/stitching-and-trimming-getting-started), Dolby Vision, Dolby Atmos, etc.  
+For those, we had to create a more flexible and more consistent way to specify files (and transformations on files), with multiple subtypes of `InputStream` objects, the primary one for specifying video and audio input files being the `IngestInputStream`.
+
+So, whilst for simple use cases the 2 methods are equivalent, we strongly recommend, if only for consistency, to use the second one. In the future any new input functionality will be provided through `InputStreams`.
+
+## Conversion
+
+To convert your existing code to use the `IngestInputStream` is very simple. Here is an example for Java:
+
+### Before
+
+Java
+
+`private static Stream createStream(
+      Encoding encoding, Input input, String inputPath, CodecConfiguration codecConfiguration)
+      throws BitmovinException {
+    StreamInput streamInput = new StreamInput();
+    streamInput.setInputId(input.getId());
+    streamInput.setInputPath(inputPath);
+    streamInput.setSelectionMode(StreamSelectionMode.AUTO);
+    
+    Stream stream = new Stream();
+    stream.addInputStreamsItem(streamInput);
+    stream.setCodecConfigId(codecConfiguration.getId());
+    
+    return bitmovinApi.encoding.encodings.streams.create(encoding.getId(), stream);
+}
+`
+
+### After
+
+Java
+
+`  private static Stream createStream(
+      Encoding encoding, Input input, String inputPath, CodecConfiguration codecConfiguration)
+      throws BitmovinException {
+    IngestInputStream ingestInputStream = new IngestInputStream();
+    ingestInputStream.setInputId(input.getId());
+    ingestInputStream.setInputPath(inputPath);
+    ingestInputStream.setSelectionMode(StreamSelectionMode.AUTO);
+    ingestInputStream = bitmovinApi.encoding.encodings.inputStreams.ingest.create(encoding.getId(), ingestInputStream);
+    
+    StreamInput streamInput = new StreamInput();
+    streamInput.setInputStreamId(ingestInputStream.getId());
+    
+    Stream stream = new Stream();
+    stream.addInputStreamsItem(streamInput);
+    stream.setCodecConfigId(codecConfiguration.getId());
+    
+    return bitmovinApi.encoding.encodings.streams.create(encoding.getId(), stream);
+  }
+`
+
+Note that unlike `StreamInput`, which is an abstraction internal to the SDKs used in the construction of the `Stream`, `IngestInputStream` is an API endpoint in its own right, and you therefore need to call it (as shown on line 8 above), before you can use it in the definition of the `Stream`.

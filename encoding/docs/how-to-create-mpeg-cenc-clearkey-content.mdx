@@ -1,0 +1,58 @@
+---
+title: "How to create MPEG-CENC ClearKey content"
+---
+
+## Overview
+
+Clear Key encryption is an interface supported by EME. This interface can be used to deliver MPEG-DASH content with Clear Key. The interface provides the basic functionality that the user could provide a key that will be used for the decryption of the segments. MPEG-DASH signals the key in the Media Presentation Duration (MPD), which is the manifest of MPEG-DASH. All the relevant information that is needed for decryption is included in the MPD.
+
+## About this example
+
+The code snippets shown here are based on the [full example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java) called `CencDrmContentProtection.java`, using our [Bitmovin SDK for Java](/encoding/docs/how-to-create-mpeg-cenc-clearkey-content#get-started-with-a-bitmovin-sdk).
+
+> **Hint:** If you haven't created any encodings with our Service yet, its recommended to start with our quick start guide called "[Get Started with the Bitmovin API](/encoding/reference/get-started-with-the-bitmovin-api)" first, before you continue :)
+
+## Encoding configuration
+
+The key part to create an encoding that encodes and encrypt adhering MPEG-CENC standards, is to add a `CencDRM` Configuration to an `fMP4 Muxing`.
+
+So to encrypt your content an `encryption key` (referred to as `key` later on) is required. A `Content ID` or `kid` is optional in this case, but can be provided if you want to.
+
+> **Important:** MPEG CENC ClearKey Encryption provides an additional layer of security for the stored content, the decryption on the client side doesn't happen in an isolated secure environment as it is the case with an actual DRM solution. The Decryption is handled by a HTML5 player directly, therefore the key (and kid if needed) is part of its configuration and therefore accessible on the client side. [Learn more about DRM](https://bitmovin.com/digital-rights-management-everything-to-know/).
+
+**General configuration values:**
+
+* `key`: (required) You need to provide a key that will be used to encrypt the content (16 byte encryption key, represented as 32 hexadecimal characters)
+* `kid`: (optional) also known as Key ID, or ContentID. Its a unique identifer for your content (16 byte initialization vector, represented as 32 hexadecimal characters)
+
+**Java SDK Example - createDrmConfig() Method** ([Line in Example](https://github.com/bitmovin/bitmovin-api-sdk-examples/blob/master/java/src/main/java/CencDrmContentProtection.java#L266))
+
+Java
+
+`private static CencDrm createDrmConfig(
+    Encoding encoding, Muxing muxing, Output output, String outputPath) throws BitmovinException {
+  CencDrm cencDrm = new CencDrm();
+  cencDrm.addOutputsItem(buildEncodingOutput(output, outputPath));
+  cencDrm.setKey("cab5b529ae28d5cc5e3e7bc3fd4a544d");
+  cencDrm.setKid("08eecef4b026deec395234d94218273d");
+  
+  return bitmovinApi.encoding.encodings.muxings.fmp4.drm.cenc.create(
+      encoding.getId(), muxing.getId(), cencDrm);
+}
+`
+
+## How to play MPEG-CENC ClearKey content?
+
+Now, that you are able to create this content, you most likely want to play it as well :) Therefore, please see our tutorial, [how you can play MPEG-CENC ClearKey encrypted content](https://developer.bitmovin.com/playback/docs/how-to-play-mpeg-cenc-clearkey-content) with our Bitmovin Player
+
+## Get Started with a Bitmovin SDK
+
+| Bitmovin API SDK                                                               | Description                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [Java](https://github.com/bitmovin/bitmovin-api-sdk-java)                      | Integrate the SDK into your Java Project easily and add it to the config of your dependency manager like Maven or Gradle. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-java#installation) |
+| [Javascript/Typescript](https://github.com/bitmovin/bitmovin-api-sdk-examples) | Integrate the SDK into your Javascript/Typescript based project easily by adding it as a dependency via NPM. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-javascript#installation)        |
+| [Python](https://github.com/bitmovin/bitmovin-api-sdk-examples)                | Integrate the SDK into your Python based project easily by adding it as a dependency via pip or Setuptools. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-python#installation)             |
+| [.NET](https://github.com/bitmovin/bitmovin-api-sdk-examples)                  | Integrate the SDK into your .NET based project easily by adding it as a dependency via nuget. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-dotnet#installation)                           |
+| [PHP](https://github.com/bitmovin/bitmovin-api-sdk-examples)                   | Integrate the SDK into your PHP based project easily by adding it as a dependency via composer. [Learn more](https://github.com/bitmovin/bitmovin-api-sdk-php#installation)                            |
+
+Visit our [Github Example Repository](https://github.com/bitmovin/bitmovin-api-sdk-examples) that provides you with examples for all Bitmovin SDK's available.

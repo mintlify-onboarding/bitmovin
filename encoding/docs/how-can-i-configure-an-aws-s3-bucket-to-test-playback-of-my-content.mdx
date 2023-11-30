@@ -1,0 +1,64 @@
+---
+title: "How can I configure an AWS S3 Bucket to test playback of my content?"
+---
+
+When you use an S3 bucket as Output for your encodings, they will not automatically allow you to test streaming your encoded content from them. The default security model with S3 does not allow for this.
+
+To enable this model, you will need to do the following:
+
+## Allow Public Access ACLs
+
+For creating new buckets we have this tutorial: [How to create an S3 Encoding Input or Output with the Bitmovin API](/encoding/docs/how-to-create-an-s3-encoding-input-or-output-with-the-bitmovin-api)
+
+For existing buckets:
+
+1. Go to the **Permissions** tab of the S3 Bucket a. e.g.: [https://s3.console.aws.amazon.com/s3/buckets/](https://s3.console.aws.amazon.com/s3/buckets/)?tab=permissions
+2. If it says `Access: Bucket and objects not public` our Encoder cannot set objects to have the PUBLIC_ACCESS ACL._  
+_a. In **Block public access (bucket settings)** push the **Edit** button_  
+_b. uncheck 🔳 **Block**_ **all**\_ **public access.**  
+c. Hit **Save changes**  
+d. In the **Permissions overview,** it should say `Access: Objects can be public`
+
+When you create the bucket, disable the bucket settings that block public access, which is set by default on new buckets. If you use the AWS Console, they are _Block new public ACLs and uploading public objects,_ and _Remove public access granted through public ACLs_. See the [AWS Documentation on Block Public Access](https://docs.aws.amazon.com/AmazonS3/latest/dev/access-control-block-public-access.html) for details.
+
+If you leave those enabled, you will need to ensure that your scripts set ACL permissions to PRIVATE on objects output to this bucket (for example muxings, manifests, etc.), or your encodings will fail.
+
+**Note: Encodings started in the** [https://bitmovin.com/dashboard/](https://bitmovin.com/dashboard/) **are configured to set the PUBLIC\_ACCESS ACL on output files. Allowing Public Access ACLs in the bucket is required for these Encodings to work.**
+
+## CORS configuration
+
+To allow players to request content for streaming from your S3 bucket, you will also need to allow origin access with a CORS configuration.
+
+1. Go to the **Permissions** tab of the S3 Bucket  
+a. e.g.: [https://s3.console.aws.amazon.com/s3/buckets/](https://s3.console.aws.amazon.com/s3/buckets/) _bucket-name_ ?tab=permissions
+2. Scroll down until **Cross-origin resource sharing (CORS)** and hit the **Edit** Button next to it  
+a. e.g.: [https://s3.console.aws.amazon.com/s3/buckets/](https://s3.console.aws.amazon.com/s3/buckets/) _bucket-name_ /property/cors/edit
+3. Now you can paste or edit the CORS configuration based on your needs.
+
+The following is a good default policy that provides unrestricted access for streaming.
+
+JSON
+
+`[
+    {
+        "AllowedHeaders": [
+            "Authorization"
+        ],
+        "AllowedMethods": [
+            "GET",
+            "HEAD"
+        ],
+        "AllowedOrigins": [
+            "*"
+        ],
+        "ExposeHeaders": [],
+        "MaxAgeSeconds": 3000
+    }
+]
+`
+
+For more information on how to enable CORS on S3 buckets, see the [AWS Documentation](https://docs.aws.amazon.com/AmazonS3/latest/dev/cors.html)
+
+## Troubleshooting
+
+To troubleshoot upload issues to your AWS S3 bucket are explained [here](/encoding/docs/why-are-my-encodings-with-s3-outputs-failing-although-the-credentials-are-correct).

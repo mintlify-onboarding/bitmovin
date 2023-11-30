@@ -1,0 +1,46 @@
+---
+title: "Digital Rights Management (DRM) Overview"
+---
+
+## What is a DRM?
+
+Digital Rights Management (DRM) systems provide you the ability to control how people can consume your content. Usually content owners and producers like all major Hollywood Studios, TV Stations, etc. enforce others that buy or rent content to use specific DRM systems to protect the content according to the constraints associated with the specific content. Hollywood grade DRM protection is not always needed and sometimes it’s enough to provide basic protection through token based secure authentication or simple AES encryption of the video without sophisticated license exchange and policy management.
+
+## How does it work?
+
+A DRM setup needs specific encoding, packaging, player and a license server. Bitmovin provides the encoding, packaging and the player. For license servers we refer to our partners from Irdeto, EZDRM, ExpressPlay and Axinom, which provide a multi DRM setup. It’s also possible to build your own license servers and negotiate terms directly with Google (Widevine), Microsoft (PlayReady), Adobe (PrimeTime) or Apple (Fairplay), but it usually takes longer.
+
+![](/images/encoding/docs/79b568d-image.png)
+
+## Encoding & Packaging
+
+From an encoding and packaging perspective it makes not much difference if the video is ‘just’ AES encrypted or Hollywood grade DRM encrypted because for the encryption in both cases AES is used. The major difference is that for Hollywood grade DRM’s further metadata information needs to be added in the packaging step. Hollywood grade DRM’s like [PlayReady](https://developer.bitmovin.com/playback/docs/setup-using-multiple-drm-solutions#playready), [Widevine](https://developer.bitmovin.com/playback/docs/setup-using-multiple-drm-solutions#widevine), [PrimeTime](https://developer.bitmovin.com/playback/docs/setup-using-multiple-drm-solutions#adobe-primetime) and [Fairplay](https://developer.bitmovin.com/playback/docs/setup-using-multiple-drm-solutions#fairplay) don’t differ on the encryption side they differ on the features that are provided. Features such as offline playback, fine grained policies (e.g., allow only SD playback, rights visibility for users, APIs, different payment modes such as subscription, purchase, rental and gifting, etc.) and [platforms that are supported](https://developer.bitmovin.com/playback/docs/drm-content-protection) (e.g., Chrome, Firefox, IE, Safari, Android, iOS, etc.) with the DRM system.
+
+## Multi DRM and MPEG-CENC
+
+Typically, [each device supports just one DRM](https://developer.bitmovin.com/playback/docs/drm-content-protection). If you want to achieve maximum device reach it’s impossible to use just one DRM you need to use multiple DRM’s in parallel. The MPEG Common Encryption (MPEG-CENC) standard enables this in the most efficient way as it allows key association from different DRM’s with the same video. This means that your video can be encoded and encrypted once with the same key. Metadata for the different DRM’s will be added in the packaging step. The details of the license acquisition, license mappings, etc. will be left out to the individual DRM system. The player decides based on the platform support which specific DRM will be used.
+
+Traditional multi DRM setups needed to encrypt and package the content for each DRM differently. This increases the storage footprint of the content as each video needs to be encrypted and packaged with every DRM system and stored separately. Furthermore, each video also needs to be encoded into multiple resolutions and bitrates to serve different devices and then each encoding needs to be encrypted and packaged with all the different DRMs. This would not only increase the storage footprint tremendously it also increases the management efforts, because another service needs to keep track of this different versions. Beside that it reduces the efficiency of your CDN if so many different versions for each DRM are distributed.
+
+## Playback
+
+On the player side we utilize the [HTML5 Encrypted Media Extensions](https://www.w3.org/TR/encrypted-media/) (EME) to enable DRM playback without plugins. If the DRM is not supported through the EME we can always fallback to Flash and Adobe Access. If the content is MPEG-CENC multi DRM encrypted the player will automatically choose the DRM that is natively supported on the given platform to playback the content in HTML5 without plugins. The player handles the authentication and the license acquisition through the EME with the metadata that is provided with the content.
+
+## Licensing Server
+
+The licensing server is the management backend of your DRM setup. It allows you to create, modify and revoke licenses for your content and users. Licensing servers and DRM’s differ in their features such as offline playback, fine grained policies, rights visibility for users, APIs, different payment (subscription, purchase, rental and gifting), etc. We do not provide licensing servers but we partner with several companies that provide such servers and services such as [Irdeto](https://developer.bitmovin.com/playback/docs/playing-protected-content-with-irdeto), [EZDRM](https://bitmovin.com/docs/player/tutorials/how-to-play-drm-protected-content-with-ezdrm), [ExpressPlay](https://bitmovin.com/docs/player/tutorials/how-to-play-multi-drm-protected-content-with-intertrust-expressplay), [Axinom](http://www.axinom.com/), [DRMtoday](https://developer.bitmovin.com/playback/docs/playing-protected-content-with-drmtoday), [Conax](https://bitmovin.com/docs/player/tutorials/setup-the-bitmovin-player-with-conax-drm-service) and [BuyDRM](https://developer.bitmovin.com/playback/docs/playing-protected-content-using-buydrm). It’s also possible to create your own licensing backend if you have a contract with Google (Widevine), Microsoft (PlayReady), Adobe (PrimeTime) or Apple (Fairplay) directly and you implement the specification. You can then also integrate your licensing backend with our services as long as it follows the official specifications.
+
+## Hollywood & UltraViolet
+
+When implementing a DRM strategy it’s worth checking that the DRM is accepted by the content owner. Which means that if you distribute Hollywood content you need to implement a DRM that is accepted by the Hollywood studios. But also if you don’t deliver Hollywood content it’s good to check what is accepted by Hollywood because you never know, probably you will deliver such content in the future. Replacing an already deployed DRM solution is hard and Hollywood has already done the due diligence of the DRMs for you, so it’s worth checking these recommended DRMs.
+
+The Digital Entertainment Content Ecosystem (DECE) is a consortium of 85 companies (e.g., studios, manufactures, etc.) that created the UltraViolet standard that ensures that after you purchase a content you are able to watch this content on broad number of devices. DRM is a major part of UltraViolet and therefore 6 DRM technologies have been approved:
+
+* Widevine
+* PlayReady
+* PrimeTime
+* Marlin
+* OMA
+* DivX DRM
+
+Apple Fairplay is not part of this list as Apple is not a member of the DECE and Fairplay has just entered the market.

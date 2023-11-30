@@ -1,0 +1,106 @@
+---
+title: "Multi-Tenant: Invite other Users to your Bitmovin account"
+---
+
+## Overview
+
+When companies grow or already have a certain size, more and more people need access to its account, either to use it in order to start encodings, or have a look into the usage statistics, analytics data, add new domains to your player license and so on. Sharing the credentials was typically the initial way to deal with those needs, however its not a handy one, nor allows it to specify access rights for each user. `Multi Tenant` comes to the rescue :)
+
+It enables you to invite others (developers, finance team, operations, devops) dedicated access to your Bitmovin Account, by assigning them to `Groups` with a set of `Permissions`, so they can `View` or `Manage` specific resources and configurations in your `Organisation`.
+
+---
+
+## Terminology
+
+Everyone who signs up for an Bitmovin Account, creates an `Organisation` and a `User` who is the owner of this `Organisation`. In your dashboard you find those in the top menu bar:
+
+![image](/images/encoding/docs/image.png) **Bitmovin Account**  
+A Bitmovin Account is created when someone signs up at [https://bitmovin.com/dashboard/signup](https://bitmovin.com/dashboard/signup) or gets invited to an `Organisation`.
+
+* **Organisation**  
+It holds all the resources you can create in the Dashboard or through the Bitmovin API (Encodings, Inputs, Outputs, Configurations, Manifests, etc.), as well as the Subscriptions for each of our Services. Further, one or more `User`s can be part of an `Organisation`.  
+   * **User** (Owner, You)  
+   A `User` is by default the Owner of the Organisation of its own Bitmovin Account.  
+   * **Groups**  
+   `Groups` have specific `Permissions` assigned to it to control which actions its members can perform in an `Organisation`.  
+         * **Users**  
+         A `User` can become a member of other `Organisations` by being added to one or more of its `Group`s. `User`s that are added to other `Organisations` are also referred to as `Tenant-Users`.  
+         * **Permissions**  
+         `Permissions` can be assigned to `Groups` to control what resources its members are allowed to `View` or `Manage` of an Organisation.
+
+---
+
+## Invite Users to your Organisation
+
+You can grant others access to your account by inviting them using their email address, and assigning them to one or more `Groups`.
+
+##### 1) Go to "Organisation Settings => Team"
+
+![](/images/encoding/docs/8050544-image.png)
+
+##### 2) Click the “+ Add” button right next to “Users”
+
+![](/images/encoding/docs/fcf97c3-image.png)
+
+Enter the email address of someone you want to provide with access to your organisation. If a ...
+
+* **Bitmovin Account with this Email doesn't exist yet** \- The owner of the email address will receive an invitation email to create their own Bitmovin Account. Once done, they can select your `Organisation` in the top menu bar, and switch to it.
+* **Bitmovin Account with Email already exists** \- All the Invitee has to do is to select the `Organisation` in the top menu bar in order to switch to it.
+
+By default, you have three predefined groups available you can choose from:
+
+* **Devops** Allowed to view encoding, player, and analytics resources
+* **Account Admins** Allowed to view and manage account settings
+* **Product Admins** Allowed to view and manage encoding, player and analytics resources
+
+Select the group you want the user to be part of, and click on “+ Add”.
+
+## Create a new group
+
+If none of the predefined groups fits your needs, you can create a custom group with custom permissions. In order to create a custom group, go to your ["Team" settings](https://bitmovin.com/dashboard/organization/team), and click on the “+ Add” button next to “Groups”:
+
+![](/images/encoding/docs/e3e45ed-image.png)
+
+Its recommended to use a descriptive name and description, so it is easy to see what set of permissions are configured for this group. By default, if no permissions are added to a group everything will be denied. So, by adding permissions you can allow specific actions that users of this group can perform.
+
+## Set permissions for a group
+
+In order to edit permissions of a group, and its members, go to your ["Team" settings](https://bitmovin.com/dashboard/organization/team) page, and click on the "Edit" button next to the group name and description. There you can grant `View` and/or `Manage` access to the different resources and products available to your `Organisation`.
+
+* `View` \- Allows to view the resources only (API SDK: GET Requests only)
+* `Manage` \- Allows to create/edit/delete resources (API SDK: POST/DELETE Requests only)
+
+![](/images/encoding/docs/0f24d85-image.png)
+
+**Available Policies:**
+
+* Encoding - Control access to all encoding related resources and its API's  
+[VoD/Live/PerTitle Encodings and Object Detection](/encoding/reference/encodings), [Configurations](/encoding/reference/configurations), [Inputs](/encoding/reference/inputs), [Outputs](/encoding/reference/outputs), [Filters](/encoding/reference/filters), [Manifests](/encoding/reference/manifests), [Infrastructure](/encoding/reference/infrastructure), [Statistics](/encoding/reference/statistics)
+* Notifications - Controls access to email- and webhook notifications for encoding events and its API's  
+([Email](https://bitmovin.com/docs/encoding/api-reference/sections/notifications-email), [Webhook](https://bitmovin.com/docs/encoding/api-reference/sections/notifications-webhooks))
+* Player - Controls access to all player related resources and its API's  
+([Licenses](https://bitmovin.com/docs/player/api-reference/rest/sections/licenses), [Statistics](https://bitmovin.com/dashboard/player/statistics))
+* Analytics - Controls access to all analytics related resources and its API's  
+([Licenses](https://bitmovin.com/docs/analytics/api-reference/sections/licenses), [Queries](https://bitmovin.com/docs/analytics/api-reference/sections/queries), [Metrics](https://bitmovin.com/docs/analytics/api-reference/all))
+* Account - Controls access to Bitmovin Account related areas  
+([Account Settings](https://bitmovin.com/dashboard/account), [Organisation Settings](https://bitmovin.com/dashboard/organization/overview))
+* Billing - Controls access to all billing and subscription related areas  
+([Subscriptions](https://bitmovin.com/dashboard/organization/billing/plans), [Payment Methods](https://bitmovin.com/dashboard/organization/billing), [Billing Information Details](https://bitmovin.com/dashboard/organization/billing))
+
+## Using an API SDK with different Organisations
+
+By default, in order to use any of our API SDK's available, you provide it with the API Key of your own Bitmovin Account to authenticate your requests and have them executed in your own Bitmovin Account and Organisation.
+
+To execute API calls in other Organisations you got invited to, you have to provide the `Organisation ID` when initialising the API SDK. Doing so, your API calls will be executed in this particular Organisation instead of your own. You can only execute acctions that you are permitted to based on the permissions of your `Group`.
+
+In addition to the [quick start guide](/encoding/docs/get-started-with-the-bitmovin-api) that shows how you get started using our API and its SDK's, you can provide the ID of the Organisation you want to perform actions in using the `withTenantOrgId()` method:
+
+Java
+
+`BitmovinApi bitmovinApi = BitmovinApi.builder()
+    .withApiKey("YOUR_API_KEY_HERE")
+    .withTenantOrgId("YOUR_ORGANISATION_ID_HERE")
+    .build();
+`
+
+Now, all API calls using this API SDK instance will be performed in the provided organisation instead of your own.
